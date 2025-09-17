@@ -33,14 +33,16 @@ const CalculatorChat: React.FC = () => {
     setIsStreaming(true);
 
     try {
-      const formData = new FormData();
-      formData.append('message', input);
-      formData.append('thread_id', threadId);
-      formData.append('user_id', userId);
-
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat/calculator`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: input,
+          thread_id: threadId,
+          user_id: userId,
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to send message');
