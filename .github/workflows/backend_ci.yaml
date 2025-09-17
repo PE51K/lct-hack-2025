@@ -1,0 +1,22 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend_ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend_ci.yml"
+
+jobs:
+  lint:
+    name: Lint backend python code using Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+            args: check
+            src: "./backend"
