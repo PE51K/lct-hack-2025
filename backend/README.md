@@ -1,6 +1,6 @@
-# Backend - ...
+# Backend - AI Data Assistant
 
-This folder contains the backend code for the ...
+This folder contains the backend code for the AI Data Assistant
 
 ## Table of Contents
 
@@ -13,6 +13,9 @@ This folder contains the backend code for the ...
 ## Technology Stack
 
 - **python3.12** - Core programming language
+- **UV** - Dependency management
+- **Ruff** - Linting and formatting
+- **FastAPI** - Web API building
 - **pydantic-settings** - Configuration management
 - **LangChain** - LLM orchestration and agent framework
 - **LangGraph** - Agentic workflow management
@@ -25,26 +28,26 @@ This folder contains the backend code for the ...
 
 ```plaintext
 backend/
-├── ai
-│   ├── agents
-│   │   ├── calculcator_agent.py
+├── ai/                          # AI-related modules
+│   ├── agents/                  # AI agents for specific tasks
+│   │   ├── calculcator_agent.py # Calculator agent for computations
 │   │   └── __init__.py
 │   ├── __init__.py
-│   └── llm
+│   └── llm/                     # Large Language Model integrations
 │       └── __init__.py
-├── app
-│   └── app.py
-├── core
+├── app/                         # Application entry point
+│   └── app.py                   # FastAPI application
+├── core/                        # Core utilities and configurations
 │   ├── __init__.py
-│   ├── logging.py
-│   └── settings.py
-├── docker-compose.langfuse.yaml
-├── docker-compose.yaml
-├── dockerfile
-├── init-multiple-databases.sh
-├── pyproject.toml
-├── README.md
-└── uv.lock
+│   ├── logging.py               # Logging configuration
+│   └── settings.py              # Application settings and configuration
+├── docker-compose.langfuse.yaml # Docker Compose for LangFuse
+├── docker-compose.yaml          # Main Docker Compose configuration
+├── dockerfile                   # Dockerfile for backend container
+├── init-multiple-databases.sh   # Script to initialize databases
+├── pyproject.toml               # Python project configuration
+├── README.md                    # This file
+└── uv.lock                      # Dependency lock file
 ```
 
 ## Development Setup
@@ -64,19 +67,19 @@ pip install uv
 uv sync
 ```
 
-4. Copy `.env.example` to `.env` and update the environment variables as needed:
+4. Copy `.env.dev.example` to `.env` and update the environment variables as needed:
 ```bash
-cp .env.example .env
+cp .env.dev.example .env
 # Edit .env to set your configurations
 ```
 
-6. **Start supporting services (Postgres, LangFuse)**:
+6. **Start supporting services (Postgres, LangFuse) from the project root directory**:
 ```bash
 # Run from the project root directory
 docker compose up -d postgres langfuse-web
 ```
 
-7. Run fastapi server:
+7. Run local fastapi server:
 ```bash
 uv run uvicorn app.app:app --reload --host 0.0.0.0 --port 8000
 ```

@@ -1,6 +1,6 @@
-# 🎯 ...
+# 🎯 AI Data Assistant
 
-....
+A comprehensive AI-powered assistant for automating data engineering processes, capable of connecting to various data sources, building ETL pipelines, designing data warehouses, and optimizing processing performance.
 
 ## 📜 Table of Contents
 
@@ -14,7 +14,20 @@
 ## 🏗️ Architecture
 
 ```
-...
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend       │    │   AI Agents     │
+│   (React + TS)  │◄──►│   (FastAPI)     │◄──►│   (LangChain)   │
+│                 │    │                 │    │                 │
+│ - User Interface│    │ - API Endpoints │    │ - Data Sources  │
+│ - Chat Interface│    │ - Orchestration │    │ - ETL Pipelines │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Data Stores   │
+                    │   (PostgreSQL)  │
+                    └─────────────────┘
 ```
 
 ## 📁 Project Structure
@@ -45,16 +58,16 @@ cd lct-hack-2025
 
 2. **Set up environment variables:**
 ```bash
-# Backend configuration
-cp backend/.env.example backend/.env
+# Backend configuration (use .env.prod.example for production)
+cp backend/.env.prod.example backend/.env
 # Edit backend/.env with your settings
 
-# Frontend configuration
-cp frontend/.env.example frontend/.env
+# Frontend configuration (use .env.prod.example for production)
+cp frontend/.env.prod.example frontend/.env
 # Edit frontend/.env with your settings
 ```
 
-- Refer to the [`backend/.env.example`](backend/.env.example) and [`frontend/.env.example`](frontend/.env.example) files for variable descriptions.
+- Refer to the [`backend/.env.dev.example`](backend/.env.dev.example) and [`frontend/.env.dev.example`](frontend/.env.dev.example) files for variable descriptions.
 
 3. **Start all services:**
 ```bash
@@ -73,9 +86,9 @@ Refer to [Backend Documentation](backend/README.md) and [Frontend Documentation]
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes and add tests
-4. Run linting: `cd backend && uv run ruff check`
-5. Format code: `uv run ruff format`
+3. Make your changes
+4. Format backend code: `cd backend && uv run ruff format && uv run ruff check --fix`
+5. Format frontend code: `cd frontend && npm run lint`
 6. Commit your changes: `git commit -am 'Add new feature'`
 7. Push to the branch: `git push origin feature/your-feature`
 8. Submit a pull request
