@@ -38,7 +38,7 @@ const CalculatorChat: React.FC = () => {
       formData.append('thread_id', threadId);
       formData.append('user_id', userId);
 
-      const response = await fetch('http://localhost:8000/chat/calculator', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat/calculator`, {
         method: 'POST',
         body: formData,
       });

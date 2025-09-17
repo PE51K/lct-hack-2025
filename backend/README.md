@@ -70,10 +70,10 @@ cp .env.example .env
 # Edit .env to set your configurations
 ```
 
-6. **Start supporting services (LangGraph, Postgres)**:
+6. **Start supporting services (Postgres, LangFuse)**:
 ```bash
 # Run from the project root directory
-docker compose up -d langgraph postgres
+docker compose up -d postgres langfuse-web
 ```
 
 7. Run fastapi server:
