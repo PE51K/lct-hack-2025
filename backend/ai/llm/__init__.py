@@ -13,7 +13,6 @@ sys.path.insert(0, "..")
 
 from core.settings import settings
 
-
 # Initialize the base language model using YandexGPT
 llm = ChatOpenAI(
     api_key=settings.ai.yandex_gpt.api_key,

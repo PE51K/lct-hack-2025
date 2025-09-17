@@ -7,7 +7,6 @@ Uses Pydantic's BaseSettings to manage configuration and environment variables.
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 # ============ FastAPI backend app ============
 
 
@@ -153,12 +152,15 @@ class AISettings(BaseSettings):
 
     Attributes:
         yandex_gpt (YandexGPTSettings): Settings for Yandex GPT integration.
-        langgraph_checkpointer (LanggraphCheckpointerPostgresSettings): Settings for Langgraph Checkpointer PostgreSQL connection.
+        langgraph_checkpointer (LanggraphCheckpointerPostgresSettings):
+            Settings for Langgraph Checkpointer PostgreSQL connection.
         langfuse (LangfuseSettings): Settings for LangFuse integration.
     """
 
     yandex_gpt: YandexGPTSettings = YandexGPTSettings()
-    langgraph_checkpointer: LanggraphCheckpointerPostgresSettings = LanggraphCheckpointerPostgresSettings()
+    langgraph_checkpointer: LanggraphCheckpointerPostgresSettings = (
+        LanggraphCheckpointerPostgresSettings()
+    )
     langfuse: LangfuseSettings = LangfuseSettings()
 
 

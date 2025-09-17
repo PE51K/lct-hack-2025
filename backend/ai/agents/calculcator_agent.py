@@ -5,16 +5,19 @@ This module defines the calculator agent, including its prompt template,
 tools for mathematical operations, and input models.
 """
 
-from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
 from langchain_core.tools.structured import StructuredTool
 from pydantic import BaseModel, Field
-
 
 # Chat prompt template for the calculator agent
 calculator_agent_chat_prompt_template = ChatPromptTemplate.from_messages(
     [
         SystemMessagePromptTemplate.from_template(
-"""
+            """
 You are a calculator agent. You can perform mathematical calculations and provide accurate results.
 """
         ),
@@ -30,6 +33,7 @@ class SummationInput(BaseModel):
     Attributes:
         numbers (list[float]): A list of numbers to sum.
     """
+
     numbers: list[float] = Field(..., description="A list of numbers to sum")
 
 
