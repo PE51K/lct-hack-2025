@@ -4,7 +4,7 @@ interface Message {
   id: string;
   content: string;
   type: string;
-  toolCalls?: any[];
+  toolCalls?: unknown[];
 }
 
 const CalculatorChat: React.FC = () => {
@@ -76,7 +76,7 @@ const CalculatorChat: React.FC = () => {
               } else if (msg.type === 'tool') {
                 setMessages(prev => [...prev, { id: msg.id, content: `Tool result: ${msg.content}`, type: 'tool' }]);
               }
-            } catch (e) {
+            } catch {
               console.error('Failed to parse line:', line);
             }
           }
