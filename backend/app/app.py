@@ -9,11 +9,12 @@ import json
 import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Dict
+from typing import Dict, Annotated
+from enum import Enum
 
 from pydantic import BaseModel
 from langfuse._client.client import Langfuse
-from langchain_core.messages import UserMessage
+from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.postgres.aio import (
     AsyncConnectionPool, 
     AsyncPostgresSaver,
@@ -32,7 +33,7 @@ from core.settings import settings
 from ai.llm import llm
 from pydantic import BaseModel
 from ai.agents.calculcator_agent import (
-    calculator_agent_system_prompt_template,
+    calculator_agent_chat_prompt_template,
     calculator_agent_tools,
 )
 
@@ -76,7 +77,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.calculator_agent = create_react_agent(
             model=llm,
             tools=calculator_agent_tools,
-            prompt=calculator_agent_system_prompt_template,
+            prompt=calculator_agent_chat_prompt_template,
             checkpointer=postgres_saver,
         )
 
@@ -108,14 +109,29 @@ class ChatWithAgentRequest(BaseModel):
     user_id: str
 
 
+class AgentNameEnum(str):
+    calculator = "calculator"
+
+
 @app.post("/chat/{agent_name}")
-async def chat_with_agent(agent_name: str, request: ChatWithAgentRequest = Form(...)) -> StreamingResponse:
-    """Chat with the specified agent."""
+async def chat_with_agent(agent_name: Annotated[str, AgentNameEnum], request: ChatWithAgentRequest = Form(...)) -> StreamingResponse:
+    """
+    Chat with the specified agent.
+
+    Example response streaming JSON lines:
+    ```
+    {"message": {"content": "", "additional_kwargs": {"tool_calls": [{"index": 0, "id": "sum_numbers", "function": {"arguments": "{\"numbers\":[2,2]}", "name": "sum_numbers"}, "type": "function"}]}, "response_metadata": {"finish_reason": "tool_calls", "model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt"}, "type": "AIMessageChunk", "name": null, "id": "run--3cba6907-14b9-4e6d-bd0c-25b08defce11", "example": false, "tool_calls": [{"name": "sum_numbers", "args": {"numbers": [2, 2]}, "id": "sum_numbers", "type": "tool_call"}], "invalid_tool_calls": [], "usage_metadata": null, "tool_call_chunks": [{"name": "sum_numbers", "args": "{\"numbers\":[2,2]}", "id": "sum_numbers", "index": 0, "type": "tool_call_chunk"}]}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 1, "langgraph_node": "agent", "langgraph_triggers": ["branch:to:agent"], "langgraph_path": ["__pregel_pull", "agent"], "langgraph_checkpoint_ns": "agent:6df49d2d-b200-b0cc-9203-31e209d3fb83", "checkpoint_ns": "agent:6df49d2d-b200-b0cc-9203-31e209d3fb83", "ls_provider": "openai", "ls_model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt", "ls_model_type": "chat", "ls_temperature": null}}
+    {"message": {"content": "4.0", "additional_kwargs": {}, "response_metadata": {}, "type": "tool", "name": "sum_numbers", "id": "75b15edf-c77f-4042-8f52-8d153f6d50f6", "tool_call_id": "sum_numbers", "artifact": null, "status": "success"}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 2, "langgraph_node": "tools", "langgraph_triggers": ["__pregel_push"], "langgraph_path": ["__pregel_push", 0, false], "langgraph_checkpoint_ns": "tools:d8618445-e763-954e-7b24-b86174d32525"}}
+    {"message": {"content": "Two", "additional_kwargs": {}, "response_metadata": {}, "type": "AIMessageChunk", "name": null, "id": "run--ad573982-3ca5-4ce7-9f2a-1e9f0b5741a4", "example": false, "tool_calls": [], "invalid_tool_calls": [], "usage_metadata": null, "tool_call_chunks": []}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 3, "langgraph_node": "agent", "langgraph_triggers": ["branch:to:agent"], "langgraph_path": ["__pregel_pull", "agent"], "langgraph_checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "ls_provider": "openai", "ls_model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt", "ls_model_type": "chat", "ls_temperature": null}}
+    {"message": {"content": " plus two, a simple quest,\nIn math's realm, a test of the best.\nThe sum is four, a fact so true,\nA number that's both", "additional_kwargs": {}, "response_metadata": {}, "type": "AIMessageChunk", "name": null, "id": "run--ad573982-3ca5-4ce7-9f2a-1e9f0b5741a4", "example": false, "tool_calls": [], "invalid_tool_calls": [], "usage_metadata": null, "tool_call_chunks": []}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 3, "langgraph_node": "agent", "langgraph_triggers": ["branch:to:agent"], "langgraph_path": ["__pregel_pull", "agent"], "langgraph_checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "ls_provider": "openai", "ls_model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt", "ls_model_type": "chat", "ls_temperature": null}}
+    {"message": {"content": " old and new.", "additional_kwargs": {}, "response_metadata": {"finish_reason": "stop", "model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt"}, "type": "AIMessageChunk", "name": null, "id": "run--ad573982-3ca5-4ce7-9f2a-1e9f0b5741a4", "example": false, "tool_calls": [], "invalid_tool_calls": [], "usage_metadata": null, "tool_call_chunks": []}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 3, "langgraph_node": "agent", "langgraph_triggers": ["branch:to:agent"], "langgraph_path": ["__pregel_pull", "agent"], "langgraph_checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "ls_provider": "openai", "ls_model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt", "ls_model_type": "chat", "ls_temperature": null}}
+    ```
+    """
     logger = app.state.logger
     await logger.info(f"Received chat message for agent {agent_name}: {request.message}")
 
     inputs = {
-        "messages": UserMessage(content=request.message),
+        "messages": HumanMessage(content=request.message),
     }
     config = {
         "configurable": {"thread_id": request.thread_id, "user_id": request.user_id},

@@ -1,10 +1,17 @@
-from langchain_core.prompts import SystemMessagePromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.tools.structured import StructuredTool
 from pydantic import BaseModel, Field
 
 
-calculator_agent_system_prompt_template = SystemMessagePromptTemplate.from_template(
-    """You are a calculator agent. You can perform mathematical calculations and provide accurate results."""
+calculator_agent_chat_prompt_template = ChatPromptTemplate.from_messages(
+    [
+        SystemMessagePromptTemplate.from_template(
+"""
+You are a calculator agent. You can perform mathematical calculations and provide accurate results.
+"""
+        ),
+        MessagesPlaceholder(variable_name="messages"),
+    ]
 )
 
 
