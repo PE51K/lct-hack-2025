@@ -104,12 +104,26 @@ app.add_middleware(
 
 
 class ChatWithAgentRequest(BaseModel):
+    """
+    Request model for chatting with an agent.
+
+    Attributes:
+        message (str): The message content to send to the agent.
+        thread_id (str): Unique identifier for the conversation thread.
+        user_id (str): Unique identifier for the user.
+    """
     message: str
     thread_id: str
     user_id: str
 
 
-class AgentNameEnum(str):
+class AgentNameEnum(str, Enum):
+    """
+    Enumeration of available agent names.
+
+    Attributes:
+        calculator (str): The calculator agent for performing mathematical operations.
+    """
     calculator = "calculator"
 
 
@@ -118,13 +132,18 @@ async def chat_with_agent(agent_name: Annotated[str, AgentNameEnum], request: Ch
     """
     Chat with the specified agent.
 
-    Example response streaming JSON lines:
+    Returns a streaming response with JSON lines containing message and metadata.
+
+    Example response with different message types:
     ```
-    {"message": {"content": "", "additional_kwargs": {"tool_calls": [{"index": 0, "id": "sum_numbers", "function": {"arguments": "{\"numbers\":[2,2]}", "name": "sum_numbers"}, "type": "function"}]}, "response_metadata": {"finish_reason": "tool_calls", "model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt"}, "type": "AIMessageChunk", "name": null, "id": "run--3cba6907-14b9-4e6d-bd0c-25b08defce11", "example": false, "tool_calls": [{"name": "sum_numbers", "args": {"numbers": [2, 2]}, "id": "sum_numbers", "type": "tool_call"}], "invalid_tool_calls": [], "usage_metadata": null, "tool_call_chunks": [{"name": "sum_numbers", "args": "{\"numbers\":[2,2]}", "id": "sum_numbers", "index": 0, "type": "tool_call_chunk"}]}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 1, "langgraph_node": "agent", "langgraph_triggers": ["branch:to:agent"], "langgraph_path": ["__pregel_pull", "agent"], "langgraph_checkpoint_ns": "agent:6df49d2d-b200-b0cc-9203-31e209d3fb83", "checkpoint_ns": "agent:6df49d2d-b200-b0cc-9203-31e209d3fb83", "ls_provider": "openai", "ls_model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt", "ls_model_type": "chat", "ls_temperature": null}}
-    {"message": {"content": "4.0", "additional_kwargs": {}, "response_metadata": {}, "type": "tool", "name": "sum_numbers", "id": "75b15edf-c77f-4042-8f52-8d153f6d50f6", "tool_call_id": "sum_numbers", "artifact": null, "status": "success"}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 2, "langgraph_node": "tools", "langgraph_triggers": ["__pregel_push"], "langgraph_path": ["__pregel_push", 0, false], "langgraph_checkpoint_ns": "tools:d8618445-e763-954e-7b24-b86174d32525"}}
-    {"message": {"content": "Two", "additional_kwargs": {}, "response_metadata": {}, "type": "AIMessageChunk", "name": null, "id": "run--ad573982-3ca5-4ce7-9f2a-1e9f0b5741a4", "example": false, "tool_calls": [], "invalid_tool_calls": [], "usage_metadata": null, "tool_call_chunks": []}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 3, "langgraph_node": "agent", "langgraph_triggers": ["branch:to:agent"], "langgraph_path": ["__pregel_pull", "agent"], "langgraph_checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "ls_provider": "openai", "ls_model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt", "ls_model_type": "chat", "ls_temperature": null}}
-    {"message": {"content": " plus two, a simple quest,\nIn math's realm, a test of the best.\nThe sum is four, a fact so true,\nA number that's both", "additional_kwargs": {}, "response_metadata": {}, "type": "AIMessageChunk", "name": null, "id": "run--ad573982-3ca5-4ce7-9f2a-1e9f0b5741a4", "example": false, "tool_calls": [], "invalid_tool_calls": [], "usage_metadata": null, "tool_call_chunks": []}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 3, "langgraph_node": "agent", "langgraph_triggers": ["branch:to:agent"], "langgraph_path": ["__pregel_pull", "agent"], "langgraph_checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "ls_provider": "openai", "ls_model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt", "ls_model_type": "chat", "ls_temperature": null}}
-    {"message": {"content": " old and new.", "additional_kwargs": {}, "response_metadata": {"finish_reason": "stop", "model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt"}, "type": "AIMessageChunk", "name": null, "id": "run--ad573982-3ca5-4ce7-9f2a-1e9f0b5741a4", "example": false, "tool_calls": [], "invalid_tool_calls": [], "usage_metadata": null, "tool_call_chunks": []}, "metadata": {"langfuse_session_id": "132322312213344", "langfuse_user_id": "21321312323444", "langfuse_tags": ["chat", "fastapi", "agent", "calculator"], "thread_id": "132322312213344", "user_id": "21321312323444", "langgraph_step": 3, "langgraph_node": "agent", "langgraph_triggers": ["branch:to:agent"], "langgraph_path": ["__pregel_pull", "agent"], "langgraph_checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "checkpoint_ns": "agent:63c327a0-f51a-6a2e-68ff-4a3b86f48d99", "ls_provider": "openai", "ls_model_name": "gpt://b1gbknonr2fm4ss0se7a/yandexgpt", "ls_model_type": "chat", "ls_temperature": null}}
+    # Tool call message
+    {"message": {"content": "", "type": "AIMessageChunk", "tool_calls": [{"name": "sum_numbers", "args": {"numbers": [2, 2]}}]}, "metadata": {"thread_id": "12345", "user_id": "67890", "langgraph_step": 1}}
+
+    # Tool result message
+    {"message": {"content": "4.0", "type": "tool", "name": "sum_numbers", "tool_call_id": "sum_numbers", "status": "success"}, "metadata": {"thread_id": "12345", "user_id": "67890", "langgraph_step": 2}}
+
+    # Text chunk message
+    {"message": {"content": "The sum is 4", "type": "AIMessageChunk"}, "metadata": {"thread_id": "12345", "user_id": "67890", "langgraph_step": 3}}
     ```
     """
     logger = app.state.logger
