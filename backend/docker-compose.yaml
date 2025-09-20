@@ -1,6 +1,8 @@
 include:
   - path: "docker-compose.langfuse.yaml"
     env_file: ".env"
+  - path: "docker-compose.test-dbs.yaml"
+    env_file: ".env"
 
 services:
   postgres:
