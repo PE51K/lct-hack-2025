@@ -14,6 +14,7 @@ jobs:
   lint:
     name: Lint backend python code using Ruff
     runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/demo'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3

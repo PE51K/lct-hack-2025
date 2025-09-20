@@ -14,6 +14,7 @@ jobs:
   lint:
     name: Lint frontend code using ESLint
     runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/demo'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
