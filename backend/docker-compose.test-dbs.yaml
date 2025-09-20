@@ -10,8 +10,8 @@ services:
       - ${TEST_CLICKHOUSE_DATA_VOLUME}:/var/lib/clickhouse
       - ${TEST_CLICKHOUSE_LOGS_VOLUME}:/var/log/clickhouse-server
     ports:
-      - "8124:8123"
-      - "9001:9000"
+      - "${TEST_CLICKHOUSE_HTTP_PORT:-8124}:8123"
+      - "${TEST_CLICKHOUSE_NATIVE_PORT:-9001}:9000"
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
       interval: 5s
@@ -27,7 +27,7 @@ services:
       POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${TEST_POSTGRES_DB:-sample}
     ports:
-      - "5433:5432"
+      - "${TEST_POSTGRES_PORT:-5433}:5432"
     volumes:
       - ${TEST_POSTGRES_VOLUME}:/var/lib/postgresql/data
     healthcheck:
@@ -41,15 +41,13 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2182:2181"
 
   test-kafka:
     image: confluentinc/cp-kafka:7.4.0
     depends_on:
       - test-zookeeper
     ports:
-      - "9093:9092"
+      - "${TEST_KAFKA_PORT:-9093}:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: test-zookeeper:2181
@@ -67,7 +65,7 @@ services:
       POSTGRES_PASSWORD: ${TEST_AIRFLOW_POSTGRES_PASSWORD:-airflow}
       POSTGRES_DB: ${TEST_AIRFLOW_POSTGRES_DB:-airflow}
     ports:
-      - "5434:5432"
+      - "${TEST_AIRFLOW_POSTGRES_PORT:-5434}:5432"
     volumes:
       - ${TEST_AIRFLOW_POSTGRES_VOLUME}:/var/lib/postgresql/data
     healthcheck:
@@ -76,22 +74,13 @@ services:
       timeout: 3s
       retries: 10
 
-  test-airflow-redis:
-    image: redis:7
-    restart: unless-stopped
-    ports:
-      - "6380:6379"
-    volumes:
-      - ${TEST_AIRFLOW_REDIS_VOLUME}:/data
-
   test-airflow:
     image: apache/airflow:2.8.0
+    user: root
     restart: unless-stopped
     depends_on:
       test-airflow-postgres:
         condition: service_healthy
-      test-airflow-redis:
-        condition: service_started
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${TEST_AIRFLOW_POSTGRES_USER}:${TEST_AIRFLOW_POSTGRES_PASSWORD}@test-airflow-postgres:5432/${TEST_AIRFLOW_POSTGRES_DB}
@@ -101,7 +90,7 @@ services:
       AIRFLOW__WEBSERVER__RBAC: 'true'
       AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 30
     ports:
-      - "8081:8080"
+      - "${TEST_AIRFLOW_PORT:-8081}:8080"
     volumes:
       - ${TEST_AIRFLOW_DAGS_VOLUME}:/opt/airflow/dags
       - ${TEST_AIRFLOW_LOGS_VOLUME}:/opt/airflow/logs
@@ -128,8 +117,8 @@ services:
       MINIO_ROOT_USER: ${TEST_MINIO_ROOT_USER:-minio}
       MINIO_ROOT_PASSWORD: ${TEST_MINIO_ROOT_PASSWORD:-miniosecret}
     ports:
-      - "9002:9000"
-      - "9003:9001"
+      - "${TEST_MINIO_PORT:-9002}:9000"
+      - "${TEST_MINIO_CONSOLE_PORT:-9003}:9001"
     volumes:
       - ${TEST_MINIO_VOLUME}:/data
     healthcheck:
@@ -138,3 +127,4 @@ services:
       timeout: 5s
       retries: 5
       start_period: 1s
+      
