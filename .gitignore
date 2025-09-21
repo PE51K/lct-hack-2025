@@ -1,0 +1,46 @@
+# Test files
+jsonfiles/*.json
+jsonfiles/*.jsonl
+jsonfiles/*.txt
+!jsonfiles/__init__.py
+tests/*.json
+tests/*.jsonl
+tests/*.txt
+!tests/__init__.py
+# Claude files
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
