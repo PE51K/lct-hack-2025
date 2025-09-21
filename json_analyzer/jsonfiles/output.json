@@ -1,0 +1,776 @@
+{
+  "analysis_metadata": {
+    "source_info": {
+      "source_type": "file_upload",
+      "total_records": 20001,
+      "total_keys": 34,
+      "file_size_mb": 242.4190549850464,
+      "processing_time_seconds": 4.2751500606536865
+    },
+    "structure_analysis": {
+      "nesting_depth": 1,
+      "schema_consistency": 0.9,
+      "most_frequent_keys": [
+        "date_exec",
+        "code_form_ind_entrep",
+        "name_form_ind_entrep",
+        "inf_surname_ind_entrep_sex",
+        "citizenship_kind",
+        "inf_authority_reg_ind_entrep_name",
+        "inf_authority_reg_ind_entrep_code",
+        "inf_reg_tax_ind_entrep",
+        "inf_okved_code",
+        "inf_okved_name"
+      ],
+      "value_type_distribution": {
+        "string": 0.5969905728788978,
+        "number": 0.40300942712110227
+      },
+      "nested_structure_map": {
+        "date_exec": "primitive",
+        "code_form_ind_entrep": "primitive",
+        "name_form_ind_entrep": "primitive",
+        "inf_surname_ind_entrep_sex": "primitive",
+        "citizenship_kind": "primitive",
+        "inf_authority_reg_ind_entrep_name": "primitive",
+        "inf_authority_reg_ind_entrep_code": "primitive",
+        "inf_reg_tax_ind_entrep": "primitive",
+        "inf_okved_code": "primitive",
+        "inf_okved_name": "primitive",
+        "process_dttm": "primitive",
+        "error_code": "primitive",
+        "inf_surname_ind_entrep_firstname": "primitive",
+        "inf_surname_ind_entrep_surname": "primitive",
+        "inf_surname_ind_entrep_midname": "primitive",
+        "dob": "primitive",
+        "date_ogrnip": "primitive",
+        "id_card": "primitive",
+        "innfl": "primitive",
+        "ogrnip": "primitive",
+        "insured_pf": "primitive",
+        "email_ind_entrep": "primitive",
+        "insuref_fss": "primitive",
+        "inf_stop_ind_entrep_name": "primitive",
+        "inf_stop_ind_entrep_code": "primitive"
+      }
+    },
+    "key_analysis": [
+      {
+        "field_name": "date_exec",
+        "field_type": "string",
+        "sample_values": [
+          "2024-05-15",
+          "2024-05-16",
+          "2024-05-15"
+        ],
+        "unique_count": 19,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "code_form_ind_entrep",
+        "field_type": "string",
+        "sample_values": [
+          "1",
+          "1",
+          "1"
+        ],
+        "unique_count": 2,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "name_form_ind_entrep",
+        "field_type": "string",
+        "sample_values": [
+          "Индивидуальный предприниматель",
+          "Индивидуальный предприниматель",
+          "Индивидуальный предприниматель"
+        ],
+        "unique_count": 2,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_surname_ind_entrep_sex",
+        "field_type": "string",
+        "sample_values": [
+          "1",
+          "2",
+          "1"
+        ],
+        "unique_count": 2,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "citizenship_kind",
+        "field_type": "string",
+        "sample_values": [
+          "1",
+          "1",
+          "1"
+        ],
+        "unique_count": 2,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_authority_reg_ind_entrep_name",
+        "field_type": "string",
+        "sample_values": [
+          "Управление Федеральной налоговой службы по Карачаево-Черкесской республике",
+          "Межрайонная инспекция Федеральной налоговой службы № 11 по Ставропольскому краю",
+          "Управление Федеральной налоговой службы по Карачаево-Черкесской республике"
+        ],
+        "unique_count": 86,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_authority_reg_ind_entrep_code",
+        "field_type": "string",
+        "sample_values": [
+          "900",
+          "2651",
+          "900"
+        ],
+        "unique_count": 86,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_reg_tax_ind_entrep",
+        "field_type": "string",
+        "sample_values": [
+          "Управление Федеральной налоговой службы по Карачаево-Черкесской Республике",
+          "Управление Федеральной налоговой службы по Карачаево-Черкесской Республике",
+          "Управление Федеральной налоговой службы по Карачаево-Черкесской Республике"
+        ],
+        "unique_count": 293,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_okved_code",
+        "field_type": "string",
+        "sample_values": [
+          "49.41",
+          "68.2",
+          "47.91"
+        ],
+        "unique_count": 287,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_okved_name",
+        "field_type": "string",
+        "sample_values": [
+          "Деятельность автомобильного грузового транспорта",
+          "Аренда и управление собственным или арендованным недвижимым имуществом",
+          "Торговля розничная по почте или по информационно-коммуникационной сети Интернет"
+        ],
+        "unique_count": 286,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "process_dttm",
+        "field_type": "string",
+        "sample_values": [
+          "2024-05-16T08:35:14.932+03:00",
+          "2024-05-16T08:35:14.893+03:00",
+          "2024-05-16T08:35:14.932+03:00"
+        ],
+        "unique_count": 371,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "error_code",
+        "field_type": "string",
+        "sample_values": [
+          "0",
+          "0",
+          "0"
+        ],
+        "unique_count": 1,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_surname_ind_entrep_firstname",
+        "field_type": "string",
+        "sample_values": [
+          "СЕРГЕЙ",
+          "МАРИЯ",
+          "НИКОЛАЙ"
+        ],
+        "unique_count": 340,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_surname_ind_entrep_surname",
+        "field_type": "string",
+        "sample_values": [
+          "БУСЫГИН",
+          "ПАНКОВА",
+          "ДМИТРИЙ"
+        ],
+        "unique_count": 500,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_surname_ind_entrep_midname",
+        "field_type": "string",
+        "sample_values": [
+          "ВЛАДИМИРОВИЧ",
+          "ЕГОРОВНА",
+          "ВЛАДИМИРОВИЧ"
+        ],
+        "unique_count": 299,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "dob",
+        "field_type": "string",
+        "sample_values": [
+          "1972-08-26",
+          "1953-09-22",
+          "2000-06-27"
+        ],
+        "unique_count": 500,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "date_ogrnip",
+        "field_type": "string",
+        "sample_values": [
+          "2024-04-23",
+          "2017-06-22",
+          "2023-11-25"
+        ],
+        "unique_count": 500,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "id_card",
+        "field_type": "string",
+        "sample_values": [
+          "47 74 215047",
+          "93 67 254643",
+          "27 32 374776"
+        ],
+        "unique_count": 500,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "innfl",
+        "field_type": "string",
+        "sample_values": [
+          "273123051127",
+          "222461125773",
+          "306478860203"
+        ],
+        "unique_count": 500,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "ogrnip",
+        "field_type": "string",
+        "sample_values": [
+          "206263377103459",
+          "468012186265889",
+          "111166430309885"
+        ],
+        "unique_count": 500,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "insured_pf",
+        "field_type": "string",
+        "sample_values": [
+          "659466404690",
+          "785173632567",
+          "227877656501"
+        ],
+        "unique_count": 500,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "email_ind_entrep",
+        "field_type": "string",
+        "sample_values": [
+          "busygin.sergei_syn_882@ICLOUD.COM",
+          "dmitrii.nikolai_77_syn_2849@BK.RU",
+          "holmurodova.yana_syn_2758@MAIL.RU"
+        ],
+        "unique_count": 500,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "insuref_fss",
+        "field_type": "string",
+        "sample_values": [
+          "713759009253297",
+          "84102496583613",
+          "672163126350993"
+        ],
+        "unique_count": 108,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_stop_ind_entrep_name",
+        "field_type": "string",
+        "sample_values": [
+          "Индивидуальный предприниматель прекратил деятельность в связи с принятием им соответствующего решени...",
+          "Индивидуальный предприниматель прекратил деятельность в связи с принятием им соответствующего решени...",
+          "Индивидуальный предприниматель прекратил деятельность в связи с принятием им соответствующего решени..."
+        ],
+        "unique_count": 4,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_stop_ind_entrep_code",
+        "field_type": "string",
+        "sample_values": [
+          "201",
+          "201",
+          "201"
+        ],
+        "unique_count": 4,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "citizenship_name",
+        "field_type": "string",
+        "sample_values": [
+          "АЗЕРБАЙДЖАН",
+          "ТАДЖИКИСТАН",
+          "УЗБЕКИСТАН"
+        ],
+        "unique_count": 9,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "id_card_alien_for_rus",
+        "field_type": "string",
+        "sample_values": [
+          "4004451/8800/30",
+          "5477151/8262/44",
+          "22 2759987"
+        ],
+        "unique_count": 22,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_reg_ind_entrep_num",
+        "field_type": "string",
+        "sample_values": [
+          "0436 КГТ",
+          "ИРП № 2331802",
+          "5925"
+        ],
+        "unique_count": 13,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_reg_ind_entrep_date",
+        "field_type": "string",
+        "sample_values": [
+          "2001-09-06",
+          "2000-06-29",
+          "1998-07-20"
+        ],
+        "unique_count": 13,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_surname_ind_entrep_zags_surname",
+        "field_type": "string",
+        "sample_values": [
+          "ВАРЛАМОВА",
+          "ТИХОНОВА",
+          "РОДЮКОВА"
+        ],
+        "unique_count": 3,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_surname_ind_entrep_zags_firstname",
+        "field_type": "string",
+        "sample_values": [
+          "НАТАЛЬЯ",
+          "НАТАЛЬЯ",
+          "СЕВАРА"
+        ],
+        "unique_count": 2,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_surname_ind_entrep_zags_midname",
+        "field_type": "string",
+        "sample_values": [
+          "МАНСУРОВНА",
+          "НИКОЛАЕВНА",
+          "АГАВОВНА"
+        ],
+        "unique_count": 3,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_status_ind_entrep_name",
+        "field_type": "string",
+        "sample_values": [
+          "Принято решение о предстоящем исключении недействующего ИП из ЕГРИП",
+          "Принято решение о предстоящем исключении недействующего ИП из ЕГРИП",
+          "Принято решение о предстоящем исключении недействующего ИП из ЕГРИП"
+        ],
+        "unique_count": 1,
+        "null_count": 0,
+        "completeness_ratio": 1
+      },
+      {
+        "field_name": "inf_status_ind_entrep_code",
+        "field_type": "string",
+        "sample_values": [
+          "110",
+          "110",
+          "110"
+        ],
+        "unique_count": 1,
+        "null_count": 0,
+        "completeness_ratio": 1
+      }
+    ],
+    "quality_metrics": {
+      "completeness_score": 1,
+      "consistency_score": 0.9,
+      "validity_score": 0.9,
+      "duplicate_records": 0,
+      "missing_values_total": 0,
+      "data_density": 1,
+      "uniqueness_distribution": {
+        "date_exec": 0.038,
+        "code_form_ind_entrep": 0.004,
+        "name_form_ind_entrep": 0.004,
+        "inf_surname_ind_entrep_sex": 0.004,
+        "citizenship_kind": 0.004,
+        "inf_authority_reg_ind_entrep_name": 0.172,
+        "inf_authority_reg_ind_entrep_code": 0.172,
+        "inf_reg_tax_ind_entrep": 0.586,
+        "inf_okved_code": 0.574,
+        "inf_okved_name": 0.572,
+        "process_dttm": 0.742,
+        "error_code": 0.002,
+        "inf_surname_ind_entrep_firstname": 0.68,
+        "inf_surname_ind_entrep_surname": 1,
+        "inf_surname_ind_entrep_midname": 0.598,
+        "dob": 1,
+        "date_ogrnip": 1,
+        "id_card": 1,
+        "innfl": 1,
+        "ogrnip": 1,
+        "insured_pf": 1,
+        "email_ind_entrep": 1,
+        "insuref_fss": 1,
+        "inf_stop_ind_entrep_name": 0.024844720496894408,
+        "inf_stop_ind_entrep_code": 0.024844720496894408,
+        "citizenship_name": 0.4090909090909091,
+        "id_card_alien_for_rus": 1,
+        "inf_reg_ind_entrep_num": 1,
+        "inf_reg_ind_entrep_date": 1,
+        "inf_surname_ind_entrep_zags_surname": 1,
+        "inf_surname_ind_entrep_zags_firstname": 0.6666666666666666,
+        "inf_surname_ind_entrep_zags_midname": 1,
+        "inf_status_ind_entrep_name": 0.017857142857142856,
+        "inf_status_ind_entrep_code": 0.017857142857142856
+      }
+    },
+    "semantic_analysis": {
+      "detected_patterns": {
+        "email_addresses": [
+          "email_ind_entrep"
+        ],
+        "dates": [
+          "date_exec",
+          "dob",
+          "date_ogrnip",
+          "inf_reg_ind_entrep_date"
+        ],
+        "timestamps": [
+          "process_dttm"
+        ],
+        "identifiers": [
+          "inf_authority_reg_ind_entrep_name",
+          "inf_reg_tax_ind_entrep",
+          "inf_okved_name",
+          "inf_surname_ind_entrep_midname",
+          "innfl",
+          "ogrnip",
+          "insured_pf",
+          "insuref_fss",
+          "citizenship_name",
+          "inf_surname_ind_entrep_zags_surname",
+          "inf_surname_ind_entrep_zags_midname"
+        ],
+        "financial_data": [
+          "id_card",
+          "innfl",
+          "ogrnip",
+          "insured_pf",
+          "id_card_alien_for_rus"
+        ],
+        "personal_names": [
+          "name_form_ind_entrep",
+          "inf_surname_ind_entrep_sex",
+          "inf_surname_ind_entrep_firstname",
+          "inf_surname_ind_entrep_surname",
+          "inf_stop_ind_entrep_name",
+          "inf_surname_ind_entrep_zags_firstname",
+          "inf_status_ind_entrep_name"
+        ],
+        "contact_info": [
+          "email_ind_entrep"
+        ]
+      },
+      "domain_indicators": [],
+      "pii_risk_assessment": 1
+    },
+    "agent_recommendations": {
+      "suggested_primary_key": "innfl",
+      "structural_characteristics": {
+        "cardinality_patterns": {
+          "high_cardinality": [
+            "insuref_fss",
+            "id_card_alien_for_rus",
+            "inf_reg_ind_entrep_num",
+            "inf_reg_ind_entrep_date",
+            "inf_surname_ind_entrep_zags_surname",
+            "inf_surname_ind_entrep_zags_midname"
+          ],
+          "medium_cardinality": [
+            "inf_reg_tax_ind_entrep",
+            "inf_okved_code",
+            "inf_okved_name",
+            "process_dttm",
+            "inf_surname_ind_entrep_firstname",
+            "inf_surname_ind_entrep_surname",
+            "inf_surname_ind_entrep_midname",
+            "dob",
+            "date_ogrnip",
+            "id_card",
+            "innfl",
+            "ogrnip",
+            "insured_pf",
+            "email_ind_entrep",
+            "citizenship_name",
+            "inf_surname_ind_entrep_zags_firstname"
+          ],
+          "low_cardinality": [
+            "date_exec",
+            "code_form_ind_entrep",
+            "name_form_ind_entrep",
+            "inf_surname_ind_entrep_sex",
+            "citizenship_kind",
+            "inf_authority_reg_ind_entrep_name",
+            "inf_authority_reg_ind_entrep_code",
+            "inf_stop_ind_entrep_name",
+            "inf_stop_ind_entrep_code"
+          ],
+          "constant_values": [
+            "error_code",
+            "inf_status_ind_entrep_name",
+            "inf_status_ind_entrep_code"
+          ]
+        },
+        "data_distribution_skew": {
+          "uniform": [
+            "insuref_fss",
+            "id_card_alien_for_rus",
+            "inf_reg_ind_entrep_num",
+            "inf_reg_ind_entrep_date",
+            "inf_surname_ind_entrep_zags_surname",
+            "inf_surname_ind_entrep_zags_midname"
+          ],
+          "moderate": [
+            "insured_pf",
+            "email_ind_entrep",
+            "inf_surname_ind_entrep_zags_firstname"
+          ],
+          "high": [
+            "inf_reg_tax_ind_entrep",
+            "inf_okved_code",
+            "inf_okved_name",
+            "process_dttm",
+            "inf_surname_ind_entrep_firstname",
+            "inf_surname_ind_entrep_surname",
+            "inf_surname_ind_entrep_midname",
+            "dob",
+            "date_ogrnip",
+            "id_card",
+            "innfl",
+            "ogrnip",
+            "citizenship_name"
+          ],
+          "extreme": [
+            "date_exec",
+            "code_form_ind_entrep",
+            "name_form_ind_entrep",
+            "inf_surname_ind_entrep_sex",
+            "citizenship_kind",
+            "inf_authority_reg_ind_entrep_name",
+            "inf_authority_reg_ind_entrep_code",
+            "inf_stop_ind_entrep_name",
+            "inf_stop_ind_entrep_code"
+          ]
+        },
+        "field_correlation_strength": 0.3,
+        "schema_stability": 0.9
+      },
+      "universal_semantics": {
+        "temporal_indicators": [
+          "date_exec",
+          "process_dttm",
+          "dob",
+          "date_ogrnip",
+          "inf_reg_ind_entrep_date"
+        ],
+        "identifier_candidates": [
+          "id_card_alien_for_rus"
+        ],
+        "categorical_fields": [
+          "inf_reg_tax_ind_entrep"
+        ],
+        "text_content_fields": [
+          "inf_okved_name"
+        ],
+        "field_types": {
+          "date_exec": "temporal",
+          "code_form_ind_entrep": "numeric",
+          "name_form_ind_entrep": "personal_name",
+          "inf_surname_ind_entrep_sex": "numeric",
+          "citizenship_kind": "numeric",
+          "inf_authority_reg_ind_entrep_name": "organization_name",
+          "inf_authority_reg_ind_entrep_code": "numeric",
+          "inf_reg_tax_ind_entrep": "categorical",
+          "inf_okved_code": "numeric",
+          "inf_okved_name": "text_content",
+          "process_dttm": "temporal",
+          "error_code": "numeric",
+          "inf_surname_ind_entrep_firstname": "personal_name",
+          "inf_surname_ind_entrep_surname": "personal_name",
+          "inf_surname_ind_entrep_midname": "personal_name",
+          "dob": "temporal",
+          "date_ogrnip": "temporal",
+          "id_card": "numeric",
+          "innfl": "numeric",
+          "ogrnip": "numeric",
+          "insured_pf": "numeric",
+          "email_ind_entrep": "contact",
+          "insuref_fss": "numeric",
+          "inf_stop_ind_entrep_name": "personal_name",
+          "inf_stop_ind_entrep_code": "numeric",
+          "citizenship_name": "personal_name",
+          "id_card_alien_for_rus": "identifier",
+          "inf_reg_ind_entrep_num": "numeric",
+          "inf_reg_ind_entrep_date": "temporal",
+          "inf_surname_ind_entrep_zags_surname": "personal_name",
+          "inf_surname_ind_entrep_zags_firstname": "personal_name",
+          "inf_surname_ind_entrep_zags_midname": "personal_name",
+          "inf_status_ind_entrep_name": "personal_name",
+          "inf_status_ind_entrep_code": "numeric"
+        }
+      },
+      "performance_hints": {
+        "size_growth_indicators": {
+          "date_exec": "stable",
+          "code_form_ind_entrep": "stable",
+          "name_form_ind_entrep": "stable",
+          "inf_surname_ind_entrep_sex": "stable",
+          "citizenship_kind": "stable",
+          "inf_authority_reg_ind_entrep_name": "stable",
+          "inf_authority_reg_ind_entrep_code": "stable",
+          "inf_reg_tax_ind_entrep": "logarithmic",
+          "inf_okved_code": "stable",
+          "inf_okved_name": "unpredictable",
+          "process_dttm": "stable",
+          "error_code": "stable",
+          "inf_surname_ind_entrep_firstname": "stable",
+          "inf_surname_ind_entrep_surname": "stable",
+          "inf_surname_ind_entrep_midname": "stable",
+          "dob": "stable",
+          "date_ogrnip": "stable",
+          "id_card": "stable",
+          "innfl": "stable",
+          "ogrnip": "stable",
+          "insured_pf": "stable",
+          "email_ind_entrep": "stable",
+          "insuref_fss": "linear",
+          "inf_stop_ind_entrep_name": "stable",
+          "inf_stop_ind_entrep_code": "stable",
+          "citizenship_name": "stable",
+          "id_card_alien_for_rus": "linear",
+          "inf_reg_ind_entrep_num": "linear",
+          "inf_reg_ind_entrep_date": "linear",
+          "inf_surname_ind_entrep_zags_surname": "linear",
+          "inf_surname_ind_entrep_zags_firstname": "stable",
+          "inf_surname_ind_entrep_zags_midname": "linear",
+          "inf_status_ind_entrep_name": "stable",
+          "inf_status_ind_entrep_code": "stable"
+        },
+        "query_performance_hints": [
+          "Optimize for GROUP BY and aggregation queries",
+          "Consider partitioning by time-based fields",
+          "Use projection/materialized views for common aggregations"
+        ],
+        "optimal_storage_format": "document",
+        "compression_potential": 0.32941176470588235,
+        "indexing_strategy": {
+          "date_exec": "btree_range",
+          "inf_reg_tax_ind_entrep": "hash",
+          "inf_okved_name": "fulltext",
+          "process_dttm": "btree_range",
+          "dob": "btree_range",
+          "date_ogrnip": "btree_range",
+          "innfl": "primary_btree",
+          "id_card_alien_for_rus": "unique_btree",
+          "inf_reg_ind_entrep_date": "btree_range"
+        },
+        "recommended_database": "postgresql",
+        "database_rationale": "Default recommendation"
+      }
+    }
+  },
+  "ydata_profile_summary": {
+    "disabled": true,
+    "reason": "big_data_optimization"
+  },
+  "processing_stats": {
+    "memory_usage_mb": 0.75,
+    "processing_duration": 4.2751500606536865,
+    "records_per_second": 4678.432269332266,
+    "analysis_timestamp": "1758467697.4212787"
+  }
+}
