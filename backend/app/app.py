@@ -102,6 +102,81 @@ app.add_middleware(
 )
 
 
+class DEPipeMetadata(BaseModel):
+    """
+    Metadata model for AI Data Engineering Pipeline.
+
+    Attributes:
+        thread_id (str): Unique identifier for the conversation thread.
+        user_id (str): Unique identifier for the user.
+    """
+    thread_id: str
+    user_id: str
+
+
+class InitAIDEPipeRequest(BaseModel):
+    """
+    Request model for AI Data Engineering Pipeline.
+
+    Attributes:
+        input_data_uri (str): The URI for the input data.
+        metadata (DEPipeMetadata): Metadata including thread_id and user_id.
+    """
+    # URI for the input data
+    input_data_uri: str
+    some_list: list[str]
+    metadata: DEPipeMetadata
+
+
+class InitAIDEPipeResponse(BaseModel):
+    """
+    Response model for AI Data Engineering Pipeline.
+
+    Attributes:
+        ai_recommendation (str): The AI-recommendations for selected storage, DDL and DAG.
+    """
+    ai_recommendation: str
+
+
+async def InitAIDEPipe(request: InitAIDEPipeRequest) -> InitAIDEPipeResponse:
+    """
+    Generate ETL pipe and recommendations based on input data URI.
+    
+    Args:
+        request (InitAIDEPipeRequest): The request containing input data URI and metadata.
+
+    Returns:
+        InitAIDEPipeResponse: The response containing AI-generated recommendations.
+    """
+    pass
+
+
+class FixAIDEPipeRequest(BaseModel):
+    """
+    Request model for fixing AI Data Engineering Pipeline.
+
+    Attributes:
+        user_feedback (str): The user feedback for fixing the pipeline.
+        metadata (DEPipeMetadata): Metadata including thread_id and user_id.
+    """
+    user_feedback: str
+    metadata: DEPipeMetadata
+
+
+async def FixAIDEPipe(request: FixAIDEPipeRequest) -> InitAIDEPipeResponse:
+    """
+    Fix ETL pipe and recommendations based on user feedback.
+    
+    Args:
+        request (FixAIDEPipeRequest): The request containing user feedback and metadata.
+
+    Returns:
+        InitAIDEPipeResponse: The response containing updated AI-generated recommendations.
+    """
+    pass
+
+
+
 class ChatWithAgentRequest(BaseModel):
     """
     Request model for chatting with an agent.
