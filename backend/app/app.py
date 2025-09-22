@@ -101,80 +101,135 @@ app.add_middleware(
     allow_headers=settings.app.cors.allow_headers,
 )
 
+# ================== ETL Generation ===================
 
-class DEPipeMetadata(BaseModel):
+
+class EtlGenerationRequestMetadata(BaseModel):
     """
-    Metadata model for AI Data Engineering Pipeline.
+    Metadata model for AI ELT generation requests.
 
     Attributes:
         thread_id (str): Unique identifier for the conversation thread.
         user_id (str): Unique identifier for the user.
     """
+
     thread_id: str
     user_id: str
 
 
-class InitAIDEPipeRequest(BaseModel):
+class EtlGenerationRequest(BaseModel):
     """
-    Request model for AI Data Engineering Pipeline.
+    Request model for AI ELT generation.
 
     Attributes:
-        input_data_uri (str): The URI for the input data.
-        metadata (DEPipeMetadata): Metadata including thread_id and user_id.
+        input_data_uri (str): The URI to the input data.
+        metadata (EtlGenerationRequestMetadata): Metadata including thread_id and user_id.
     """
-    # URI for the input data
+
     input_data_uri: str
-    some_list: list[str]
-    metadata: DEPipeMetadata
+    metadata: EtlGenerationRequestMetadata
 
 
-class InitAIDEPipeResponse(BaseModel):
+@app.post("/generate_etl")
+async def generate_etl(request: EtlGenerationRequest) -> StreamingResponse:
     """
-    Response model for AI Data Engineering Pipeline.
+    Generate ETL pipeline and recommendations based on input data URI.
 
-    Attributes:
-        ai_recommendation (str): The AI-recommendations for selected storage, DDL and DAG.
-    """
-    ai_recommendation: str
-
-
-async def InitAIDEPipe(request: InitAIDEPipeRequest) -> InitAIDEPipeResponse:
-    """
-    Generate ETL pipe and recommendations based on input data URI.
-    
     Args:
-        request (InitAIDEPipeRequest): The request containing input data URI and metadata.
+        request (EtlGenerationRequest): The request containing input data URI and metadata.
 
     Returns:
-        InitAIDEPipeResponse: The response containing AI-generated recommendations.
+        StreamingResponse: A streaming response with generation status updates.
     """
     pass
 
 
-class FixAIDEPipeRequest(BaseModel):
+# ================== ETL Execution ===================
+
+
+class EtlExecutionRequestMetadata(BaseModel):
     """
-    Request model for fixing AI Data Engineering Pipeline.
+    Metadata model for AI ELT execution requests.
 
     Attributes:
-        user_feedback (str): The user feedback for fixing the pipeline.
-        metadata (DEPipeMetadata): Metadata including thread_id and user_id.
+        thread_id (str): Unique identifier for the conversation thread.
+        user_id (str): Unique identifier for the user.
     """
-    user_feedback: str
-    metadata: DEPipeMetadata
+
+    thread_id: str
+    user_id: str
 
 
-async def FixAIDEPipe(request: FixAIDEPipeRequest) -> InitAIDEPipeResponse:
+class EtlExecutionRequest(BaseModel):
     """
-    Fix ETL pipe and recommendations based on user feedback.
-    
+    Request model for AI ELT execution.
+
+    Attributes:
+        metadata (EtlExecutionRequestMetadata): Metadata including thread_id and user_id.
+    """
+
+    metadata: EtlExecutionRequestMetadata
+
+
+@app.post("/execute_etl")
+async def execute_etl(request: EtlExecutionRequest) -> StreamingResponse:
+    """
+    Executes the ETL pipeline with provided metadata.
+
     Args:
-        request (FixAIDEPipeRequest): The request containing user feedback and metadata.
+        request (EtlExecutionRequest): The request containing metadata.
 
     Returns:
-        InitAIDEPipeResponse: The response containing updated AI-generated recommendations.
+        StreamingResponse: A streaming response with execution status updates.
     """
     pass
 
+
+# ================== ETL Update based on Feedback or Error ===================
+
+
+class EtlUpdateRequestMetadata(BaseModel):
+    """
+    Metadata model for AI ELT update requests.
+
+    Attributes:
+        thread_id (str): Unique identifier for the conversation thread.
+        user_id (str): Unique identifier for the user.
+    """
+
+    thread_id: str
+    user_id: str
+
+
+class EtlUpdateRequest(BaseModel):
+    """
+    Request model for AI ELT update.
+
+    Attributes:
+        feedback (str): Feedback or error message to update the ETL process.
+        metadata (EtlUpdateRequestMetadata): Metadata including thread_id and user_id.
+    """
+
+    feedback: str
+    metadata: EtlUpdateRequestMetadata
+
+
+@app.post("/update_etl")
+async def update_etl(request: EtlUpdateRequest) -> StreamingResponse:
+    """
+    Updates the ETL pipeline based on feedback or error messages.
+
+    Args:
+        request (EtlUpdateRequest): The request containing feedback and metadata.
+
+    Returns:
+        StreamingResponse: A streaming response with update status.
+    """
+    pass
+
+
+# ================== Chat with Agent ===================
+# keeping for reference and backwards compatibility for now
 
 
 class ChatWithAgentRequest(BaseModel):
