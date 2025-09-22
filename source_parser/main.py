@@ -1,92 +1,99 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from typing import Optional, List
+from pydantic import Field
 from enum import Enum
 import json
 
+#import kafka_manager
+
 app = FastAPI()
 
-SourceType = Enum('Source_type', [('na', 1),('folder', 2),('kafka', 3),])
+SourceType = Enum('Source_type', [('na', 1),('folder', 2),('PostgreSQL', 3),('ClickHouse', 4),('kafka', 5),('hadoop', 6),('sparkstreaming', 7)])
+ContentType = Enum('Content_type', [('na', 1),('csv', 2),('xml', 3),('json', 4),('table', 5),('Parquet', 6)])
 
-class Source():
-
-    def __init__(self, type: SourceType = SourceType.na, connection_string: str = ""):
-        self.type = type
-        self.connection_string = connection_string
-
-    type: SourceType 
+class Source(BaseModel):
+    source_type: SourceType = SourceType.na
     connection_string: str
+    content_type: Optional[ContentType] = None
 
-class Attribute():
-
-    def __init__(self, orderNo: int, name: str, data_type: str):
-        self.orderNo = orderNo
-        self.name = name
-        self.data_type = data_type
-
+class Attribute(BaseModel):
     orderNo: int
     name: str
-    data_type: str
+    data_type: Optional[str] = None
+    nullable: Optional[bool] = None
 
-class Content():
+class Content(BaseModel):
+    message_name: str
+    attributes: List[Attribute] = Field(default_factory=list)
 
-    def __init__(self):
-        self.attributes = []
-
-    Attributes: list[Attribute]
-
-    def to_dict(self):
-        return self.__dict__
-
-class ExtractMetadata():
-
-    def __init__(self, source_metadata: str, content_metadata: str):
-        self.source_metadata = source_metadata
-        self.content_metadata = content_metadata
-
-    source_metadata: str
-    content_metadata: str
-
-    def to_dict(self):
-        return self.__dict__
+class ExtractConfig(BaseModel):
+    source_metadata: Optional[Source] = None
+    content_metadata: List[Content] = Field(default_factory=list)
 
 @app.get("/get_meta")
 async def get_meta(user_input: str):
 
-    
     src = await recognise_source(user_input)
 
-    if src.type == "folder":
+    if src.source_type == SourceType.folder:
         content_metadata = await get_folder_source_meatdata(src)
-    if src.type == "kafka":
+        src.content_type = ContentType.csv
+    if src.source_type  == SourceType.kafka:
         content_metadata = await get_kafka_source_meatdata(src)
+        src.content_type = ContentType.json
     else:
-        content_metadata = Content()
+        content_metadata = Content(
+            message_name = "n/a"
+        )
 
-    extractMetadata = ExtractMetadata(source_metadata="", content_metadata="")
+    content_metadata.attributes.append(Attribute(orderNo=1,name="lol",data_type="string"))
 
-    respBody = json.dumps(extractMetadata.to_dict(), ensure_ascii=False)
+    extract_config = ExtractConfig(
+        source_metadata = src
+        )
     
-    return JSONResponse(content=respBody)
+    extract_config.content_metadata = content_metadata
 
+    return extract_config
 
 async def recognise_source(source: str) -> Source:
     """ определяем тех тип источника и строку подклчюения по ввводу """
-    src = Source()
+
+    if "file:" in source:
+        src = Source(
+            source_type = SourceType.folder,
+            connection_string = source.replace("file:", "")
+        )
+    elif "kafka:" in source:
+        src = Source(
+            source_type = SourceType.kafka,
+            connection_string = source.replace("kafka:", "")
+        )
+    else:
+        src = Source(
+            source_type = SourceType.na,
+            connection_string = ""
+        )
 
     return src
 
-async def get_folder_source_meatdata(connection_string: str) -> Content:
+async def get_folder_source_meatdata(connection_string: str) -> List[Content]:
     """ определяем метаданные содержимого папки """
-    src = Content()
+    cont = [Content(
+        message_name = "csv"
+    )]
 
-    return src
+    return cont
 
-async def get_kafka_source_meatdata(connection_string: str) -> Content:
+async def get_kafka_source_meatdata(connection_string: str) -> List[Content]:
     """ определяем метаданные содержимого kafka """
-    src = Content()
+    cont = [Content(
+        message_name = "csv"
+    )]
 
-    return src
+    return cont
 
 if __name__ == "__main__":
     import uvicorn
