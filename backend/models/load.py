@@ -16,6 +16,19 @@ class TargetStorageEnum(str, Enum):
     HDFS = "hdfs"
 
 
+class TargetStorageTypeRecommendation(BaseModel):
+    """
+    Target storage type recommendation from AI.
+
+    Attributes:
+        storage_type: Target storage system type (e.g., 'postgres', 'clickhouse', 'hdfs').
+        explanation: Human-readable explanation of the recommendation.
+    """
+
+    storage_type: Annotated[str, TargetStorageEnum]
+    explanation: str
+
+
 class LoadConfig(BaseModel):
     """
     Load step configuration.
@@ -24,5 +37,5 @@ class LoadConfig(BaseModel):
         target_storage_type: Target storage system type (e.g., 'postgres', 'clickhouse
     """
 
-    target_storage_type: Annotated[str, TargetStorageEnum]
+    target_storage_type: TargetStorageTypeRecommendation
     # TODO: Complete this model
