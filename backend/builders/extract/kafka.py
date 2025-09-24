@@ -1,13 +1,13 @@
 """Kafka extract configuration builder and message reader."""
 
 import json
-import logging
 from datetime import datetime
 
 from kafka import ConsumerRecord, KafkaConsumer
 
 from models.extract import Content, ContentType, Source
 
+from ...core.logging import setup_logger
 from . import BaseExtractConfigBuilder
 
 
@@ -20,15 +20,14 @@ class KafkaMessageReader:
         self.topic_name = topic_name
         self.group_id = group_id
         self.consumer = None
-        self.setup_logging()
 
-    def setup_logging(self):
+    async def setup_logging(self):
         """Setup logging configuration."""
-        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-        self.logger = logging.getLogger(__name__)
+        self.logger = await setup_logger(__name__)
 
-    def connect(self) -> bool | None:
+    async def connect(self) -> bool | None:
         """Connect to Kafka."""
+        await self.setup_logging()
         try:
             self.consumer = KafkaConsumer(
                 self.topic_name,
@@ -38,11 +37,11 @@ class KafkaMessageReader:
                 enable_auto_commit=True,
                 value_deserializer=self.deserialize_message,
             )
-            self.logger.info(f"Successfully connected to Kafka: {self.bootstrap_servers}")
-            self.logger.info(f"Subscribed to topic: {self.topic_name}")
+            await self.logger.info(f"Successfully connected to Kafka: {self.bootstrap_servers}")
+            await self.logger.info(f"Subscribed to topic: {self.topic_name}")
             return True
         except Exception as e:
-            self.logger.error(f"Connection error: {e}")
+            await self.logger.error(f"Connection error: {e}")
             return False
 
     def deserialize_message(self, message: bytes) -> object:
@@ -67,14 +66,16 @@ class KafkaMessageReader:
         print(f"Data: {message.value}")
         print("-" * 50)
 
-    def start_consuming(self, max_messages: int | None = None):
+    async def start_consuming(self, max_messages: int | None = None):
         """Start consuming messages."""
         if not self.consumer:
-            self.logger.error("Consumer not initialized")
-            return
+            await self.connect()
+            if not self.consumer:
+                await self.logger.error("Consumer not initialized")
+                return
 
         message_count = 0
-        self.logger.info("Starting message reading...")
+        await self.logger.info("Starting message reading...")
 
         try:
             for message in self.consumer:
@@ -82,21 +83,21 @@ class KafkaMessageReader:
                 message_count += 1
 
                 if max_messages and message_count >= max_messages:
-                    self.logger.info(f"Reached limit of {max_messages} messages")
+                    await self.logger.info(f"Reached limit of {max_messages} messages")
                     break
 
         except KeyboardInterrupt:
-            self.logger.info("Received interrupt signal")
+            await self.logger.info("Received interrupt signal")
         except Exception as e:
-            self.logger.error(f"Error reading: {e}")
+            await self.logger.error(f"Error reading: {e}")
         finally:
-            self.close()
+            await self.close()
 
-    def close(self):
+    async def close(self):
         """Close connection."""
         if self.consumer:
             self.consumer.close()
-            self.logger.info("Connection closed")
+            await self.logger.info("Connection closed")
 
 
 class KafkaExtractConfigBuilder(BaseExtractConfigBuilder):
