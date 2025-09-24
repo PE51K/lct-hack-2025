@@ -8,7 +8,13 @@ sys.path.insert(0, ".")
 
 from models.extract import Content, ContentType, ExtractConfig, Source, SourceType
 
+from .clickhouse import ClickHouseExtractConfigBuilder
+from .folder import FolderExtractConfigBuilder
+from .hadoop import HadoopExtractConfigBuilder
 from .kafka import KafkaExtractConfigBuilder
+from .postgres import PostgresExtractConfigBuilder
+from .s3 import S3ExtractConfigBuilder
+from .sparkstreaming import SparkStreamingExtractConfigBuilder
 
 
 class BaseExtractConfigBuilder(ABC):
@@ -67,7 +73,13 @@ class ExtractConfigBuilder:
     """
 
     source_to_builder_map: ClassVar[dict[SourceType, type[BaseExtractConfigBuilder]]] = {
+        SourceType.folder: FolderExtractConfigBuilder,
         SourceType.kafka: KafkaExtractConfigBuilder,
+        SourceType.PostgreSQL: PostgresExtractConfigBuilder,
+        SourceType.ClickHouse: ClickHouseExtractConfigBuilder,
+        SourceType.hadoop: HadoopExtractConfigBuilder,
+        SourceType.sparkstreaming: SparkStreamingExtractConfigBuilder,
+        SourceType.s3: S3ExtractConfigBuilder,
     }
 
     @staticmethod
@@ -109,6 +121,8 @@ class ExtractConfigBuilder:
                 source_type=SourceType.sparkstreaming,
                 connection_string=source.replace("spark:", ""),
             )
+        elif "s3:" in source:
+            src = Source(source_type=SourceType.s3, connection_string=source.replace("s3:", ""))
         else:
             src = Source(source_type=SourceType.na, connection_string="")
 

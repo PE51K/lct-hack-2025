@@ -14,6 +14,7 @@ SourceType = Enum(
         ("kafka", 5),
         ("hadoop", 6),
         ("sparkstreaming", 7),
+        ("s3", 8),
     ],
 )
 ContentType = Enum(
