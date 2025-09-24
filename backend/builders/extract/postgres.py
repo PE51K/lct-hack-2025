@@ -1,0 +1,1 @@
+"""PostgreSQL extract configuration builder."""

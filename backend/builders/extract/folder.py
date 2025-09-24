@@ -1,0 +1,1 @@
+"""Folder extract configuration builder."""

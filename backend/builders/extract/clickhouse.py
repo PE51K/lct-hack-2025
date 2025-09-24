@@ -1,0 +1,1 @@
+"""ClickHouse extract configuration builder."""

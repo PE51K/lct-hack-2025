@@ -30,12 +30,12 @@ Attributes:
 
 class Source(BaseModel):
     """
-    MetaData describe technological source itself
+    MetaData describe technological source itself.
 
     Attributes:
-        source_type - tech type of source folder, kafka etc
-        connection_string - connection string to connect to source to get metadata
-        content_type - type of content in source csv json etc
+        source_type - tech type of source folder, kafka etc.
+        connection_string - connection string to connect to source to get metadata.
+        content_type - type of content in source csv json etc.
     """
 
     source_type: SourceType = SourceType.na
