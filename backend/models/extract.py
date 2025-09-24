@@ -74,4 +74,4 @@ class ExtractConfig(BaseModel):
 
     source_metadata: Source | None = None
     content_metadata: list[Content] = Field(default_factory=list)
-    content_statistics: str
+    content_statistics: str | None = None
