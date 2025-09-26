@@ -2,13 +2,13 @@
 
 import json
 import os
+from typing import Dict, List, Optional, Any
 
 import pandas as pd
 from ydata_profiling import ProfileReport
 
-from models.extract import Content, ContentType, Source
-
 from . import BaseExtractConfigBuilder
+from models.extract import Content, ContentType, Source
 
 
 SAMPLE_SIZE = 10000
@@ -16,11 +16,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(BASE_DIR, 'part1.csv')
 
 
-def clean_profile_data(profile_data, exclude_keys=None):
-    """Рекурсивная очистка указанных ключей из данных профиля"""
+def clean_profile_data(profile_data: Any, exclude_keys: Optional[List[str]] = None) -> Any:
+    """Рекурсивная очистка указанных ключей из данных профиля."""
     if exclude_keys is None:
         exclude_keys = [
-            'value_counts_without_nan', 
+            'value_counts_without_nan',
             'value_counts_index_sorted',
             'value_counts',
             'value_counts_with_nan',
@@ -41,7 +41,7 @@ def clean_profile_data(profile_data, exclude_keys=None):
             'histogram',
             'counts'
         ]
-    
+
     if isinstance(profile_data, dict):
         return {
             key: clean_profile_data(value, exclude_keys)
@@ -55,29 +55,32 @@ def clean_profile_data(profile_data, exclude_keys=None):
 
 
 def data_extractor():
+    """Функция для извлечения данных из CSV файла и создания профиля."""
     try:
         # Определяем разделитель
         separators = [',', ';', '\t', '|']
-        
+
         for sep in separators:
             try:
                 df = pd.read_csv(FILE_PATH, sep=sep, on_bad_lines='skip', engine='python', nrows=SAMPLE_SIZE)
                 if df.shape[1] > 1:
                     print(f"Найден разделитель: '{sep}'")
                     break
-            except:
+            except (pd.errors.ParserError, pd.errors.EmptyDataError, UnicodeDecodeError, Exception) as e:
+                print(f"Ошибка при проверке разделителя '{sep}': {e}")
                 continue
         else:
             # Если не нашли разделитель, используем стандартный
             sep = ','
             print("Используем стандартный разделитель ','")
-    
+
             # Перечитываем с правильным разделителем
-            df = pd.read_csv(FILE_PATH, sep=sep, on_bad_lines='skip', engine='python', nrows=SAMPLE_SIZE)
+            df = pd.read_csv(FILE_PATH, sep=sep, on_bad_lines='skip',
+                             engine='python', nrows=SAMPLE_SIZE)
 
         print(f"Загружено {len(df)} строк, {df.shape[1]} колонок")
         print("Колонки:", list(df.columns))
-        
+
         # Создание профиля
         profile = ProfileReport(df, title="Profiling Report", explorative=True)
 
