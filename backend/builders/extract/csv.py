@@ -1,7 +1,14 @@
+"""CSV extract configuration builder."""
+
+import json
 import os
+
 import pandas as pd
 from ydata_profiling import ProfileReport
-import json
+
+from models.extract import Content, ContentType, Source
+
+from . import BaseExtractConfigBuilder
 
 
 SAMPLE_SIZE = 10000
@@ -47,7 +54,7 @@ def clean_profile_data(profile_data, exclude_keys=None):
         return profile_data
 
 
-def main():
+def data_extractor():
     try:
         # Определяем разделитель
         separators = [',', ';', '\t', '|']
@@ -95,5 +102,39 @@ def main():
         traceback.print_exc()
 
 
-if __name__ == "__main__":
-    main()
+class CsvExtractConfigBuilder(BaseExtractConfigBuilder):
+    """Builder for CSVsource configurations.
+
+    Extracts metadata from CSV sources.
+    """
+
+    @classmethod
+    async def get_content_metadata(cls, source: Source) -> list[Content]:
+        """Extract content metadata from CSV source."""
+        raise NotImplementedError("Metadata extraction not implemented for CSV sources.")
+
+    @classmethod
+    async def get_src_content_type(cls, source: Source) -> ContentType:
+        """Get content type for CSV source.
+
+        Args:
+            source: CSV source configuration.
+
+        Returns:
+            ContentType for CSV.
+        """
+        raise NotImplementedError("Content type extraction not implemented for CSV sources.")
+
+    @classmethod
+    async def get_content_statistics(cls, source: Source) -> str:
+        """Get statistics for CSV source content.
+
+        Args:
+            source: CSV source configuration.
+
+        Returns:
+            String with content statistics.
+        """
+        raise NotImplementedError(
+            "Content statistics extraction not implemented for CSV sources."
+        )

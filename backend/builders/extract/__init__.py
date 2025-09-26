@@ -9,6 +9,7 @@ sys.path.insert(0, ".")
 from models.extract import Content, ContentType, ExtractConfig, Source, SourceType
 
 from .clickhouse import ClickHouseExtractConfigBuilder
+from .csv import CsvExtractConfigBuilder
 from .folder import FolderExtractConfigBuilder
 from .hadoop import HadoopExtractConfigBuilder
 from .kafka import KafkaExtractConfigBuilder
@@ -80,6 +81,7 @@ class ExtractConfigBuilder:
         SourceType.hadoop: HadoopExtractConfigBuilder,
         SourceType.sparkstreaming: SparkStreamingExtractConfigBuilder,
         SourceType.s3: S3ExtractConfigBuilder,
+        SourceType.csv: CsvExtractConfigBuilder,
     }
 
     @staticmethod
@@ -123,6 +125,8 @@ class ExtractConfigBuilder:
             )
         elif "s3:" in source:
             src = Source(source_type=SourceType.s3, connection_string=source.replace("s3:", ""))
+        elif "csv:" in source:
+            src = Source(source_type=SourceType.csv, connection_string=source.replace("csv:", ""))
         else:
             src = Source(source_type=SourceType.na, connection_string="")
 
