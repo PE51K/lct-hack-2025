@@ -99,16 +99,35 @@ For a detailed representation, refer to the [Miro board](https://miro.com/app/bo
 
 ### Where All This Stuff Is Implemented or Proposed to Be Implemented
 
-- **UI**: [`frontend/`](frontend/) - UI for all our mad stuff. Stakeholders: Daniil.
-- **FastAPI app**: [`backend/app/app.py`](backend/app/app.py) - would handle ETL generation/update/publish requests. Stakeholders: Gregory.
-- **AI pipelines**: [`backend/ai/`](backend/ai/) - would contain the AI-related logic and processing. **Attention**: committed usage of simple LangChain pipelines without memory for now with Dima - we may need to exclude checkpointer setup in [`backend/app/app.py`](backend/app/app.py) for now. Stakeholders: Gregory and Dima.
-- **ExtractConfig model**: [`backend/models/extract.py`](backend/models/extract.py) - describes source data storage, metamodels for objects in the storage, and some additional metadata. Stakeholders: Anton.
-- **TransformConfig model**: [`backend/models/transform.py`](backend/models/transform.py) - describes transformation instructions, aggregation rules, load periodicity, and some additional metadata. Stakeholders: Nikita.
-- **LoadConfig model**: [`backend/models/load.py`](backend/models/load.py) - describes target data storage, data structure in the storage, indexes, and some additional metadata. Stakeholders: Anton and Nikita.
-- **ExtractConfig builders**: [`backend/builders/extract/`](backend/builders/extract/) - would contain builders for various data sources to build ExtractConfig. Each builder is inherited from [BaseExtractConfigBuilder](backend/builders/extract/__init__.py) and should implement 3 methods for getting data shard type, metamodel for each data shard, and optional method for getting any additional useful metadata. **Attention**: some builders like `backend/builders/extract/hadoop.py`, `.../sparkstreaming.py` would not be implemented during hackathon. Stakeholders: Anton, Gregory, Nikita, Daniil, Julia.
-- **DDL generation**: [`backend/builders/ddl.py`](backend/builders/ddl.py) - would generate DDL based on ExtractConfig and LoadConfig. Stakeholders: Anton.
-- **DAG generation**: [`backend/builders/dag.py`](backend/builders/dag.py) - would generate Airflow DAG based on ExtractConfig, TransformConfig, LoadConfig, and DDL. Stakeholders: Nikita.
-- **DAG execution**: [`backend/executors/dag.py`](backend/executors/dag.py) - would handle the execution of the generated DAGs. **Attention**: probably, would include `DAG generation` part as well. Stakeholders: Nikita.
+#### UI
+[`frontend/`](frontend/) - UI for all our mad stuff. Stakeholders: Daniil.
+
+#### FastAPI app
+[`backend/app/app.py`](backend/app/app.py) - would handle ETL generation/update/publish requests. Stakeholders: Gregory.
+
+#### AI pipelines
+[`backend/ai/`](backend/ai/) - would contain the AI-related logic and processing. **Attention**: committed usage of simple LangChain pipelines without memory for now with Dima - we may need to exclude checkpointer setup in [`backend/app/app.py`](backend/app/app.py) for now. Stakeholders: Gregory and Dima.
+
+#### ExtractConfig model
+[`backend/models/extract.py`](backend/models/extract.py) - describes source data storage, metamodels for objects in the storage, and some additional metadata. Stakeholders: Anton.
+
+#### TransformConfig model
+[`backend/models/transform.py`](backend/models/transform.py) - describes transformation instructions, aggregation rules, load periodicity, and some additional metadata. Stakeholders: Nikita.
+
+#### LoadConfig model
+[`backend/models/load.py`](backend/models/load.py) - describes target data storage, data structure in the storage, indexes, and some additional metadata. Stakeholders: Anton and Nikita.
+
+#### ExtractConfig builders
+[`backend/builders/extract/`](backend/builders/extract/) - would contain builders for various data sources to build ExtractConfig. Each builder is inherited from [BaseExtractConfigBuilder](backend/builders/extract/__init__.py) and should implement 3 methods for getting data shard type, metamodel for each data shard, and optional method for getting any additional useful metadata. **Attention**: some builders like `backend/builders/extract/hadoop.py`, `.../sparkstreaming.py` would not be implemented during hackathon. Stakeholders: Anton, Gregory, Nikita, Daniil, Julia.
+
+#### DDL generation
+[`backend/builders/ddl.py`](backend/builders/ddl.py) - would generate DDL based on ExtractConfig and LoadConfig. Stakeholders: Anton.
+
+#### DAG generation
+[`backend/builders/dag.py`](backend/builders/dag.py) - would generate Airflow DAG based on ExtractConfig, TransformConfig, LoadConfig, and DDL. Stakeholders: Nikita.
+
+#### DAG execution
+[`backend/executors/dag.py`](backend/executors/dag.py) - would handle the execution of the generated DAGs. **Attention**: probably, would include `DAG generation` part as well. Stakeholders: Nikita.
 
 ## 🚀 Deployment
 
