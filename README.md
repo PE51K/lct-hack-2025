@@ -11,25 +11,6 @@ A comprehensive AI-powered assistant for automating data engineering processes, 
 - [Contributing](#-contributing)
 - [Acknowledgments](#-acknowledgments)
 
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   AI Agents     │
-│   (React + TS)  │◄──►│   (FastAPI)     │◄──►│   (LangChain)   │
-│                 │    │                 │    │                 │
-│ - User Interface│    │ - API Endpoints │    │ - Data Sources  │
-│ - Chat Interface│    │ - Orchestration │    │ - ETL Pipelines │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   Data Stores   │
-                    │   (PostgreSQL)  │
-                    └─────────────────┘
-```
-
 ## 📁 Project Structure
 
 ```
@@ -40,15 +21,7 @@ AITHachathon/
 └── README.md                  # This file
 ```
 
-## 🚀 Deployment
-
-### Prerequisites
-
-- **Docker & Docker Compose**: For containerized deployment
-- **Yandex Cloud Account**: For AI services
-- **Git**: For cloning the repository
-
-## Proposed Solutions and Architecture
+## 🏗️ Proposed Solution and Architecture
 
 ```mermaid
 flowchart TD
@@ -136,6 +109,14 @@ For a detailed representation, refer to the [Miro board](https://miro.com/app/bo
 - **DDL generation**: [`backend/builders/ddl.py`](backend/builders/ddl.py) - would generate DDL based on ExtractConfig and LoadConfig. Stakeholders: Anton.
 - **DAG generation**: [`backend/builders/dag.py`](backend/builders/dag.py) - would generate Airflow DAG based on ExtractConfig, TransformConfig, LoadConfig, and DDL. Stakeholders: Nikita.
 - **DAG execution**: [`backend/executors/dag.py`](backend/executors/dag.py) - would handle the execution of the generated DAGs. **Attention**: probably, would include `DAG generation` part as well. Stakeholders: Nikita.
+
+## 🚀 Deployment
+
+### Prerequisites
+
+- **Docker & Docker Compose**: For containerized deployment
+- **Yandex Cloud Account**: For AI services
+- **Git**: For cloning the repository
 
 ### Installation & Setup
 
