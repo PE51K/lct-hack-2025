@@ -30,38 +30,36 @@ class TargetStorageTypeRecommendation(BaseModel):
 
 
 class Field(BaseModel):
-    """
-    description for field in table
-    """
+    """Description for field in table."""
+
     name: str
     data_type: str | None = None
     nullable: bool | None = None
     indexing_order: str | None = None
 
+
 class Index(BaseModel):
-    """
-    description for index for relational db table
-    """
+    """Description for index for relational db table."""
+
     name: str
     is_clustered: bool
     fields: list[Field]
 
 
 class FlatMetaModel(BaseModel):
-    """
-    Metamodel fo relational or olumnstore db structured data
-    """
+    """Metamodel for relational or columnstore db structured data."""
+
     fields: list[Field]
     indexes: list[Index] | None = None
     partitioning_key: str
 
-class NestingMetaModel(BaseModel):
-    """
-    Metamodel for nonstructured data
-    """
 
-    data_structure: str #json
+class NestingMetaModel(BaseModel):
+    """Metamodel for nonstructured data."""
+
+    data_structure: str  # json
     partitioning_key: str
+
 
 class LoadConfig(BaseModel):
     """
@@ -80,4 +78,3 @@ class LoadConfig(BaseModel):
     target_storage_connection_string: str
     nesting_metamodel: NestingMetaModel
     flat_meta_model: FlatMetaModel
-
