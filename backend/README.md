@@ -4,15 +4,11 @@ This folder contains the backend code for the AI Data Assistant
 
 ## Table of Contents
 
-- [Backend - AI Data Assistant](#backend---ai-data-assistant)
-  - [Table of Contents](#table-of-contents)
-  - [Technology Stack](#technology-stack)
-  - [Project structure](#project-structure)
-  - [Development Setup](#development-setup)
-  - [Linting and formatting](#linting-and-formatting)
-  - [Dependency management](#dependency-management)
-- [Requests for basic scenarios](#requests-for-basic-scenarios)
-  - [get\_meta](#get_meta)
+- [Technology Stack](#technology-stack)
+- [Project structure](#project-structure)
+- [Development Setup](#development-setup)
+- [Linting and formatting](#linting-and-formatting)
+- [Dependency management](#dependency-management)
 
 ## Technology Stack
 
@@ -125,20 +121,3 @@ uv add <package-name> --dev
 ```bash
 uv remove <package-name>
 ```
-
-
-# Requests for basic scenarios
-
-## get_meta
-
-curl "http://localhost:8000/get_meta?user_input=file:D:\MyProject\ict-hack-2025-doc\syn_csv"
-
-curl "http://localhost:8000/get_meta?user_input=postgresql://user:password@localhost:5432/mydatabase"
-
-curl "http://localhost:8000/get_meta?user_input=clickhouse://user:password@localhost:9000/mydatabase"
-
-curl "http://localhost:8000/get_meta?user_input=kafka://broker1:9092,broker2:9092/my-topic?group.id=my-consumer-group"
-
-curl "http://localhost:8000/get_meta?user_input=hdfs://namenode:8020/user/data"
-
-curl "http://localhost:8000/get_meta?user_input=sparkstreaming"
