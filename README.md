@@ -118,7 +118,7 @@ For a detailed representation, refer to the [Miro board](https://miro.com/app/bo
 [`backend/models/load.py`](backend/models/load.py) - describes target data storage, data structure in the storage, indexes, and some additional metadata. Stakeholders: Anton and Nikita.
 
 #### ExtractConfig builders
-[`backend/builders/extract/`](backend/builders/extract/) - would contain builders for various data sources to build ExtractConfig. Each builder is inherited from [BaseExtractConfigBuilder](backend/builders/extract/__init__.py) and should implement 3 methods for getting data shard type, metamodel for each data shard, and optional method for getting any additional useful metadata. **Attention**: some builders like `backend/builders/extract/hadoop.py`, `.../sparkstreaming.py` would not be implemented during hackathon. Stakeholders: Anton, Gregory, Nikita, Daniil, Julia.
+[`backend/builders/extract/`](backend/builders/extract/) - would contain builders for various data sources to build ExtractConfig. Each builder is inherited from [`BaseExtractConfigBuilder`](backend/builders/extract/__init__.py) and should implement 3 methods for getting data shard type, metamodel for each data shard, and optional method for getting any additional useful metadata. **Attention**: some builders like `backend/builders/extract/hadoop.py`, `.../sparkstreaming.py` would not be implemented during hackathon. Stakeholders: Anton, Gregory, Nikita, Daniil, Julia.
 
 #### DDL generation
 [`backend/builders/ddl.py`](backend/builders/ddl.py) - would generate DDL based on ExtractConfig and LoadConfig. Stakeholders: Anton.
