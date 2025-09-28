@@ -57,7 +57,7 @@ class FlatMetaModel(BaseModel):
 class NestingMetaModel(BaseModel):
     """Metamodel for nonstructured data."""
 
-    data_structure: str  # json
+    data_structure: dict
     partitioning_key: str
 
 
