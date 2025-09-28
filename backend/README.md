@@ -37,17 +37,60 @@ backend/
 │       └── __init__.py
 ├── app/                         # Application entry point
 │   └── app.py                   # FastAPI application
+├── builders/                    # ETL builders for data extraction
+│   ├── extract/                 # ExtractConfig builders for various sources
+│   │   ├── clickhouse.py        # ClickHouse ExtractConfig builder
+│   │   ├── folder.py            # Folder ExtractConfig builder
+│   │   ├── hadoop.py            # Hadoop ExtractConfig builder
+│   │   ├── __init__.py
+│   │   ├── kafka.py             # Kafka ExtractConfig builder
+│   │   ├── postgres.py          # PostgreSQL ExtractConfig builder
+│   │   ├── s3.py                # S3 ExtractConfig builder
+│   │   └── sparkstreaming.py    # Spark Streaming ExtractConfig builder
+│   └── __init__.py
 ├── core/                        # Core utilities and configurations
 │   ├── __init__.py
 │   ├── logging.py               # Logging configuration
 │   └── settings.py              # Application settings and configuration
 ├── docker-compose.langfuse.yaml # Docker Compose for LangFuse
+├── docker-compose.test-dbs.yaml # Docker Compose for test databases
 ├── docker-compose.yaml          # Main Docker Compose configuration
 ├── dockerfile                   # Dockerfile for backend container
 ├── init-multiple-databases.sh   # Script to initialize databases
+├── models/                      # Data models and schemas
+│   ├── common.py                # Common data models
+│   ├── dag.py                   # DAG data models
+│   ├── ddl.py                   # DDL data models
+│   ├── extract.py               # Extract data models
+│   ├── generate_etl.py          # Generate ETL data models
+│   ├── __init__.py
+│   ├── load.py                  # Load data models
+│   ├── publish_etl.py           # Publish ETL data models
+│   ├── sources.py               # Sources data models
+│   ├── transform.py             # Transform data models
+│   └── update_etl.py            # Update ETL data models
 ├── pyproject.toml               # Python project configuration
 ├── README.md                    # This file
-└── uv.lock                      # Dependency lock file
+├── uv.lock                      # Dependency lock file
+└── volumes/                     # Docker volumes for persistent data
+    ├── clickhouse/              # ClickHouse data and logs
+    │   ├── data
+    │   └── logs
+    ├── minio/                   # MinIO data for LangFuse
+    │   └── langfuse
+    ├── postgres                 # PostgreSQL data
+    ├── redis/                   # Redis data
+    │   └── dump.rdb
+    ├── test_airflow/            # Test Airflow data
+    │   ├── dags
+    │   ├── logs
+    │   └── postgres
+    ├── test_clickhouse/         # Test ClickHouse data
+    │   ├── data
+    │   └── logs
+    ├── test_minio/              # Test MinIO data
+    │   └── test
+    └── test_postgres            # Test PostgreSQL data
 ```
 
 ## Development Setup
@@ -120,4 +163,21 @@ uv add <package-name> --dev
 4. To remove a dependency:
 ```bash
 uv remove <package-name>
+```
+
+# Project testing rules
+
+The project uses [pytest](https://docs.pytest.org/en/stable/) for testing. Tests are located in the [`tests`](tests) directory. To run the tests, use the following command:
+
+1. Start necessary test databases:
+```bash
+# Run from the backend directory
+docker compose -f docker-compose.test-dbs.yaml --env-file .env up
+```
+
+2. Fill test databases with your test data if needed.
+
+3. Run tests:
+```bash
+uv run pytest
 ```
