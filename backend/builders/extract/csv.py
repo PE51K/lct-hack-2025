@@ -1,8 +1,7 @@
 """CSV extract configuration builder."""
-
 import json
 import os
-from typing import Dict, List, Optional, Any
+from typing import Optional, Any
 
 import pandas as pd
 from ydata_profiling import ProfileReport
@@ -16,7 +15,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(BASE_DIR, 'part1.csv')
 
 
-def clean_profile_data(profile_data: Any, exclude_keys: Optional[List[str]] = None) -> Any:
+def clean_profile_data(profile_data: Any, exclude_keys: list[str] | None) -> Any:
     """Рекурсивная очистка указанных ключей из данных профиля."""
     if exclude_keys is None:
         exclude_keys = [
@@ -62,11 +61,17 @@ def data_extractor():
 
         for sep in separators:
             try:
-                df = pd.read_csv(FILE_PATH, sep=sep, on_bad_lines='skip', engine='python', nrows=SAMPLE_SIZE)
+                df = pd.read_csv(FILE_PATH,sep=sep,
+                                 on_bad_lines='skip',
+                                 engine='python',
+                                 nrows=SAMPLE_SIZE)
                 if df.shape[1] > 1:
                     print(f"Найден разделитель: '{sep}'")
                     break
-            except (pd.errors.ParserError, pd.errors.EmptyDataError, UnicodeDecodeError, Exception) as e:
+            except (pd.errors.ParserError,
+                    pd.errors.EmptyDataError,
+                    UnicodeDecodeError,
+                    Exception) as e:
                 print(f"Ошибка при проверке разделителя '{sep}': {e}")
                 continue
         else:
@@ -74,7 +79,7 @@ def data_extractor():
             sep = ','
             print("Используем стандартный разделитель ','")
 
-            # Перечитываем с правильным разделителем
+            # Read with right separator
             df = pd.read_csv(FILE_PATH, sep=sep, on_bad_lines='skip',
                              engine='python', nrows=SAMPLE_SIZE)
 
