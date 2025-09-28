@@ -18,6 +18,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
     "ruff>=0.13.0",
 ]
 
@@ -47,6 +49,7 @@ select = [
 ignore = [
   "D212", # Multi-line summary should start at first line
   "RUF001", # Ignore checking of Cyrillic characters
+  "S101", # Allow use of assert statements
 ]
 mccabe.max-complexity = 10 # McCabe threshold
 

@@ -23,7 +23,7 @@ ContentType = Enum(
         ("xml", 3),
         ("json", 4),
         ("table", 5),
-    ]
+    ],
 )
 
 """Tuple of thread and user identifiers.

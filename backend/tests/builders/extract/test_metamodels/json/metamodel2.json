@@ -1,0 +1,1 @@
+{"type": "object", "properties": {"book": {"type": "object", "properties": {"title": {"type": "string"}, "metadata": {"type": "object", "properties": {"author": {"type": "string"}, "year": {"type": "integer"}}}}}}, "required": ["book"]}
