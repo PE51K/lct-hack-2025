@@ -28,7 +28,14 @@ frontend/
 │   ├── assets/                  # Static assets imported in code
 │   │   └── react.svg            # React logo
 │   ├── components/              # React components
-│   │   └── CalculatorChat.tsx   # Chat interface component
+│   │   ├── CreationReport.tsx   # ETL creation report component
+│   │   ├── DeploymentProgress.tsx # Deployment progress component
+│   │   ├── DeploymentReport.tsx # Deployment report component
+│   │   ├── FeedbackForm.tsx     # User feedback form component
+│   │   ├── InputForm.tsx        # Input form for ETL generation
+│   │   └── ProgressBar.tsx      # Progress indicator component
+│   ├── services/                # API service functions
+│   │   └── api.ts               # API client and type definitions
 │   ├── App.css                 # Main application styles
 │   ├── App.tsx                 # Main application component
 │   ├── index.css               # Global styles
