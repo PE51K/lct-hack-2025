@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { GenerateETLRequest } from '../services/api';
 
+const generateRandomId = () => Math.random().toString(36).substring(2, 15);
+
 interface InputFormProps {
   onSubmit: (request: GenerateETLRequest) => void;
 }
@@ -11,8 +13,8 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
   const [userId, setUserId] = useState('');
 
   useEffect(() => {
-    setThreadId(crypto.randomUUID());
-    setUserId(crypto.randomUUID());
+    setThreadId(generateRandomId());
+    setUserId(generateRandomId());
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
