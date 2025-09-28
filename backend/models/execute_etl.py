@@ -1,6 +1,4 @@
-"""
-Models for ETL execution requests and responses.
-"""
+"""Models for ETL execution requests and responses."""
 
 from pydantic import BaseModel
 
