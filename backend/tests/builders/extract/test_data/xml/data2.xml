@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<books>
+    <book>
+        <title>1984</title>
+        <author>Orwell</author>
+    </book>
+    <book>
+        <title>Animal Farm</title>
+        <author>Orwell</author>
+        <year>1945</year>
+    </book>
+</books>
