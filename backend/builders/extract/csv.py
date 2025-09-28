@@ -1,13 +1,10 @@
 """CSV extract configuration builder."""
 import json
 import os
-from typing import Optional, Any
+from typing import Any
 
 import pandas as pd
 from ydata_profiling import ProfileReport
-
-from . import BaseExtractConfigBuilder
-from models.extract import Content, ContentType, Source
 
 
 SAMPLE_SIZE = 10000
@@ -53,7 +50,7 @@ def clean_profile_data(profile_data: Any, exclude_keys: list[str] | None) -> Any
         return profile_data
 
 
-def data_extractor():
+def csv_data_extractor():
     """Функция для извлечения данных из CSV файла и создания профиля."""
     try:
         # Определяем разделитель
@@ -77,14 +74,9 @@ def data_extractor():
         else:
             # Если не нашли разделитель, используем стандартный
             sep = ','
-            print("Используем стандартный разделитель ','")
-
             # Read with right separator
             df = pd.read_csv(FILE_PATH, sep=sep, on_bad_lines='skip',
                              engine='python', nrows=SAMPLE_SIZE)
-
-        print(f"Загружено {len(df)} строк, {df.shape[1]} колонок")
-        print("Колонки:", list(df.columns))
 
         # Создание профиля
         profile = ProfileReport(df, title="Profiling Report", explorative=True)
@@ -99,50 +91,14 @@ def data_extractor():
         # Извлекаем только variables и table
         variables_data = cleaned_data.get('variables', {})
         table_data = data.get('table', {})
-        print(f'Общая метаинформация о таблице (количество переменных, наблюдений, пропусков):\n'
+        """print(f'Общая метаинформация о таблице (количество переменных, наблюдений, пропусков):\n'
               f'{json.dumps(table_data, indent=2, ensure_ascii=False)}')
         print(f'Статистика по каждой колонке:\n'
               f'{json.dumps(variables_data, indent=2, ensure_ascii=False)}')
+        """
+        return variables_data
 
     except Exception as e:
         print(f"Ошибка: {e}")
         import traceback
         traceback.print_exc()
-
-
-class CsvExtractConfigBuilder(BaseExtractConfigBuilder):
-    """Builder for CSVsource configurations.
-
-    Extracts metadata from CSV sources.
-    """
-
-    @classmethod
-    async def get_content_metadata(cls, source: Source) -> list[Content]:
-        """Extract content metadata from CSV source."""
-        raise NotImplementedError("Metadata extraction not implemented for CSV sources.")
-
-    @classmethod
-    async def get_src_content_type(cls, source: Source) -> ContentType:
-        """Get content type for CSV source.
-
-        Args:
-            source: CSV source configuration.
-
-        Returns:
-            ContentType for CSV.
-        """
-        raise NotImplementedError("Content type extraction not implemented for CSV sources.")
-
-    @classmethod
-    async def get_content_statistics(cls, source: Source) -> str:
-        """Get statistics for CSV source content.
-
-        Args:
-            source: CSV source configuration.
-
-        Returns:
-            String with content statistics.
-        """
-        raise NotImplementedError(
-            "Content statistics extraction not implemented for CSV sources."
-        )
