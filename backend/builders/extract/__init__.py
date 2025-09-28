@@ -10,11 +10,9 @@ from models.extract import Content, ContentType, ExtractConfig, Source, SourceTy
 
 from .clickhouse import ClickHouseExtractConfigBuilder
 from .folder import FolderExtractConfigBuilder
-from .hadoop import HadoopExtractConfigBuilder
 from .kafka import KafkaExtractConfigBuilder
 from .postgres import PostgresExtractConfigBuilder
 from .s3 import S3ExtractConfigBuilder
-from .sparkstreaming import SparkStreamingExtractConfigBuilder
 
 
 class BaseExtractConfigBuilder(ABC):
@@ -78,8 +76,6 @@ class ExtractConfigBuilder:
         SourceType.kafka: KafkaExtractConfigBuilder,
         SourceType.PostgreSQL: PostgresExtractConfigBuilder,
         SourceType.ClickHouse: ClickHouseExtractConfigBuilder,
-        SourceType.hadoop: HadoopExtractConfigBuilder,
-        SourceType.sparkstreaming: SparkStreamingExtractConfigBuilder,
         SourceType.s3: S3ExtractConfigBuilder,
     }
 
@@ -112,15 +108,6 @@ class ExtractConfigBuilder:
             src = Source(
                 source_type=SourceType.ClickHouse,
                 connection_string=source.replace("clickhouse:", ""),
-            )
-        elif "hadoop:" in source:
-            src = Source(
-                source_type=SourceType.hadoop, connection_string=source.replace("hadoop:", "")
-            )
-        elif "spark:" in source:
-            src = Source(
-                source_type=SourceType.sparkstreaming,
-                connection_string=source.replace("spark:", ""),
             )
         elif "s3:" in source:
             src = Source(source_type=SourceType.s3, connection_string=source.replace("s3:", ""))

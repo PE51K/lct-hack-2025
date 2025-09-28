@@ -12,9 +12,7 @@ SourceType = Enum(
         ("PostgreSQL", 3),
         ("ClickHouse", 4),
         ("kafka", 5),
-        ("hadoop", 6),
-        ("sparkstreaming", 7),
-        ("s3", 8),
+        ("s3", 6),
     ],
 )
 ContentType = Enum(
@@ -25,7 +23,6 @@ ContentType = Enum(
         ("xml", 3),
         ("json", 4),
         ("table", 5),
-        ("parquet", 6)
     ]
 )
 
