@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "aiologger>=0.7.0",
     "fastapi>=0.116.2",
+    "kafka-python>=2.2.15",
     "langchain>=0.3.27",
     "langchain-openai>=0.3.33",
     "langfuse>=3.4.0",
@@ -59,3 +60,7 @@ convention = "google" # Enforce Google-style docstrings
 [tool.ruff.lint.flake8-annotations]
 suppress-dummy-args = true # Don't complain about placeholders like "_"
 suppress-none-returning = true # Don't complain about functions that return None
+
+[tool.pytest.ini_options]
+pythonpath = "."
+norecursedirs = ["volumes"]

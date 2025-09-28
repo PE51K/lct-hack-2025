@@ -1,67 +1,18 @@
 """Extract configuration builders for various data sources."""
 
 import sys
-from abc import ABC, abstractmethod
 from typing import ClassVar
 
 sys.path.insert(0, ".")
 
-from models.extract import Content, ContentType, ExtractConfig, Source, SourceType
+from models.extract import ExtractConfig, Source, SourceType
 
+from .base import BaseExtractConfigBuilder
 from .clickhouse import ClickHouseExtractConfigBuilder
 from .folder import FolderExtractConfigBuilder
 from .kafka import KafkaExtractConfigBuilder
 from .postgres import PostgresExtractConfigBuilder
 from .s3 import S3ExtractConfigBuilder
-
-
-class BaseExtractConfigBuilder(ABC):
-    """
-    Abstract base class for extract config builders.
-
-    Subclasses must implement methods to extract metadata, content type, and statistics
-    from various data sources.
-    """
-
-    @abstractmethod
-    @classmethod
-    async def get_content_metadata(cls, source: Source) -> list[Content]:
-        """Retrieve content metadata from the source.
-
-        Args:
-            source: The source configuration.
-
-        Returns:
-            List of Content metadata objects for every content item (e.g., file, topic, etc.).
-        """
-        pass
-
-    @abstractmethod
-    @classmethod
-    async def get_src_content_type(cls, source: Source) -> ContentType:
-        """Determine the content type of the source.
-
-        Args:
-            source: The source configuration.
-
-        Returns:
-            The ContentType enum value.
-        """
-        pass
-
-    @abstractmethod
-    @classmethod
-    async def get_content_statistics(cls, source: Source) -> dict:
-        """Retrieve statistics about the source content.
-
-        Args:
-            source: The source configuration.
-
-        Returns:
-            Dictionary containing content statistics with
-            any additional information about the source.
-        """
-        pass
 
 
 class ExtractConfigBuilder:

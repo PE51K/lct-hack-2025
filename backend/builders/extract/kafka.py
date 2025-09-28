@@ -2,13 +2,17 @@
 
 import json
 from datetime import datetime
+import sys
 
-from kafka import ConsumerRecord, KafkaConsumer
+from kafka import KafkaConsumer
+from kafka.consumer.fetcher import ConsumerRecord
 
 from models.extract import Content, ContentType, Source
 
-from ...core.logging import setup_logger
-from . import BaseExtractConfigBuilder
+sys.path.insert(0, "..")
+
+from core.logging import setup_logger
+from .base import BaseExtractConfigBuilder
 
 
 class KafkaMessageReader:
