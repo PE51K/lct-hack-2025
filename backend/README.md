@@ -175,7 +175,9 @@ The project uses [pytest](https://docs.pytest.org/en/stable/) for testing. Tests
 docker compose -f docker-compose.test-dbs.yaml --env-file .env up
 ```
 
-2. Run tests:
+2. Fill test databases with your test data if needed.
+
+3. Run tests:
 ```bash
 uv run pytest
 ```
