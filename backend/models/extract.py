@@ -18,7 +18,7 @@ SourceType = Enum(
     ],
 )
 ContentType = Enum(
-    "Content_type", [("na", 1), ("csv", 2), ("xml", 3), ("json", 4), ("table", 5), ("Parquet", 6)]
+    "Content_type", [("na", 1), ("csv", 2), ("xml", 3), ("json", 4), ("table", 5), ("parquet", 6)]
 )
 
 """Tuple of thread and user identifiers.
@@ -50,17 +50,11 @@ class Content(BaseModel):
 
     Attributes:
         message_name: file name, message offset from kafka, table name from db etc
-        metamodel: metamodel of message in source
-
-        every simple attribute of metamodel has folowing attributes:
-            - name: str
-            - data_type: str
-            - nullable: bool
-            - example: str
+        metamodel: metamodel of message in source in json schema format (https://json-schema.org/specification)
     """
 
     message_name: str
-    metamodel: str
+    metamodel: dict
 
 
 class ExtractConfig(BaseModel):
@@ -69,10 +63,10 @@ class ExtractConfig(BaseModel):
 
     Attributes:
         source_metadata - section with tech source metadata
-        content_metadata - list of content samples metadata
-        content_statistics - content statistic section
+        content_metadata - list of content samples metadata (for every file, topic, etc.)
+        content_statistics - content statistic section (any additional statistics about content)
     """
 
     source_metadata: Source | None = None
     content_metadata: list[Content] = Field(default_factory=list)
-    content_statistics: str | None = None
+    content_statistics: dict | None = None

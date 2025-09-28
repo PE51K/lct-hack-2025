@@ -29,13 +29,14 @@ class S3ExtractConfigBuilder(BaseExtractConfigBuilder):
         raise NotImplementedError("Content type extraction not implemented for S3 sources.")
 
     @classmethod
-    async def get_content_statistics(cls, source: Source) -> str:
-        """Get statistics for S3 source content.
+    async def get_content_statistics(cls, source: Source) -> dict:
+        """Retrieve statistics about the source content.
 
         Args:
-            source: S3 source configuration.
+            source: The source configuration.
 
         Returns:
-            String with content statistics.
+            Dictionary containing content statistics with
+            any additional information about the source.
         """
         raise NotImplementedError("Content statistics extraction not implemented for S3 sources.")

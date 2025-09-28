@@ -33,14 +33,15 @@ class SparkStreamingExtractConfigBuilder(BaseExtractConfigBuilder):
         )
 
     @classmethod
-    async def get_content_statistics(cls, source: Source) -> str:
-        """Get statistics for Spark Streaming source content.
+    async def get_content_statistics(cls, source: Source) -> dict:
+        """Retrieve statistics about the source content.
 
         Args:
-            source: Spark Streaming source configuration.
+            source: The source configuration.
 
         Returns:
-            String with content statistics.
+            Dictionary containing content statistics with
+            any additional information about the source.
         """
         raise NotImplementedError(
             "Content statistics extraction not implemented for Spark Streaming sources."

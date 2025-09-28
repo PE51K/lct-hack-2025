@@ -35,7 +35,7 @@ class BaseExtractConfigBuilder(ABC):
             source: The source configuration.
 
         Returns:
-            List of Content metadata objects.
+            List of Content metadata objects for every content item (e.g., file, topic, etc.).
         """
         pass
 
@@ -54,14 +54,15 @@ class BaseExtractConfigBuilder(ABC):
 
     @abstractmethod
     @classmethod
-    async def get_content_statistics(cls, source: Source) -> str:
+    async def get_content_statistics(cls, source: Source) -> dict:
         """Retrieve statistics about the source content.
 
         Args:
             source: The source configuration.
 
         Returns:
-            String containing content statistics.
+            Dictionary containing content statistics with
+            any additional information about the source.
         """
         pass
 
