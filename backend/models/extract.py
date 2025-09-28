@@ -18,13 +18,13 @@ SourceType = Enum(
     ],
 )
 ContentType = Enum(
-    "Content_type", 
+    "Content_type",
     [
-        ("na", 1), 
-        ("csv", 2), 
-        ("xml", 3), 
-        ("json", 4), 
-        ("table", 5), 
+        ("na", 1),
+        ("csv", 2),
+        ("xml", 3),
+        ("json", 4),
+        ("table", 5),
         ("parquet", 6)
     ]
 )
