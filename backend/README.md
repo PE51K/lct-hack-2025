@@ -164,3 +164,18 @@ uv add <package-name> --dev
 ```bash
 uv remove <package-name>
 ```
+
+# Project testing rules
+
+The project uses [pytest](https://docs.pytest.org/en/stable/) for testing. Tests are located in the [`tests`](tests) directory. To run the tests, use the following command:
+
+1. Start necessary test databases:
+```bash
+# Run from the backend directory
+docker compose -f docker-compose.test-dbs.yaml --env-file .env up
+```
+
+2. Run tests:
+```bash
+uv run pytest
+```
