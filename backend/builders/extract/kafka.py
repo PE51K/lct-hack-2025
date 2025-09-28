@@ -1,8 +1,8 @@
 """Kafka extract configuration builder and message reader."""
 
 import json
-from datetime import datetime
 import sys
+from datetime import datetime
 
 from kafka import KafkaConsumer
 from kafka.consumer.fetcher import ConsumerRecord
@@ -12,6 +12,7 @@ from models.extract import Content, ContentType, Source
 sys.path.insert(0, "..")
 
 from core.logging import setup_logger
+
 from .base import BaseExtractConfigBuilder
 
 
