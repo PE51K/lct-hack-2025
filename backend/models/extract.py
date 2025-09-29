@@ -153,7 +153,70 @@ class Attribute(BaseModel):
         character_maximum_length: max length of string column
         numeric_precision: max precision of numeric column
         numeric_scale: scale of numeric column
+
+    Example of metamodel:
+
+    json:
+    {
+        "number":1,
+        "order_name":"order",
+        "item":{
+            "item_no":1,
+            "item_name":"item",
+            "item_details":"details"
+        }
+    }
+
+    metamodel for this json
+    [
+        {
+            "order_no": 1,
+            "column_name": "number",
+            "data_type": "integer",
+            "is_nullable": false,
+            "character_maximum_length": null,
+            "numeric_precision": 10,
+            "numeric_scale": 0
+        },
+        {
+            "order_no": 2,
+            "column_name": "order_name",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "character_maximum_length": 255,
+            "numeric_precision": null,
+            "numeric_scale": null
+        },
+        {
+            "order_no": 3,
+            "column_name": "item.item_no",
+            "data_type": "integer",
+            "is_nullable": false,
+            "character_maximum_length": null,
+            "numeric_precision": 10,
+            "numeric_scale": 0
+        },
+        {
+            "order_no": 4,
+            "column_name": "item.item_name",
+            "data_type": "character varying",
+            "is_nullable": false,
+            "character_maximum_length": 255,
+            "numeric_precision": null,
+            "numeric_scale": null
+        },
+        {
+            "order_no": 5,
+            "column_name": "item.item_details",
+            "data_type": "character varying",
+            "is_nullable": true,
+            "character_maximum_length": 255,
+            "numeric_precision": null,
+            "numeric_scale": null
+        }
+    ]
     """
+
     order_no: int
     column_name: str
     data_type: PostgreSqlDataType
