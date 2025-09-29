@@ -14,6 +14,10 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "python-multipart>=0.0.20",
     "uvicorn>=0.35.0",
+    "kafka",
+    "sqlalchemy", 
+    "psycopg2-binary",
+    "pandas"
 ]
 
 [dependency-groups]

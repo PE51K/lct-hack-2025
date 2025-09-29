@@ -1,28 +1,3 @@
-# запуск проекта
-
-docker compose -f 'docker-compose.pg.yaml' up
-
-подключаемся через Dbeaver, создаем таблицу, заполняем данные
-
-запускаем проект
-
-выполняем тестовый curl 
-
-# запуск
-
-C:\Users\eva\AppData\Local\Programs\Python\Python313\python.exe -m venv venv
-
-venv\Scripts\activate.ps1
-
-python -m pip install --upgrade pip
-
-pip install -r requirements.txt
-
-uvicorn main:app --reload
-
-# тестовые запросы
-
-curl "http://localhost:8000/get_meta?user_input=подключись к postgresql://myuser:mypassword@localhost:5432/mydatabase и загрузи таблицу ticket_data"
 
 # код для создания таблицы в pg
 
