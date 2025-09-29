@@ -11,8 +11,8 @@ import pandas as pd
 from ydata_profiling import ProfileReport
 
 from models.extract import Content, ContentType, Source
-from . import BaseExtractConfigBuilder
-from .csv import clean_profile_data
+
+from .base import BaseExtractConfigBuilder
 
 
 class FolderExtractConfigBuilder(BaseExtractConfigBuilder):

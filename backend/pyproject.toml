@@ -6,11 +6,10 @@ requires-python = ">=3.12"
 dependencies = [
     "aiologger>=0.7.0",
     "fastapi>=0.116.2",
+    "kafka-python>=2.2.15",
     "langchain>=0.3.27",
     "langchain-openai>=0.3.33",
     "langfuse>=3.4.0",
-    "langgraph>=0.6.7",
-    "langgraph-checkpoint-postgres>=2.0.23",
     "pydantic-settings>=2.10.1",
     "python-multipart>=0.0.20",
     "uvicorn>=0.35.0",
@@ -18,6 +17,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
     "ruff>=0.13.0",
 ]
 
@@ -47,6 +48,7 @@ select = [
 ignore = [
   "D212", # Multi-line summary should start at first line
   "RUF001", # Ignore checking of Cyrillic characters
+  "S101", # Allow use of assert statements
 ]
 mccabe.max-complexity = 10 # McCabe threshold
 
@@ -56,3 +58,7 @@ convention = "google" # Enforce Google-style docstrings
 [tool.ruff.lint.flake8-annotations]
 suppress-dummy-args = true # Don't complain about placeholders like "_"
 suppress-none-returning = true # Don't complain about functions that return None
+
+[tool.pytest.ini_options]
+pythonpath = "."
+norecursedirs = ["volumes"]
