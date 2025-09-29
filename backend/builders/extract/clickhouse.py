@@ -2,7 +2,7 @@
 
 from models.extract import Content, ContentType, Source
 
-from . import BaseExtractConfigBuilder
+from .base import BaseExtractConfigBuilder
 
 
 class ClickHouseExtractConfigBuilder(BaseExtractConfigBuilder):

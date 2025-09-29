@@ -1,6 +1,7 @@
 """Models for data extraction configurations."""
 
 from enum import Enum
+from typing import Annotated
 
 from pydantic import BaseModel
 
@@ -92,37 +93,26 @@ class PostgreSqlDataType(Enum):
     REGCONFIG = 'regconfig'
     REGDICTIONARY = 'regdictionary'
 
-SourceType = Enum(
-    "Source_type",
-    [
-        ("na", 1),
-        ("folder", 2),
-        ("PostgreSQL", 3),
-        ("ClickHouse", 4),
-        ("kafka", 5),
-        ("hadoop", 6),
-        ("sparkstreaming", 7),
-        ("s3", 8),
-    ],
-)
-ContentType = Enum(
-    "Content_type",
-    [
-        ("na", 1),
-        ("csv", 2),
-        ("xml", 3),
-        ("json", 4),
-        ("table", 5),
-        ("parquet", 6)
-    ]
-)
 
-"""Tuple of thread and user identifiers.
+class SourceType(str, Enum):
+    """Enumeration of source types."""
 
-Attributes:
-    thread_id: Logical conversation or workflow run id.
-    user_id: End-user id (can be a login, UUID, or email).
-"""
+    na = "na"
+    folder = "folder"
+    PostgreSQL = "PostgreSQL"
+    ClickHouse = "ClickHouse"
+    kafka = "kafka"
+    s3 = "s3"
+
+
+class ContentType(str, Enum):
+    """Enumeration of content types."""
+
+    na = "na"
+    csv = "csv"
+    xml = "xml"
+    json = "json"
+    table = "table"
 
 
 class Source(BaseModel):
@@ -136,9 +126,9 @@ class Source(BaseModel):
         table_name - name of table in db (optional, just for postgresql)
     """
 
-    source_type: SourceType = SourceType.na
+    source_type: Annotated[str, SourceType] = SourceType.na
     connection_string: str | None = None
-    content_type: ContentType | None = None
+    content_type: Annotated[str, ContentType] | None = None
     table_name: str | None = None
 
 class Attribute(BaseModel):
@@ -219,7 +209,7 @@ class Attribute(BaseModel):
 
     order_no: int
     column_name: str
-    data_type: PostgreSqlDataType
+    data_type: Annotated[str, PostgreSqlDataType] | None = None
     is_nullable: bool
     character_maximum_length: int
     numeric_precision: int

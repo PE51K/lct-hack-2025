@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
 from models.extract import Content, ContentType, Source, Attribute, PostgreSqlDataType
 
-
+from .base import BaseExtractConfigBuilder
 
 class PostgresExtractConfigBuilder:
     """Builder for PostgreSQL source configurations.
