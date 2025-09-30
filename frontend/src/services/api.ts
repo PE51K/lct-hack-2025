@@ -24,7 +24,7 @@ export interface ETLResponse {
   dag?: Record<string, unknown>;
 }
 
-export interface CreateETLResponse extends ETLResponse {}
+export type CreateETLResponse = ETLResponse;
 
 export interface FeedbackItem {
   area: string;
@@ -47,13 +47,13 @@ export interface UpdateETLRequest {
   dag?: Record<string, unknown>;
 }
 
-export interface UpdateETLResponse extends ETLResponse {}
+export type UpdateETLResponse = ETLResponse;
 
 export interface PublishETLRequest {
   ids: ThreadUserIds;
 }
 
-export interface PublishETLResponse extends ETLResponse {}
+export type PublishETLResponse = ETLResponse;
 
 export async function* createETL(request: CreateETLRequest): AsyncGenerator<CreateETLResponse> {
   const response = await fetch(`${API_BASE_URL}/create_etl`, {
