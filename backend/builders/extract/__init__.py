@@ -10,6 +10,7 @@ from models.extract import ExtractConfig, Source, SourceType
 from .base import BaseExtractConfigBuilder
 from .clickhouse import ClickHouseExtractConfigBuilder
 from .folder import FolderExtractConfigBuilder
+
 # from .kafka import KafkaExtractConfigBuilder  # Commented out due to kafka package issues
 from .postgres import PostgresExtractConfigBuilder
 from .s3 import S3ExtractConfigBuilder
@@ -31,7 +32,7 @@ class ExtractConfigBuilder:
     }
 
     @classmethod
-    async def from_source(cls, src) -> ExtractConfig:
+    async def from_source(cls, src: Source) -> ExtractConfig:
         """Build an ExtractConfig from a URI.
 
         For now, returns a mock ExtractConfig.
@@ -57,10 +58,11 @@ class ExtractConfigBuilder:
         #     content_metadata=content_metadata,
         #     content_statistics=content_statistics,
         # )
-    
+
         # Mock implementation
         import asyncio
-        from models.extract import Content, Attribute
+
+        from models.extract import Attribute, Content
 
         await asyncio.sleep(1)
         return ExtractConfig(

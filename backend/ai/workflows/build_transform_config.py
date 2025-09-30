@@ -1,3 +1,5 @@
+"""Module for building transform configurations."""
+
 import asyncio
 
 from models.ddl import DDL

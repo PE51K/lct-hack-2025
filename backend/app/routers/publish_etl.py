@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -24,7 +25,7 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
     """
     ids = request.ids
 
-    async def publish(request: PublishETLRequest) -> PublishETLResponse:
+    async def publish(request: PublishETLRequest) -> AsyncGenerator[str, None]:
         # Step 1: Starting publishing
         yield (
             json.dumps(
@@ -85,4 +86,3 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
         )
 
     return StreamingResponse(publish(request), media_type="application/x-ndjson")
-

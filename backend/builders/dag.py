@@ -1,10 +1,12 @@
+"""Module for building DAG configurations."""
+
 import asyncio
 
 from models.dag import DAG
-from models.extract import ExtractConfig
-from models.transform import TransformConfig
-from models.load import LoadConfig
 from models.ddl import DDL
+from models.extract import ExtractConfig
+from models.load import LoadConfig
+from models.transform import TransformConfig
 
 
 async def generate_dag_from_configs(

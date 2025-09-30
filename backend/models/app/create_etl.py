@@ -2,19 +2,21 @@
 
 from pydantic import BaseModel, Field
 
-from .ids import ThreadUserIds
-from ..extract import ExtractConfig
-from ..transform import TransformConfig
-from ..load import LoadConfig
 from ..dag import DAG
 from ..ddl import DDL
+from ..extract import ExtractConfig
+from ..load import LoadConfig
+from ..transform import TransformConfig
+from .ids import ThreadUserIds
 
 
 class CreateETLRequest(BaseModel):
     """ETL creation request."""
 
     ids: ThreadUserIds = Field(..., description="Unique identifiers for user and thread.")
-    user_prompt: str = Field(..., description="User's natural language prompt with connection string and requirements.")
+    user_prompt: str = Field(
+        ..., description="User's natural language prompt with connection string and requirements."
+    )
 
 
 class CreateETLResponse(BaseModel):
@@ -25,13 +27,15 @@ class CreateETLResponse(BaseModel):
 
     # Process tracking
     processing_done: bool = Field(False, description="Flag indicating if processing is complete.")
-    processing_percentage_done: float = Field(..., ge=0.0, le=100.0, description="Progress percentage from 0 to 100.")
+    processing_percentage_done: float = Field(
+        ..., ge=0.0, le=100.0, description="Progress percentage from 0 to 100."
+    )
     processing_message: str = Field(..., description="Current processing step message.")
 
     # Success flag
     success: bool = Field(..., description="Indicates if the ETL creation was successful.")
     error_message: str | None = Field(None, description="Error message if the creation failed.")
-    
+
     # Created artefacts
     extract_config: ExtractConfig | None = Field(
         None, description="Created extract phase configuration."

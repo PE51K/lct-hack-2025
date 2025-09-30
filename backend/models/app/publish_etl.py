@@ -19,7 +19,9 @@ class PublishETLResponse(BaseModel):
 
     # Process tracking
     processing_done: bool = Field(False, description="Flag indicating if processing is complete.")
-    processing_percentage_done: float = Field(..., ge=0.0, le=100.0, description="Progress percentage from 0 to 100.")
+    processing_percentage_done: float = Field(
+        ..., ge=0.0, le=100.0, description="Progress percentage from 0 to 100."
+    )
     processing_message: str = Field(..., description="Current processing step message.")
 
     # Success flag

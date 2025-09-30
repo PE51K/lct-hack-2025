@@ -5,12 +5,12 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from .ids import ThreadUserIds
 from ..dag import DAG
 from ..ddl import DDL
 from ..extract import ExtractConfig
 from ..load import LoadConfig
 from ..transform import TransformConfig
+from .ids import ThreadUserIds
 
 
 class FeedbackAreaEnum(str, Enum):
@@ -49,7 +49,9 @@ class UpdateETLRequest(BaseModel):
 
     # Artefacts to update
     extract_config: ExtractConfig = Field(..., description="Current extract phase configuration.")
-    transform_config: TransformConfig = Field(..., description="Current transform phase configuration.")
+    transform_config: TransformConfig = Field(
+        ..., description="Current transform phase configuration."
+    )
     load_config: LoadConfig = Field(..., description="Current load phase configuration.")
     ddl: DDL = Field(..., description="Current DDL.")
     dag: DAG = Field(..., description="Current DAG.")
@@ -63,7 +65,9 @@ class UpdateETLResponse(BaseModel):
 
     # Process tracking
     processing_done: bool = Field(False, description="Flag indicating if processing is complete.")
-    processing_percentage_done: float = Field(..., ge=0.0, le=100.0, description="Progress percentage from 0 to 100.")
+    processing_percentage_done: float = Field(
+        ..., ge=0.0, le=100.0, description="Progress percentage from 0 to 100."
+    )
     processing_message: str = Field(..., description="Current processing step message.")
 
     # Success flag

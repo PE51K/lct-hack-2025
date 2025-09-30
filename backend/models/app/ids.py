@@ -8,4 +8,3 @@ class ThreadUserIds(BaseModel):
 
     user_id: str = Field(..., description="Unique identifier for the user.")
     thread_id: str = Field(..., description="Unique identifier for the thread.")
-    
