@@ -11,8 +11,6 @@ from core.settings import settings
 
 from .routers import create_router, execute_router, update_router
 
-# ================== Setting up FastAPI ===================
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
