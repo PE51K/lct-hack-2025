@@ -9,7 +9,7 @@ from pydantic import BaseModel
 class PostgreSqlDataType(Enum):
     """PostgreSQL data types enumeration."""
 
-    # Числовые типы
+    # Numeric types
     SMALLINT = "smallint"
     INTEGER = "integer"
     BIGINT = "bigint"
@@ -21,17 +21,17 @@ class PostgreSqlDataType(Enum):
     SERIAL = "serial"
     BIGSERIAL = "bigserial"
 
-    # Символьные типы
+    # Character types
     CHARACTER_VARYING = "character varying"
     VARCHAR = "varchar"
     CHARACTER = "character"
     CHAR = "char"
     TEXT = "text"
 
-    # Бинарные типы
+    # Binary types
     BYTEA = "bytea"
 
-    # Дата/время
+    # Date/time
     TIMESTAMP = "timestamp without time zone"
     TIMESTAMPTZ = "timestamp with time zone"
     DATE = "date"
@@ -39,14 +39,14 @@ class PostgreSqlDataType(Enum):
     TIMETZ = "time with time zone"
     INTERVAL = "interval"
 
-    # Логический тип
+    # Logical type
     BOOLEAN = "boolean"
     BOOL = "bool"
 
-    # Перечисляемые типы
-    ENUM = "USER-DEFINED"  # In information_schema enum'ы отображаются как USER-DEFINED
+    # Enumerated types
+    ENUM = "USER-DEFINED"  # In information_schema enums are displayed as USER-DEFINED
 
-    # Геометрические тимы
+    # Geometric types
     POINT = "point"
     LINE = "line"
     LSEG = "lseg"
@@ -55,18 +55,18 @@ class PostgreSqlDataType(Enum):
     POLYGON = "polygon"
     CIRCLE = "circle"
 
-    # Сетевые адреса
+    # Network addresses
     INET = "inet"
     CIDR = "cidr"
     MACADDR = "macaddr"
     MACADDR8 = "macaddr8"
 
-    # Bit строки
+    # Bit strings
     BIT = "bit"
     BIT_VARYING = "bit varying"
     VARBIT = "varbit"
 
-    # Текстовые поисковые типы
+    # Text search types
     TSVECTOR = "tsvector"
     TSQUERY = "tsquery"
 
@@ -80,10 +80,10 @@ class PostgreSqlDataType(Enum):
     JSON = "json"
     JSONB = "jsonb"
 
-    # Массивы
-    ARRAY = "ARRAY"  # Массивы в information_schema имеют суффикс []
+    # Arrays
+    ARRAY = "ARRAY"  # Arrays in information_schema have suffix []
 
-    # Другие типы
+    # Other types
     OID = "oid"
     REGPROC = "regproc"
     REGPROCEDURE = "regprocedure"
@@ -228,7 +228,7 @@ class Content(BaseModel):
         message_name: file name, topic from kafka, table name from db etc
         is_complex_nesting_present: is complex nesting present in message
             (we store messages with complex nesting in hdfs)
-        metamodel: metamodel of message in source in json schema format (https://json-schema.org/specification)
+        metamodel: metamodel of message (see Attribute model and example above)
     """
 
     message_name: str
