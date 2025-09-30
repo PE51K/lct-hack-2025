@@ -61,9 +61,9 @@ class NestingMetaModel(BaseModel):
 
 class LoadStrategy(str, Enum):
     """Data loading strategies."""
-    
+
     APPEND = "append"
-    UPSERT = "upsert" 
+    UPSERT = "upsert"
     FULL_REFRESH = "full_refresh"
     INCREMENTAL = "incremental"
     MERGE = "merge"
@@ -71,7 +71,7 @@ class LoadStrategy(str, Enum):
 
 class PartitionType(str, Enum):
     """Partitioning strategies."""
-    
+
     DATE = "date"
     HASH = "hash"
     RANGE = "range"
@@ -80,7 +80,7 @@ class PartitionType(str, Enum):
 
 class CompressionAlgorithm(str, Enum):
     """Compression algorithms."""
-    
+
     GZIP = "gzip"
     LZ4 = "lz4"
     ZSTD = "zstd"
@@ -89,7 +89,7 @@ class CompressionAlgorithm(str, Enum):
 
 class BatchConfig(BaseModel):
     """Batch loading configuration."""
-    
+
     batch_size: int = 1000
     parallel_loads: int = 1
     commit_interval: int = 1000
@@ -98,7 +98,7 @@ class BatchConfig(BaseModel):
 
 class PartitioningConfig(BaseModel):
     """Partitioning configuration."""
-    
+
     enabled: bool = False
     partition_by: str | None = None
     partition_type: PartitionType = PartitionType.DATE
@@ -107,7 +107,7 @@ class PartitioningConfig(BaseModel):
 
 class IndexingConfig(BaseModel):
     """Indexing configuration."""
-    
+
     auto_index: bool = True
     custom_indexes: list[dict] = Field(default_factory=list)
     primary_key: list[str] = Field(default_factory=list)
@@ -116,7 +116,7 @@ class IndexingConfig(BaseModel):
 
 class CompressionConfig(BaseModel):
     """Compression configuration."""
-    
+
     enabled: bool = True
     algorithm: CompressionAlgorithm = CompressionAlgorithm.GZIP
     level: int = 6
@@ -124,7 +124,7 @@ class CompressionConfig(BaseModel):
 
 class LoadResourceConfig(BaseModel):
     """Resource configuration for loading."""
-    
+
     cpu_request: float = 1.0
     memory_request_mb: int = 512
     disk_io_limit: str | None = None
@@ -134,7 +134,7 @@ class LoadResourceConfig(BaseModel):
 
 class MonitoringConfig(BaseModel):
     """Monitoring configuration."""
-    
+
     track_row_counts: bool = True
     track_execution_time: bool = True
     alert_on_failure: bool = True

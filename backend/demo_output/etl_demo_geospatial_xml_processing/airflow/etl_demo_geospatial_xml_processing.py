@@ -38,23 +38,15 @@ Pipeline ID: etl_demo_geospatial_xml_processing
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
-from airflow.operators.python import PythonOperator
-from airflow.operators.bash import BashOperator
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.email import EmailOperator
-from airflow.sensors.filesystem import FileSensor
-import logging
-import json
-from pathlib import Path
-from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.providers.postgres.hooks.postgres import PostgresHook
-# Для работы с файловой системой импорты уже включены
 
+from airflow import DAG
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
+
+# Для работы с файловой системой импорты уже включены
 # Импорт конфигурации и функций
 from etl_demo_geospatial_xml_processing_config import *
 from etl_demo_geospatial_xml_processing_functions import *
-
 
 default_args = {
     "owner": "demo_user",
@@ -65,7 +57,7 @@ default_args = {
     "retries": 3,
     "retry_delay": timedelta(minutes=5),
     "execution_timeout": timedelta(hours=2),
-    "email": ['demo_user@company.com'],
+    "email": ["demo_user@company.com"],
 }
 
 dag = DAG(
@@ -76,22 +68,16 @@ dag = DAG(
     start_date=datetime(2025, 9, 30),
     catchup=False,
     max_active_runs=1,
-    tags=['xml', 'folder', 'etl', 'automated']
+    tags=["xml", "folder", "etl", "automated"],
 )
 
 
 # Стартовая задача
-start_task = DummyOperator(
-    task_id="start_pipeline",
-    dag=dag
-)
+start_task = DummyOperator(task_id="start_pipeline", dag=dag)
 
 # Валидация источника данных
 validate_source_task = PythonOperator(
-    task_id="validate_source",
-    python_callable=validate_source_data,
-    provide_context=True,
-    dag=dag
+    task_id="validate_source", python_callable=validate_source_data, provide_context=True, dag=dag
 )
 
 # Извлечение данных
@@ -100,23 +86,20 @@ extract_task = PythonOperator(
     python_callable=extract_data,
     provide_context=True,
     pool_slots=4,
-    dag=dag
+    dag=dag,
 )
 
-# Трансформация данных  
+# Трансформация данных
 transform_task = PythonOperator(
-    task_id="transform_data",
-    python_callable=transform_data,
-    provide_context=True,
-    dag=dag
+    task_id="transform_data", python_callable=transform_data, provide_context=True, dag=dag
 )
 
 # Валидация трансформированных данных
 validate_transform_task = PythonOperator(
-    task_id="validate_transformed_data", 
+    task_id="validate_transformed_data",
     python_callable=validate_transformed_data,
     provide_context=True,
-    dag=dag
+    dag=dag,
 )
 
 # Загрузка в PostgreSQL
@@ -125,7 +108,7 @@ load_task = PythonOperator(
     python_callable=load_to_postgres,
     provide_context=True,
     pool_slots=5,
-    dag=dag
+    dag=dag,
 )
 
 # Валидация загруженных данных
@@ -133,7 +116,7 @@ validate_load_task = PythonOperator(
     task_id="validate_loaded_data",
     python_callable=validate_loaded_data,
     provide_context=True,
-    dag=dag
+    dag=dag,
 )
 
 # Очистка временных файлов
@@ -142,14 +125,12 @@ cleanup_task = PythonOperator(
     python_callable=cleanup_temp_files,
     provide_context=True,
     trigger_rule="all_done",
-    dag=dag
+    dag=dag,
 )
 
 # Финальная задача
 end_task = DummyOperator(
-    task_id="end_pipeline",
-    trigger_rule="none_failed_min_one_success",
-    dag=dag
+    task_id="end_pipeline", trigger_rule="none_failed_min_one_success", dag=dag
 )
 
 # Зависимости задач

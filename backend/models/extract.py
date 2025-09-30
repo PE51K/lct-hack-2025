@@ -238,7 +238,7 @@ class Content(BaseModel):
 
 class ExtractSchedule(BaseModel):
     """Scheduling configuration for data extraction."""
-    
+
     interval: str = "@daily"  # Cron expression
     start_date: str = "2025-01-01"
     end_date: str | None = None
@@ -249,7 +249,7 @@ class ExtractSchedule(BaseModel):
 
 class ExtractResourceConfig(BaseModel):
     """Resource requirements for extraction."""
-    
+
     cpu_request: float = 1.0
     memory_request_mb: int = 512
     disk_space_gb: int = 10
@@ -260,7 +260,7 @@ class ExtractResourceConfig(BaseModel):
 
 class IncrementalConfig(BaseModel):
     """Configuration for incremental data loading."""
-    
+
     enabled: bool = False
     key_field: str | None = None
     lookback_days: int = 1
@@ -269,7 +269,7 @@ class IncrementalConfig(BaseModel):
 
 class DataQualityProfile(BaseModel):
     """Data quality metrics and thresholds."""
-    
+
     completeness_threshold: float = 0.95
     accuracy_threshold: float = 0.98
     consistency_checks: list[str] = ["date_format", "data_types"]

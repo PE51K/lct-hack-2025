@@ -14,7 +14,7 @@ SOURCE_PATH = "postgres://mock_user:mock_pass@localhost:5432/mock_db"
 SOURCE_TYPE = "postgres"
 CONTENT_TYPE = "table"
 
-# Processing Configuration  
+# Processing Configuration
 BATCH_SIZE = 1000
 PARALLEL_WORKERS = 1
 MAX_DATA_SIZE_BYTES = 1073741824
@@ -48,7 +48,7 @@ MAX_DUPLICATES_PCT = 0.05
 # Notification Settings
 EMAIL_ON_SUCCESS = False
 EMAIL_ON_FAILURE = True
-NOTIFICATION_EMAILS = ['test_user@company.com']
+NOTIFICATION_EMAILS = ["test_user@company.com"]
 
 # Performance Settings (from AI Recommendations)
 # AI Рекомендация: Увеличение ресурсов для больших объемов данных

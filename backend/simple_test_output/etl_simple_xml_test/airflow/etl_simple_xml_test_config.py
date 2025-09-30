@@ -14,7 +14,7 @@ SOURCE_PATH = "file://d:/lct-hack-2025/backend/parsers/sample/XML/"
 SOURCE_TYPE = "folder"
 CONTENT_TYPE = "xml"
 
-# Processing Configuration  
+# Processing Configuration
 BATCH_SIZE = 1000
 PARALLEL_WORKERS = 2
 MAX_DATA_SIZE_BYTES = 1073741824
@@ -48,7 +48,7 @@ MAX_DUPLICATES_PCT = 0.05
 # Notification Settings
 EMAIL_ON_SUCCESS = False
 EMAIL_ON_FAILURE = True
-NOTIFICATION_EMAILS = ['test_user@company.com']
+NOTIFICATION_EMAILS = ["test_user@company.com"]
 
 # Performance Settings (from AI Recommendations)
 # AI рекомендации по производительности не найдены

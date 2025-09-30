@@ -1,6 +1,7 @@
 """Models for data transformation configurations."""
 
 from __future__ import annotations
+
 from enum import Enum
 from typing import Any
 
@@ -9,9 +10,9 @@ from pydantic import BaseModel, Field
 
 class TransformationType(str, Enum):
     """Types of data transformations."""
-    
+
     SQL = "sql"
-    PYTHON = "python" 
+    PYTHON = "python"
     VALIDATION = "validation"
     AGGREGATION = "aggregation"
     ENRICHMENT = "enrichment"
@@ -21,7 +22,7 @@ class TransformationType(str, Enum):
 
 class ValidationRuleType(str, Enum):
     """Types of validation rules."""
-    
+
     NOT_NULL = "not_null"
     RANGE = "range"
     REGEX = "regex"
@@ -32,7 +33,7 @@ class ValidationRuleType(str, Enum):
 
 class ErrorAction(str, Enum):
     """Actions to take when validation fails."""
-    
+
     SKIP = "skip"
     FAIL = "fail"
     LOG = "log"
@@ -41,7 +42,7 @@ class ErrorAction(str, Enum):
 
 class TransformationRule(BaseModel):
     """Individual transformation rule."""
-    
+
     rule_id: str
     rule_name: str
     description: str = ""
@@ -60,7 +61,7 @@ class TransformationRule(BaseModel):
 
 class ValidationRule(BaseModel):
     """Data validation rule."""
-    
+
     field_name: str
     rule_type: ValidationRuleType
     parameters: dict[str, Any] = Field(default_factory=dict)
@@ -71,7 +72,7 @@ class ValidationRule(BaseModel):
 
 class BusinessRule(BaseModel):
     """Business logic rule."""
-    
+
     rule_name: str
     description: str = ""
     condition: str
@@ -82,7 +83,7 @@ class BusinessRule(BaseModel):
 
 class DataTypeMapping(BaseModel):
     """Mapping between source and target data types."""
-    
+
     source_field: str
     source_type: str
     target_field: str
@@ -93,7 +94,7 @@ class DataTypeMapping(BaseModel):
 
 class TransformResourceConfig(BaseModel):
     """Resource configuration for transformation."""
-    
+
     cpu_request: float = 2.0
     memory_request_mb: int = 1024
     execution_timeout_hours: float = 2.0

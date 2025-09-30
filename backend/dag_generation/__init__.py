@@ -8,7 +8,7 @@ DAG Generation System for ETL Pipelines
 
 🔍 АНАЛИЗ ДАННЫХ:
 - Автоматическое определение типа и формата источника данных
-- Анализ структуры и сложности данных  
+- Анализ структуры и сложности данных
 - Оценка метрик качества данных
 - Расчет требований к ресурсам
 
@@ -44,7 +44,7 @@ URL/Path → Analyzer → Config Builder → AI Engine → DAG Generator → Air
 Компоненты:
 ----------
 - ETLPipelineAnalyzer: Анализ источников данных
-- ComprehensiveDAGBuilder: Создание конфигураций пайплайнов  
+- ComprehensiveDAGBuilder: Создание конфигураций пайплайнов
 - AIRecommendationEngine: Генерация AI рекомендаций
 - EnhancedAirflowDAGGenerator: Создание Airflow кода
 - ETLDAGGenerationSystem: Главный интерфейс системы
@@ -67,7 +67,7 @@ result = await dag_system.create_complete_etl_pipeline(
 
 # Результат содержит:
 # - pipeline_config: Полная конфигурация
-# - generated_files: Пути к Airflow файлам  
+# - generated_files: Пути к Airflow файлам
 # - ai_recommendations: AI рекомендации
 # - report_file: Подробный отчет
 
@@ -76,7 +76,7 @@ result = await dag_system.create_complete_etl_pipeline(
 - Папки с файлами (XML, JSON, CSV)
 - PostgreSQL базы данных
 - ClickHouse хранилища
-- S3 объектные хранилища  
+- S3 объектные хранилища
 - Kafka топики
 - HTTP API эндпоинты
 - FTP/SFTP серверы
@@ -102,35 +102,36 @@ AI оптимизации:
 Команда: AI Data Assistant
 """
 
-from .etl_dag_system import ETLDAGGenerationSystem
-from .comprehensive_dag_builder import ComprehensiveDAGBuilder, ETLPipelineAnalyzer, AIRecommendationEngine
+from .comprehensive_dag_builder import (
+    AIRecommendationEngine,
+    ComprehensiveDAGBuilder,
+    ETLPipelineAnalyzer,
+)
 from .enhanced_airflow_generator import EnhancedAirflowDAGGenerator
+from .etl_dag_system import ETLDAGGenerationSystem
 from .pipeline_config_models import (
-    # Основные конфигурации
-    CompletePipelineWithAI,
-    CompletePipelineConfig,
-    EnhancedExtractConfig,
-    EnhancedTransformConfig, 
-    EnhancedLoadConfig,
-    
-    # Enums
-    SourceType,
-    ContentType,
-    TargetStorageType,
-    LoadStrategy,
-    TransformationType,
-    PipelineType,
-    RecommendationType,
-    
     # AI и метрики
     AIRecommendation,
+    CompletePipelineConfig,
+    # Основные конфигурации
+    CompletePipelineWithAI,
+    ContentType,
+    DataQualityProfile,
+    EnhancedExtractConfig,
+    EnhancedLoadConfig,
+    EnhancedTransformConfig,
+    LoadStrategy,
+    NotificationConfig,
     OptimizationMetrics,
-    
     # Вспомогательные модели
     PipelineMetadata,
-    NotificationConfig,
-    DataQualityProfile,
-    SourceMetrics
+    PipelineType,
+    RecommendationType,
+    SourceMetrics,
+    # Enums
+    SourceType,
+    TargetStorageType,
+    TransformationType,
 )
 
 # Версия системы
@@ -140,52 +141,47 @@ __version__ = "2.0.0"
 __all__ = [
     # Главный интерфейс
     "ETLDAGGenerationSystem",
-    
     # Основные компоненты
     "ComprehensiveDAGBuilder",
-    "ETLPipelineAnalyzer", 
+    "ETLPipelineAnalyzer",
     "AIRecommendationEngine",
     "EnhancedAirflowDAGGenerator",
-    
     # Конфигурационные модели
     "CompletePipelineWithAI",
     "CompletePipelineConfig",
     "EnhancedExtractConfig",
     "EnhancedTransformConfig",
     "EnhancedLoadConfig",
-    
     # Перечисления
     "SourceType",
-    "ContentType", 
+    "ContentType",
     "TargetStorageType",
     "LoadStrategy",
     "TransformationType",
     "PipelineType",
     "RecommendationType",
-    
     # AI и оптимизация
     "AIRecommendation",
     "OptimizationMetrics",
-    
     # Метаданные и настройки
     "PipelineMetadata",
     "NotificationConfig",
     "DataQualityProfile",
     "SourceMetrics",
-    
     # Версия
-    "__version__"
+    "__version__",
 ]
+
 
 # Вспомогательные функции для быстрого старта
 async def quick_xml_pipeline(xml_path: str, pipeline_name: str) -> dict:
     """
     Быстрое создание пайплайна для XML файлов.
-    
+
     Args:
         xml_path: Путь к XML файлам
         pipeline_name: Название пайплайна
-        
+
     Returns:
         Результат создания пайплайна
     """
@@ -194,27 +190,29 @@ async def quick_xml_pipeline(xml_path: str, pipeline_name: str) -> dict:
         source_url=f"file://{xml_path}",
         pipeline_name=pipeline_name,
         owner="xml_processor",
-        team="data_processing"
+        team="data_processing",
     )
+
 
 async def quick_postgres_pipeline(connection_string: str, pipeline_name: str) -> dict:
     """
     Быстрое создание пайплайна для PostgreSQL.
-    
+
     Args:
         connection_string: Строка подключения PostgreSQL
         pipeline_name: Название пайплайна
-        
+
     Returns:
         Результат создания пайплайна
     """
     system = ETLDAGGenerationSystem()
     return await system.create_complete_etl_pipeline(
         source_url=connection_string,
-        pipeline_name=pipeline_name, 
+        pipeline_name=pipeline_name,
         owner="postgres_processor",
-        team="database_team"
+        team="database_team",
     )
+
 
 def print_system_info():
     """Вывод информации о системе."""
@@ -240,10 +238,11 @@ def print_system_info():
 ╚══════════════════════════════════════════════════════════════════╝
     """)
 
+
 # Константы системы
 DEFAULT_OUTPUT_DIR = "generated_etl_pipelines"
 SUPPORTED_SOURCE_TYPES = [e.value for e in SourceType]
-SUPPORTED_CONTENT_TYPES = [e.value for e in ContentType] 
+SUPPORTED_CONTENT_TYPES = [e.value for e in ContentType]
 SUPPORTED_TARGET_STORAGE = [e.value for e in TargetStorageType]
 
 # Настройки по умолчанию
@@ -260,7 +259,7 @@ DEFAULT_DUPLICATE_THRESHOLD = 0.05
 
 # AI настройки
 AI_CONFIDENCE_THRESHOLD = 0.7  # Минимальная уверенность для применения рекомендаций
-AI_MAX_RECOMMENDATIONS = 10    # Максимальное количество рекомендаций
+AI_MAX_RECOMMENDATIONS = 10  # Максимальное количество рекомендаций
 
 if __name__ == "__main__":
     print_system_info()

@@ -10,119 +10,115 @@ Enhanced Airflow DAG Generator
 """
 
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
-import json
 
 sys.path.append("..")
 
 from .pipeline_config_models import (
-    CompletePipelineWithAI, 
-    SourceType, 
-    ContentType, 
+    CompletePipelineWithAI,
+    ContentType,
+    SourceType,
     TargetStorageType,
-    LoadStrategy,
-    TransformationType
 )
 
 
 class EnhancedAirflowDAGGenerator:
     """
     Расширенный генератор Airflow DAG с поддержкой AI рекомендаций.
-    
+
     Создает:
     - Полный Python код DAG
     - Функции задач с обработкой ошибок
     - Интеграцию с существующими парсерами
     - Мониторинг и метрики
     """
-    
+
     def __init__(self, output_dir: str = "generated_dags"):
         """
         Инициализация генератора.
-        
+
         Args:
             output_dir: Директория для сохранения DAG файлов
         """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
-    
-    async def generate_complete_dag(self, pipeline_config: CompletePipelineWithAI) -> Dict[str, str]:
+
+    async def generate_complete_dag(
+        self, pipeline_config: CompletePipelineWithAI
+    ) -> dict[str, str]:
         """
         Генерация полного набора файлов для Airflow DAG.
-        
+
         Args:
             pipeline_config: Полная конфигурация пайплайна
-            
+
         Returns:
             Словарь с путями к созданным файлам
         """
         dag_id = pipeline_config.pipeline_config.metadata.pipeline_id
-        
+
         print(f"🏗️ Генерирую Airflow DAG: {dag_id}")
-        
+
         generated_files = {}
-        
+
         # 1. Основной DAG файл
         dag_content = await self._generate_dag_file_content(pipeline_config)
         dag_file = self.output_dir / f"{dag_id}.py"
-        with open(dag_file, 'w', encoding='utf-8') as f:
+        with open(dag_file, "w", encoding="utf-8") as f:
             f.write(dag_content)
         generated_files["dag_file"] = str(dag_file)
-        
+
         # 2. Модуль функций задач
         functions_content = await self._generate_task_functions_module(pipeline_config)
         functions_file = self.output_dir / f"{dag_id}_functions.py"
-        with open(functions_file, 'w', encoding='utf-8') as f:
+        with open(functions_file, "w", encoding="utf-8") as f:
             f.write(functions_content)
         generated_files["functions_file"] = str(functions_file)
-        
+
         # 3. Конфигурационный файл
         config_content = await self._generate_config_file(pipeline_config)
         config_file = self.output_dir / f"{dag_id}_config.py"
-        with open(config_file, 'w', encoding='utf-8') as f:
+        with open(config_file, "w", encoding="utf-8") as f:
             f.write(config_content)
         generated_files["config_file"] = str(config_file)
-        
+
         # 4. Requirements файл
         requirements_content = await self._generate_requirements(pipeline_config)
         requirements_file = self.output_dir / "requirements.txt"
-        with open(requirements_file, 'w', encoding='utf-8') as f:
+        with open(requirements_file, "w", encoding="utf-8") as f:
             f.write(requirements_content)
         generated_files["requirements_file"] = str(requirements_file)
-        
+
         # 5. Документация по развертыванию
         docs_content = await self._generate_deployment_docs(pipeline_config, generated_files)
         docs_file = self.output_dir / f"{dag_id}_deployment.md"
-        with open(docs_file, 'w', encoding='utf-8') as f:
+        with open(docs_file, "w", encoding="utf-8") as f:
             f.write(docs_content)
         generated_files["documentation"] = str(docs_file)
-        
+
         print(f"✅ Сгенерированы файлы: {list(generated_files.keys())}")
         return generated_files
-    
+
     async def _generate_dag_file_content(self, config: CompletePipelineWithAI) -> str:
         """Генерация основного DAG файла."""
-        
         pipeline = config.pipeline_config
         dag_id = pipeline.metadata.pipeline_id
-        
+
         # AI рекомендации в виде комментариев
         ai_comments = self._generate_ai_recommendations_comments(config.ai_recommendations)
-        
+
         # Импорты
         imports = self._generate_imports(pipeline)
-        
+
         # Конфигурация DAG
         dag_config = self._generate_dag_configuration(pipeline)
-        
+
         # Определения задач
         task_definitions = await self._generate_task_definitions(pipeline)
-        
+
         # Зависимости задач
         task_dependencies = self._generate_task_dependencies()
-        
+
         content = f'''"""
 {pipeline.metadata.description}
 
@@ -150,89 +146,95 @@ from {dag_id}_functions import *
 
 {task_dependencies}
 '''
-        
+
         return content
-    
-    def _generate_ai_recommendations_comments(self, recommendations: List) -> str:
+
+    def _generate_ai_recommendations_comments(self, recommendations: list) -> str:
         """Генерация комментариев с AI рекомендациями."""
         if not recommendations:
             return "# AI рекомендации: не доступны"
-        
+
         comments = ["# AI РЕКОМЕНДАЦИИ ПО ОПТИМИЗАЦИИ:"]
-        
+
         for i, rec in enumerate(recommendations, 1):
             comments.append(f"# {i}. {rec.title}")
             comments.append(f"#    {rec.description}")
             comments.append(f"#    Уверенность: {rec.confidence_score:.0%}")
             comments.append(f"#    Воздействие: {rec.impact_level}")
-            
+
             if rec.estimated_improvement:
-                improvements = ", ".join([f"{k}: {v:.1f}x" for k, v in rec.estimated_improvement.items()])
+                improvements = ", ".join(
+                    [f"{k}: {v:.1f}x" for k, v in rec.estimated_improvement.items()]
+                )
                 comments.append(f"#    Улучшения: {improvements}")
-            
+
             comments.append("#")
-        
+
         return "\n".join(comments)
-    
+
     def _generate_imports(self, pipeline) -> str:
         """Генерация импортов."""
-        
         base_imports = [
             "from datetime import datetime, timedelta",
             "from airflow import DAG",
             "from airflow.operators.python import PythonOperator",
-            "from airflow.operators.bash import BashOperator", 
+            "from airflow.operators.bash import BashOperator",
             "from airflow.operators.dummy import DummyOperator",
             "from airflow.operators.email import EmailOperator",
             "from airflow.sensors.filesystem import FileSensor",
             "import logging",
             "import json",
-            "from pathlib import Path"
+            "from pathlib import Path",
         ]
-        
+
         # Добавляем специфичные импорты на основе конфигурации
         source_type = pipeline.extract_config.source_type
         target_storage = pipeline.load_config.target_storage_type
-        
+
         if target_storage == TargetStorageType.POSTGRES:
-            base_imports.append("from airflow.providers.postgres.operators.postgres import PostgresOperator")
-            base_imports.append("from airflow.providers.postgres.hooks.postgres import PostgresHook")
-        
+            base_imports.append(
+                "from airflow.providers.postgres.operators.postgres import PostgresOperator"
+            )
+            base_imports.append(
+                "from airflow.providers.postgres.hooks.postgres import PostgresHook"
+            )
+
         if target_storage == TargetStorageType.CLICKHOUSE:
-            base_imports.append("from airflow.providers.http.operators.http import SimpleHttpOperator")
-        
+            base_imports.append(
+                "from airflow.providers.http.operators.http import SimpleHttpOperator"
+            )
+
         if source_type == SourceType.FOLDER:
             base_imports.append("# Для работы с файловой системой импорты уже включены")
-        
+
         return "\n".join(base_imports)
-    
+
     def _generate_dag_configuration(self, pipeline) -> str:
         """Генерация конфигурации DAG."""
-        
         schedule = pipeline.extract_config.schedule
-        
+
         default_args = {
-            'owner': pipeline.metadata.owner,
-            'depends_on_past': schedule.depends_on_past,
-            'start_date': f"datetime({schedule.start_date.year}, {schedule.start_date.month}, {schedule.start_date.day})",
-            'email_on_failure': pipeline.notifications.email_on_failure,
-            'email_on_retry': pipeline.notifications.email_on_retry,
-            'retries': schedule.retry_count,
-            'retry_delay': f'timedelta(minutes={schedule.retry_delay_minutes})',
-            'execution_timeout': f'timedelta(hours={schedule.execution_timeout_hours})'
+            "owner": pipeline.metadata.owner,
+            "depends_on_past": schedule.depends_on_past,
+            "start_date": f"datetime({schedule.start_date.year}, {schedule.start_date.month}, {schedule.start_date.day})",
+            "email_on_failure": pipeline.notifications.email_on_failure,
+            "email_on_retry": pipeline.notifications.email_on_retry,
+            "retries": schedule.retry_count,
+            "retry_delay": f"timedelta(minutes={schedule.retry_delay_minutes})",
+            "execution_timeout": f"timedelta(hours={schedule.execution_timeout_hours})",
         }
-        
+
         if pipeline.notifications.email_addresses:
-            default_args['email'] = str(pipeline.notifications.email_addresses)
-        
+            default_args["email"] = str(pipeline.notifications.email_addresses)
+
         args_lines = ["default_args = {"]
         for key, value in default_args.items():
-            if isinstance(value, str) and not value.startswith(('datetime', 'timedelta', '[')):
+            if isinstance(value, str) and not value.startswith(("datetime", "timedelta", "[")):
                 args_lines.append(f'    "{key}": "{value}",')
             else:
                 args_lines.append(f'    "{key}": {value},')
         args_lines.append("}")
-        
+
         dag_definition = f'''
 {chr(10).join(args_lines)}
 
@@ -246,39 +248,38 @@ dag = DAG(
     max_active_runs={schedule.max_active_runs},
     tags={pipeline.metadata.tags}
 )'''
-        
+
         return dag_definition
-    
+
     async def _generate_task_definitions(self, pipeline) -> str:
         """Генерация определений задач."""
-        
         extract_config = pipeline.extract_config
         transform_config = pipeline.transform_config
         load_config = pipeline.load_config
-        
+
         tasks = []
-        
+
         # Start task
-        tasks.append('''
+        tasks.append("""
 # Стартовая задача
 start_task = DummyOperator(
     task_id="start_pipeline",
     dag=dag
-)''')
-        
+)""")
+
         # Задачи валидации источника
         if extract_config.data_quality.schema_drift_detection:
-            tasks.append('''
+            tasks.append("""
 # Валидация источника данных
 validate_source_task = PythonOperator(
     task_id="validate_source",
     python_callable=validate_source_data,
     provide_context=True,
     dag=dag
-)''')
-        
+)""")
+
         # Задача извлечения
-        tasks.append(f'''
+        tasks.append(f"""
 # Извлечение данных
 extract_task = PythonOperator(
     task_id="extract_data",
@@ -286,33 +287,33 @@ extract_task = PythonOperator(
     provide_context=True,
     pool_slots={extract_config.resources.parallel_workers},
     dag=dag
-)''')
-        
+)""")
+
         # Задачи трансформации
         if transform_config.transformation_rules:
-            tasks.append('''
+            tasks.append("""
 # Трансформация данных  
 transform_task = PythonOperator(
     task_id="transform_data",
     python_callable=transform_data,
     provide_context=True,
     dag=dag
-)''')
-        
+)""")
+
         # Задача валидации трансформированных данных
         if transform_config.quality_checks:
-            tasks.append('''
+            tasks.append("""
 # Валидация трансформированных данных
 validate_transform_task = PythonOperator(
     task_id="validate_transformed_data", 
     python_callable=validate_transformed_data,
     provide_context=True,
     dag=dag
-)''')
-        
+)""")
+
         # Задача загрузки
         if load_config.target_storage_type == TargetStorageType.POSTGRES:
-            tasks.append(f'''
+            tasks.append(f"""
 # Загрузка в PostgreSQL
 load_task = PythonOperator(
     task_id="load_to_postgres",
@@ -320,9 +321,9 @@ load_task = PythonOperator(
     provide_context=True,
     pool_slots={load_config.resources.concurrent_connections},
     dag=dag
-)''')
+)""")
         elif load_config.target_storage_type == TargetStorageType.CLICKHOUSE:
-            tasks.append(f'''
+            tasks.append(f"""
 # Загрузка в ClickHouse
 load_task = PythonOperator(
     task_id="load_to_clickhouse",
@@ -330,21 +331,21 @@ load_task = PythonOperator(
     provide_context=True,
     pool_slots={load_config.resources.concurrent_connections},
     dag=dag
-)''')
-        
+)""")
+
         # Задача валидации загруженных данных
         if load_config.quality_checks.row_count_validation:
-            tasks.append('''
+            tasks.append("""
 # Валидация загруженных данных
 validate_load_task = PythonOperator(
     task_id="validate_loaded_data",
     python_callable=validate_loaded_data,
     provide_context=True,
     dag=dag
-)''')
-        
+)""")
+
         # Задача очистки
-        tasks.append('''
+        tasks.append("""
 # Очистка временных файлов
 cleanup_task = PythonOperator(
     task_id="cleanup_temp_files",
@@ -352,8 +353,8 @@ cleanup_task = PythonOperator(
     provide_context=True,
     trigger_rule="all_done",
     dag=dag
-)''')
-        
+)""")
+
         # Задача уведомления об успехе
         if pipeline.notifications.email_on_success:
             tasks.append(f'''
@@ -370,40 +371,38 @@ success_notification = EmailOperator(
     """,
     dag=dag
 )''')
-        
+
         # End task
-        tasks.append('''
+        tasks.append("""
 # Финальная задача
 end_task = DummyOperator(
     task_id="end_pipeline",
     trigger_rule="none_failed_min_one_success",
     dag=dag
-)''')
-        
+)""")
+
         return "\n".join(tasks)
-    
+
     def _generate_task_dependencies(self) -> str:
         """Генерация зависимостей задач."""
-        
         dependencies = [
             "# Зависимости задач",
             "start_task >> validate_source_task >> extract_task",
-            "extract_task >> transform_task >> validate_transform_task", 
+            "extract_task >> transform_task >> validate_transform_task",
             "validate_transform_task >> load_task >> validate_load_task",
             "validate_load_task >> success_notification >> end_task",
-            "[validate_load_task, success_notification] >> cleanup_task >> end_task"
+            "[validate_load_task, success_notification] >> cleanup_task >> end_task",
         ]
-        
+
         return "\n".join(dependencies)
-    
+
     async def _generate_task_functions_module(self, config: CompletePipelineWithAI) -> str:
         """Генерация модуля с функциями задач."""
-        
         pipeline = config.pipeline_config
         extract_config = pipeline.extract_config
         transform_config = pipeline.transform_config
         load_config = pipeline.load_config
-        
+
         content = f'''"""
 Task Functions Module for {pipeline.metadata.pipeline_name}
 
@@ -750,16 +749,15 @@ def cleanup_temp_files(**context):
     
     return {{"cleanup_status": "completed", "files_removed": len(temp_files)}}
 '''
-        
+
         return content
-    
+
     async def _generate_config_file(self, config: CompletePipelineWithAI) -> str:
         """Генерация конфигурационного файла."""
-        
         pipeline = config.pipeline_config
         extract_config = pipeline.extract_config
         load_config = pipeline.load_config
-        
+
         content = f'''"""
 Configuration file for {pipeline.metadata.pipeline_name}
 
@@ -815,37 +813,40 @@ NOTIFICATION_EMAILS = {pipeline.notifications.email_addresses}
 # Performance Settings (from AI Recommendations)
 {self._generate_ai_performance_settings(config.ai_recommendations)}
 '''
-        
+
         return content
-    
-    def _generate_ai_performance_settings(self, recommendations: List) -> str:
+
+    def _generate_ai_performance_settings(self, recommendations: list) -> str:
         """Генерация настроек производительности на основе AI рекомендаций."""
         settings = []
-        
+
         for rec in recommendations:
             if rec.recommendation_type.value == "performance_tuning":
                 settings.append(f"# AI Рекомендация: {rec.title}")
-                
+
                 if "processing_speed" in rec.estimated_improvement:
-                    settings.append(f"ENABLE_STREAMING_PARSING = True  # Улучшение: {rec.estimated_improvement['processing_speed']:.1f}x")
-                
+                    settings.append(
+                        f"ENABLE_STREAMING_PARSING = True  # Улучшение: {rec.estimated_improvement['processing_speed']:.1f}x"
+                    )
+
                 if "memory_efficiency" in rec.estimated_improvement:
-                    settings.append(f"ENABLE_MEMORY_OPTIMIZATION = True  # Улучшение: {rec.estimated_improvement['memory_efficiency']:.1f}x")
-            
+                    settings.append(
+                        f"ENABLE_MEMORY_OPTIMIZATION = True  # Улучшение: {rec.estimated_improvement['memory_efficiency']:.1f}x"
+                    )
+
             elif rec.recommendation_type.value == "resource_allocation":
                 settings.append(f"# AI Рекомендация: {rec.title}")
                 settings.append("ENABLE_PARALLEL_PROCESSING = True")
-        
+
         if not settings:
             settings.append("# AI рекомендации по производительности не найдены")
-        
+
         return "\n".join(settings)
-    
+
     async def _generate_requirements(self, config: CompletePipelineWithAI) -> str:
         """Генерация requirements.txt."""
-        
         pipeline = config.pipeline_config
-        
+
         requirements = [
             "# Core Airflow dependencies",
             "apache-airflow>=2.7.0",
@@ -859,43 +860,39 @@ NOTIFICATION_EMAILS = {pipeline.notifications.email_addresses}
             "",
             "# XML processing (if needed)",
         ]
-        
+
         if pipeline.extract_config.content_type == ContentType.XML:
-            requirements.extend([
-                "lxml>=4.9.0",
-                "xmltodict>=0.13.0",
-            ])
-        
+            requirements.extend(
+                [
+                    "lxml>=4.9.0",
+                    "xmltodict>=0.13.0",
+                ]
+            )
+
         if pipeline.load_config.target_storage_type == TargetStorageType.POSTGRES:
-            requirements.extend([
-                "",
-                "# PostgreSQL",
-                "psycopg2-binary>=2.9.0",
-                "sqlalchemy>=2.0.0"
-            ])
-        
+            requirements.extend(["", "# PostgreSQL", "psycopg2-binary>=2.9.0", "sqlalchemy>=2.0.0"])
+
         if pipeline.load_config.target_storage_type == TargetStorageType.CLICKHOUSE:
-            requirements.extend([
-                "",
-                "# ClickHouse", 
-                "clickhouse-driver>=0.2.0",
-                "clickhouse-connect>=0.6.0"
-            ])
-        
+            requirements.extend(
+                ["", "# ClickHouse", "clickhouse-driver>=0.2.0", "clickhouse-connect>=0.6.0"]
+            )
+
         return "\n".join(requirements)
-    
-    async def _generate_deployment_docs(self, config: CompletePipelineWithAI, generated_files: Dict[str, str]) -> str:
+
+    async def _generate_deployment_docs(
+        self, config: CompletePipelineWithAI, generated_files: dict[str, str]
+    ) -> str:
         """Генерация документации по развертыванию."""
-        
         pipeline = config.pipeline_config
         dag_id = pipeline.metadata.pipeline_id
-        
+
         # AI рекомендации для развертывания
         deployment_recommendations = [
-            rec for rec in config.ai_recommendations 
+            rec
+            for rec in config.ai_recommendations
             if rec.recommendation_type.value in ["resource_allocation", "performance_tuning"]
         ]
-        
+
         ai_deployment_section = ""
         if deployment_recommendations:
             ai_deployment_section = "## 🤖 AI Рекомендации для развертывания\n\n"
@@ -909,7 +906,7 @@ NOTIFICATION_EMAILS = {pipeline.notifications.email_addresses}
                     for step in rec.implementation_steps:
                         ai_deployment_section += f"- {step}\n"
                 ai_deployment_section += "\n"
-        
+
         content = f'''# Deployment Guide for {pipeline.metadata.pipeline_name}
 
 Автоматически сгенерированная документация для развертывания ETL пайплайна.
@@ -924,12 +921,19 @@ NOTIFICATION_EMAILS = {pipeline.notifications.email_addresses}
 
 ## 📁 Сгенерированные файлы
 
-{chr(10).join([f"- `{Path(path).name}` - {desc}" for desc, path in [
-    ("Основной DAG файл", generated_files["dag_file"]),
-    ("Модуль функций задач", generated_files["functions_file"]),
-    ("Конфигурационный файл", generated_files["config_file"]),
-    ("Зависимости Python", generated_files["requirements_file"])
-]])}
+{
+            chr(10).join(
+                [
+                    f"- `{Path(path).name}` - {desc}"
+                    for desc, path in [
+                        ("Основной DAG файл", generated_files["dag_file"]),
+                        ("Модуль функций задач", generated_files["functions_file"]),
+                        ("Конфигурационный файл", generated_files["config_file"]),
+                        ("Зависимости Python", generated_files["requirements_file"]),
+                    ]
+                ]
+            )
+        }
 
 ## 🚀 Инструкции по развертыванию
 
@@ -989,7 +993,9 @@ CREATE TABLE {pipeline.load_config.schema_name}.{pipeline.load_config.table_name
 # Установка переменных конфигурации
 airflow variables set {dag_id}_batch_size {pipeline.extract_config.batch_size}
 airflow variables set {dag_id}_parallel_workers {pipeline.extract_config.resources.parallel_workers}
-airflow variables set {dag_id}_notification_email "{','.join(pipeline.notifications.email_addresses)}"
+airflow variables set {dag_id}_notification_email "{
+            ",".join(pipeline.notifications.email_addresses)
+        }"
 ```
 
 ### 6. Тестирование DAG
@@ -1016,7 +1022,9 @@ airflow tasks list {dag_id}
 
 ```bash
 # Создание пула ресурсов
-airflow pools set {dag_id}_pool {pipeline.extract_config.resources.parallel_workers} "Pool for {dag_id}"
+airflow pools set {dag_id}_pool {pipeline.extract_config.resources.parallel_workers} "Pool for {
+            dag_id
+        }"
 ```
 
 {ai_deployment_section}
@@ -1032,7 +1040,7 @@ airflow pools set {dag_id}_pool {pipeline.extract_config.resources.parallel_work
 
 ### Настройка алертов:
 - Email уведомления при сбоях: {pipeline.notifications.email_on_failure}
-- SLA: {pipeline.sla_minutes or 'не установлено'} минут
+- SLA: {pipeline.sla_minutes or "не установлено"} минут
 
 ## 🔧 Устранение неполадок
 
@@ -1058,63 +1066,63 @@ airflow pools set {dag_id}_pool {pipeline.extract_config.resources.parallel_work
 
 - **Владелец:** {pipeline.metadata.owner}
 - **Команда:** {pipeline.metadata.team}
-- **Email для уведомлений:** {', '.join(pipeline.notifications.email_addresses)}
+- **Email для уведомлений:** {", ".join(pipeline.notifications.email_addresses)}
 
 ---
 
-*Документация создана автоматически {config.generated_at.strftime('%Y-%m-%d %H:%M:%S')}*
+*Документация создана автоматически {config.generated_at.strftime("%Y-%m-%d %H:%M:%S")}*
 *Версия генератора: {config.generator_version}*
 '''
-        
+
         return content
-    
-    def _get_recommendation_for_task(self, recommendations: List, task_type: str) -> str:
+
+    def _get_recommendation_for_task(self, recommendations: list, task_type: str) -> str:
         """Получение рекомендации для конкретного типа задачи."""
         for rec in recommendations:
             if task_type.lower() in rec.description.lower():
                 return rec.description
         return "Специальные рекомендации отсутствуют"
-    
+
     def _generate_transform_rules_comment(self, transform_config) -> str:
         """Генерация комментария с правилами трансформации."""
         if not transform_config.transformation_rules:
             return "    # Стандартная трансформация XML геоданных"
-        
+
         rules = []
         for rule in transform_config.transformation_rules:
             rules.append(f"    # - {rule.rule_name}: {rule.expression}")
-        
+
         return "\n".join(rules)
 
 
 # Пример использования
 async def main():
     """Демонстрация генерации DAG."""
-    
     # Импорт builder для создания полной конфигурации
     from .comprehensive_dag_builder import ComprehensiveDAGBuilder
-    
+
     # Создание полного пайплайна
     builder = ComprehensiveDAGBuilder()
     pipeline_config = await builder.build_complete_pipeline_from_url(
         source_url="file://d:/lct-hack-2025/backend/parsers/sample/XML/",
         pipeline_name="Enhanced Geospatial XML Processing",
         owner="senior_data_engineer",
-        team="geo_analytics_team"
+        team="geo_analytics_team",
     )
-    
+
     # Генерация Airflow DAG
     generator = EnhancedAirflowDAGGenerator()
     generated_files = await generator.generate_complete_dag(pipeline_config)
-    
+
     print("🎉 Генерация завершена!")
     print("📁 Созданные файлы:")
     for file_type, file_path in generated_files.items():
         print(f"   {file_type}: {file_path}")
-    
+
     return generated_files
 
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
