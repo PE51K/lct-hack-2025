@@ -1,14 +1,17 @@
-"""ETL execution endpoint logic."""
+"""Router for ETL execution endpoints."""
 
 import asyncio
 import json
 
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from models.execute_etl import ExecuteETLRequest, ExecuteETLResponse
 
+router = APIRouter()
 
-def execute_etl_endpoint(request: ExecuteETLRequest) -> StreamingResponse:
+@router.post("/execute_etl")
+async def execute_etl(request: ExecuteETLRequest) -> StreamingResponse:
     """
     Executes the ETL pipeline with provided metadata.
 

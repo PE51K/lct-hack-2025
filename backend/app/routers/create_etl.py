@@ -1,13 +1,14 @@
-"""ETL update endpoint logic."""
+"""Router for ETL creation (generation) endpoints."""
 
 import asyncio
 import json
 
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from models.update_etl import UpdateETLRequest, UpdateETLResponse
+from models.generate_etl import GenerateETLRequest, GenerateETLResponse
 
-from .mock_data import (
+from ..mock_data import (
     generate_mock_dag,
     generate_mock_ddl,
     generate_mock_extract_config,
@@ -15,26 +16,28 @@ from .mock_data import (
     generate_mock_transform_config,
 )
 
+router = APIRouter()
 
-def update_etl_endpoint(request: UpdateETLRequest) -> StreamingResponse:
+@router.post("/generate_etl")
+async def create_etl(request: GenerateETLRequest) -> StreamingResponse:
     """
-    Updates the ETL pipeline based on feedback or error messages.
+    Generate ETL pipeline and recommendations based on input data URI.
 
     Args:
-        request (UpdateETLRequest): The request containing feedback and metadata.
+        request (GenerateETLRequest): The request containing input data URI and metadata.
 
     Returns:
-        StreamingResponse: A streaming response with update status.
+        StreamingResponse: A streaming response with generation status updates.
     """
     ids = request.ids
 
     async def generate():
-        # Step 1: Processing feedback
+        # Step 1: Analyzing data
         yield (
             json.dumps(
-                UpdateETLResponse(
+                GenerateETLResponse(
                     ids=ids,
-                    message="Processing user feedback...",
+                    message="Analyzing input data from URI...",
                     done=False,
                 ).model_dump()
             )
@@ -42,12 +45,12 @@ def update_etl_endpoint(request: UpdateETLRequest) -> StreamingResponse:
         )
         await asyncio.sleep(1)
 
-        # Step 2: Updating extract config
+        # Step 2: Generating extract config
         yield (
             json.dumps(
-                UpdateETLResponse(
+                GenerateETLResponse(
                     ids=ids,
-                    message="Updating extract configuration based on feedback...",
+                    message="Generating extract configuration...",
                     done=False,
                     extract_config=generate_mock_extract_config(),
                 ).model_dump()
@@ -56,12 +59,12 @@ def update_etl_endpoint(request: UpdateETLRequest) -> StreamingResponse:
         )
         await asyncio.sleep(1)
 
-        # Step 3: Updating transform config
+        # Step 3: Generating transform config
         yield (
             json.dumps(
-                UpdateETLResponse(
+                GenerateETLResponse(
                     ids=ids,
-                    message="Updating transform configuration...",
+                    message="Generating transform configuration...",
                     done=False,
                     extract_config=generate_mock_extract_config(),
                     transform_config=generate_mock_transform_config(),
@@ -71,12 +74,12 @@ def update_etl_endpoint(request: UpdateETLRequest) -> StreamingResponse:
         )
         await asyncio.sleep(1)
 
-        # Step 4: Updating load config
+        # Step 4: Generating load config
         yield (
             json.dumps(
-                UpdateETLResponse(
+                GenerateETLResponse(
                     ids=ids,
-                    message="Updating load configuration...",
+                    message="Generating load configuration...",
                     done=False,
                     extract_config=generate_mock_extract_config(),
                     transform_config=generate_mock_transform_config(),
@@ -87,12 +90,12 @@ def update_etl_endpoint(request: UpdateETLRequest) -> StreamingResponse:
         )
         await asyncio.sleep(1)
 
-        # Step 5: Updating DDL
+        # Step 5: Generating DDL
         yield (
             json.dumps(
-                UpdateETLResponse(
+                GenerateETLResponse(
                     ids=ids,
-                    message="Updating DDL statements...",
+                    message="Generating DDL statements...",
                     done=False,
                     extract_config=generate_mock_extract_config(),
                     transform_config=generate_mock_transform_config(),
@@ -104,12 +107,12 @@ def update_etl_endpoint(request: UpdateETLRequest) -> StreamingResponse:
         )
         await asyncio.sleep(1)
 
-        # Step 6: Updating DAG
+        # Step 6: Generating DAG
         yield (
             json.dumps(
-                UpdateETLResponse(
+                GenerateETLResponse(
                     ids=ids,
-                    message="Updating DAG structure...",
+                    message="Generating DAG structure...",
                     done=False,
                     extract_config=generate_mock_extract_config(),
                     transform_config=generate_mock_transform_config(),
@@ -125,9 +128,9 @@ def update_etl_endpoint(request: UpdateETLRequest) -> StreamingResponse:
         # Final: Complete
         yield (
             json.dumps(
-                UpdateETLResponse(
+                GenerateETLResponse(
                     ids=ids,
-                    message="ETL update complete.",
+                    message="ETL generation complete.",
                     done=True,
                     extract_config=generate_mock_extract_config(),
                     transform_config=generate_mock_transform_config(),
