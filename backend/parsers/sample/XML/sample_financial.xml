@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<financial_data>
+    <header>
+        <report_date>2025-09-30</report_date>
+        <currency>RUB</currency>
+        <region>Russia</region>
+    </header>
+    <transactions>
+        <transaction id="tx_001">
+            <date>2025-09-30</date>
+            <amount>15000.50</amount>
+            <type>purchase</type>
+            <merchant>
+                <name>Tech Store Moscow</name>
+                <category>electronics</category>
+                <location>
+                    <city>Moscow</city>
+                    <coordinates>
+                        <lat>55.7522</lat>
+                        <lon>37.6156</lon>
+                    </coordinates>
+                </location>
+            </merchant>
+            <customer>
+                <id>cust_12345</id>
+                <segment>premium</segment>
+                <payment_method>card</payment_method>
+            </customer>
+        </transaction>
+        <transaction id="tx_002">
+            <date>2025-09-30</date>
+            <amount>3500.00</amount>
+            <type>refund</type>
+            <merchant>
+                <name>Online Marketplace</name>
+                <category>retail</category>
+                <location>
+                    <city>Saint Petersburg</city>
+                    <coordinates>
+                        <lat>59.9386</lat>
+                        <lon>30.3141</lon>
+                    </coordinates>
+                </location>
+            </merchant>
+            <customer>
+                <id>cust_67890</id>
+                <segment>regular</segment>
+                <payment_method>bank_transfer</payment_method>
+            </customer>
+        </transaction>
+    </transactions>
+</financial_data>
