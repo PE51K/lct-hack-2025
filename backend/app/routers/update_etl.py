@@ -6,88 +6,13 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from models.dag import DAG
-from models.ddl import DDL
-from models.extract import Content, ContentType, ExtractConfig, Source, SourceType
-from models.load import (
-    Field,
-    FlatMetaModel,
-    LoadConfig,
-    NestingMetaModel,
-    TargetStorageTypeRecommendation,
-)
-from models.transform import TransformConfig
-from models.update_etl import UpdateETLRequest, UpdateETLResponse
-
-
-def generate_mock_extract_config() -> ExtractConfig:
-    """Generate mock extract configuration."""
-    return ExtractConfig(
-        source_metadata=Source(
-            source_type=SourceType.folder,
-            connection_string="s3://mock-bucket/data/",
-            content_type=ContentType.csv,
-        ),
-        content_metadata=[
-            Content(
-                message_name="data1.csv",
-                metamodel={
-                    "type": "object",
-                    "properties": {
-                        "id": {"type": "integer"},
-                        "name": {"type": "string"},
-                        "value": {"type": "number"},
-                    },
-                },
-            )
-        ],
-        content_statistics={"total_files": 1, "total_size": 1024},
-    )
-
-
-def generate_mock_transform_config() -> TransformConfig:
-    """Generate mock transform configuration."""
-    return TransformConfig(
-        identity_keys=["id"],
-        aggregate_keys=["name"],
-        versioning_field="timestamp",
-    )
-
-
-def generate_mock_load_config() -> LoadConfig:
-    """Generate mock load configuration."""
-    return LoadConfig(
-        target_storage_type=TargetStorageTypeRecommendation(
-            storage_type="postgres",
-            explanation="Relational database suitable for structured data.",
-        ),
-        target_storage_connection_string="postgresql://user:pass@localhost:5432/db",
-        nesting_metamodel=NestingMetaModel(
-            data_structure={"type": "object"},
-            partitioning_key="id",
-        ),
-        flat_meta_model=FlatMetaModel(
-            fields=[
-                Field(name="id", data_type="INTEGER", nullable=False),
-                Field(name="name", data_type="VARCHAR(255)", nullable=True),
-                Field(name="value", data_type="DECIMAL", nullable=True),
-            ],
-            indexes=[],
-            partitioning_key="id",
-        ),
-    )
-
-
-def generate_mock_dag() -> DAG:
-    """Generate mock DAG."""
-    return DAG()  # Empty for now
-
-
-def generate_mock_ddl() -> DDL:
-    """Generate mock DDL."""
-    return DDL()  # Empty for now
-
-
+from models.app.update_etl import UpdateETLRequest, UpdateETLResponse
+from ai.workflows.extract_source import extract_source_from_user_prompt
+from ai.workflows.build_load_config import build_load_config_from_extract_config_and_prompt
+from ai.workflows.build_transform_config import build_transform_config_from_configs_and_prompt
+from builders.extract import ExtractConfigBuilder
+from builders.ddl import generate_ddl_from_configs
+from builders.dag import generate_dag_from_configs
 update_router = APIRouter()
 
 
@@ -105,114 +30,108 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
     ids = request.ids
 
     async def generate():
-        # Step 1: Processing feedback
-        yield (
-            json.dumps(
-                UpdateETLResponse(
-                    ids=ids,
-                    message="Processing user feedback...",
-                    done=False,
-                ).model_dump()
-            )
-            + "\n"
-        )
-        await asyncio.sleep(1)
+        try:
+            # Step 1: Processing feedback (10%)
+            yield UpdateETLResponse(
+                ids=ids,
+                processing_done=False,
+                processing_percentage_done=10.0,
+                processing_message="Processing user feedback...",
+                success=True,
+            ).model_dump_json() + "\n"
+            await asyncio.sleep(1)
 
-        # Step 2: Updating extract config
-        yield (
-            json.dumps(
-                UpdateETLResponse(
-                    ids=ids,
-                    message="Updating extract configuration based on feedback...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                ).model_dump()
-            )
-            + "\n"
-        )
-        await asyncio.sleep(1)
+            # For update, we start with existing configs and modify based on feedback
+            # For simplicity, we'll regenerate from scratch with feedback incorporated into prompt
+            feedback_text = " ".join([f"{item.area}: {item.message}" for item in request.feedback.items])
+            if request.feedback.overall:
+                feedback_text += f" Overall: {request.feedback.overall}"
 
-        # Step 3: Updating transform config
-        yield (
-            json.dumps(
-                UpdateETLResponse(
-                    ids=ids,
-                    message="Updating transform configuration...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                ).model_dump()
-            )
-            + "\n"
-        )
-        await asyncio.sleep(1)
+            # Step 2: Updating extract config (30%)
+            yield UpdateETLResponse(
+                ids=ids,
+                processing_done=False,
+                processing_percentage_done=30.0,
+                processing_message="Updating extract configuration based on feedback...",
+                success=True,
+            ).model_dump_json() + "\n"
 
-        # Step 4: Updating load config
-        yield (
-            json.dumps(
-                UpdateETLResponse(
-                    ids=ids,
-                    message="Updating load configuration...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                    load_config=generate_mock_load_config(),
-                ).model_dump()
-            )
-            + "\n"
-        )
-        await asyncio.sleep(1)
+            # Re-extract source with feedback
+            source = await extract_source_from_user_prompt(feedback_text)
+            extract_config = await ExtractConfigBuilder.from_source(source)
 
-        # Step 5: Updating DDL
-        yield (
-            json.dumps(
-                UpdateETLResponse(
-                    ids=ids,
-                    message="Updating DDL statements...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                    load_config=generate_mock_load_config(),
-                    ddl=generate_mock_ddl(),
-                ).model_dump()
-            )
-            + "\n"
-        )
-        await asyncio.sleep(1)
+            # Step 3: Updating load config (50%)
+            yield UpdateETLResponse(
+                ids=ids,
+                processing_done=False,
+                processing_percentage_done=50.0,
+                processing_message="Updating load configuration...",
+                success=True,
+            ).model_dump_json() + "\n"
 
-        # Step 6: Updating DAG
-        yield (
-            json.dumps(
-                UpdateETLResponse(
-                    ids=ids,
-                    message="Updating DAG structure...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                    load_config=generate_mock_load_config(),
-                    ddl=generate_mock_ddl(),
-                    dag=generate_mock_dag(),
-                ).model_dump()
+            load_config = await build_load_config_from_extract_config_and_prompt(
+                extract_config, feedback_text
             )
-            + "\n"
-        )
-        await asyncio.sleep(1)
 
-        # Final: Complete
-        yield (
-            json.dumps(
-                UpdateETLResponse(
-                    ids=ids,
-                    message="ETL update complete.",
-                    done=True,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                    load_config=generate_mock_load_config(),
-                    ddl=generate_mock_ddl(),
-                    dag=generate_mock_dag(),
-                ).model_dump()
+            # Step 4: Updating DDL (70%)
+            yield UpdateETLResponse(
+                ids=ids,
+                processing_done=False,
+                processing_percentage_done=70.0,
+                processing_message="Updating DDL statements...",
+                success=True,
+            ).model_dump_json() + "\n"
+
+            ddl = await generate_ddl_from_configs(extract_config, load_config)
+
+            # Step 5: Updating transform config (90%)
+            yield UpdateETLResponse(
+                ids=ids,
+                processing_done=False,
+                processing_percentage_done=90.0,
+                processing_message="Updating transform configuration...",
+                success=True,
+            ).model_dump_json() + "\n"
+
+            transform_config = await build_transform_config_from_configs_and_prompt(
+                ddl, extract_config, load_config, feedback_text
             )
-            + "\n"
-        )
+
+            # Step 6: Updating DAG (100%)
+            yield UpdateETLResponse(
+                ids=ids,
+                processing_done=False,
+                processing_percentage_done=100.0,
+                processing_message="Updating DAG structure...",
+                success=True,
+            ).model_dump_json() + "\n"
+
+            dag = await generate_dag_from_configs(
+                extract_config, transform_config, load_config, ddl
+            )
+
+            # Final: Complete
+            yield UpdateETLResponse(
+                ids=ids,
+                processing_done=True,
+                processing_percentage_done=100.0,
+                processing_message="ETL update complete.",
+                success=True,
+                extract_config=extract_config,
+                transform_config=transform_config,
+                load_config=load_config,
+                ddl=ddl,
+                dag=dag,
+            ).model_dump_json() + "\n"
+
+        except Exception as e:
+            yield UpdateETLResponse(
+                ids=ids,
+                processing_done=True,
+                processing_percentage_done=0.0,
+                processing_message=f"Error during ETL update: {str(e)}",
+                success=False,
+                error_message=str(e),
+            ).model_dump_json() + "\n"
 
     return StreamingResponse(generate(), media_type="application/x-ndjson")

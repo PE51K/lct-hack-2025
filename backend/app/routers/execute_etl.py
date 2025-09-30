@@ -6,7 +6,7 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from models.execute_etl import ExecuteETLRequest, ExecuteETLResponse
+from models.app.execute_etl import ExecuteETLRequest, ExecuteETLResponse
 
 execute_router = APIRouter()
 

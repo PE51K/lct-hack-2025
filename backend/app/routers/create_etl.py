@@ -9,210 +9,118 @@ from fastapi.responses import StreamingResponse
 from models.dag import DAG
 from models.ddl import DDL
 from models.extract import Content, ContentType, ExtractConfig, Source, SourceType
-from models.generate_etl import GenerateETLRequest, GenerateETLResponse
-from models.load import (
-    Field,
-    FlatMetaModel,
-    LoadConfig,
-    NestingMetaModel,
-    TargetStorageTypeRecommendation,
-)
-from models.transform import TransformConfig
-
-
-def generate_mock_extract_config() -> ExtractConfig:
-    """Generate mock extract configuration."""
-    return ExtractConfig(
-        source_metadata=Source(
-            source_type=SourceType.folder,
-            connection_string="s3://mock-bucket/data/",
-            content_type=ContentType.csv,
-        ),
-        content_metadata=[
-            Content(
-                message_name="data1.csv",
-                metamodel={
-                    "type": "object",
-                    "properties": {
-                        "id": {"type": "integer"},
-                        "name": {"type": "string"},
-                        "value": {"type": "number"},
-                    },
-                },
-            )
-        ],
-        content_statistics={"total_files": 1, "total_size": 1024},
-    )
-
-
-def generate_mock_transform_config() -> TransformConfig:
-    """Generate mock transform configuration."""
-    return TransformConfig(
-        identity_keys=["id"],
-        aggregate_keys=["name"],
-        versioning_field="timestamp",
-    )
-
-
-def generate_mock_load_config() -> LoadConfig:
-    """Generate mock load configuration."""
-    return LoadConfig(
-        target_storage_type=TargetStorageTypeRecommendation(
-            storage_type="postgres",
-            explanation="Relational database suitable for structured data.",
-        ),
-        target_storage_connection_string="postgresql://user:pass@localhost:5432/db",
-        nesting_metamodel=NestingMetaModel(
-            data_structure={"type": "object"},
-            partitioning_key="id",
-        ),
-        flat_meta_model=FlatMetaModel(
-            fields=[
-                Field(name="id", data_type="INTEGER", nullable=False),
-                Field(name="name", data_type="VARCHAR(255)", nullable=True),
-                Field(name="value", data_type="DECIMAL", nullable=True),
-            ],
-            indexes=[],
-            partitioning_key="id",
-        ),
-    )
-
-
-def generate_mock_dag() -> DAG:
-    """Generate mock DAG."""
-    return DAG()  # Empty for now
-
-
-def generate_mock_ddl() -> DDL:
-    """Generate mock DDL."""
-    return DDL()  # Empty for now
+from models.app import CreateETLRequest, CreateETLResponse
+from ai.workflows.extract_source import extract_source_from_user_prompt
+from ai.workflows.build_load_config import build_load_config_from_extract_config_and_prompt
+from ai.workflows.build_transform_config import build_transform_config_from_configs_and_prompt
+from builders.extract import ExtractConfigBuilder
+from builders.ddl import generate_ddl_from_configs
+from builders.dag import generate_dag_from_configs
 
 
 create_router = APIRouter()
 
 
-@create_router.post("/generate_etl")
-async def create_etl(request: GenerateETLRequest) -> StreamingResponse:
-    """
-    Generate ETL pipeline and recommendations based on input data URI.
+@create_router.post("/create_etl")
+async def create_etl(request: CreateETLRequest) -> StreamingResponse:
+    """Create an ETL pipeline."""
+    # Define async streaming generator
+    async def create(request: CreateETLRequest):
+        try:
+            # Step 1. Extract Source object from user prompt (10%)
+            yield CreateETLResponse(
+                ids=request.ids,
+                processing_done=False,
+                processing_percentage_done=10.0,
+                processing_message="Extracting source from user prompt...",
+                success=True,
+            ).model_dump_json() + "\n"
 
-    Args:
-        request (GenerateETLRequest): The request containing input data URI and metadata.
+            source: Source = await extract_source_from_user_prompt(request.user_prompt)
 
-    Returns:
-        StreamingResponse: A streaming response with generation status updates.
-    """
-    ids = request.ids
+            # Step 2. Build ExtractConfig from source (20%)
+            yield CreateETLResponse(
+                ids=request.ids,
+                processing_done=False,
+                processing_percentage_done=20.0,
+                processing_message="Building extract configuration...",
+                success=True,
+            ).model_dump_json() + "\n"
 
-    async def generate():
-        # Step 1: Analyzing data
-        yield (
-            json.dumps(
-                GenerateETLResponse(
-                    ids=ids,
-                    message="Analyzing input data from URI...",
-                    done=False,
-                ).model_dump()
+            extract_config = await ExtractConfigBuilder.from_source(source)
+
+            # Step 3. Generate LoadConfig from ExtractConfig and user prompt (40%)
+            yield CreateETLResponse(
+                ids=request.ids,
+                processing_done=False,
+                processing_percentage_done=40.0,
+                processing_message="Generating load configuration with AI...",
+                success=True,
+            ).model_dump_json() + "\n"
+
+            load_config = await build_load_config_from_extract_config_and_prompt(
+                extract_config, request.user_prompt
             )
-            + "\n"
-        )
-        await asyncio.sleep(1)
 
-        # Step 2: Generating extract config
-        yield (
-            json.dumps(
-                GenerateETLResponse(
-                    ids=ids,
-                    message="Generating extract configuration...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                ).model_dump()
+            # Step 4. Generate DDL from ExtractConfig and LoadConfig (60%)
+            yield CreateETLResponse(
+                ids=request.ids,
+                processing_done=False,
+                processing_percentage_done=60.0,
+                processing_message="Generating DDL...",
+                success=True,
+            ).model_dump_json() + "\n"
+
+            ddl = await generate_ddl_from_configs(extract_config, load_config)
+
+            # Step 5. Generate TransformConfig from DDL and user prompt (80%)
+            yield CreateETLResponse(
+                ids=request.ids,
+                processing_done=False,
+                processing_percentage_done=80.0,
+                processing_message="Generating transformation configuration with AI...",
+                success=True,
+            ).model_dump_json() + "\n"
+
+            transform_config = await build_transform_config_from_configs_and_prompt(
+                ddl, extract_config, load_config, request.user_prompt
             )
-            + "\n"
-        )
-        await asyncio.sleep(1)
 
-        # Step 3: Generating transform config
-        yield (
-            json.dumps(
-                GenerateETLResponse(
-                    ids=ids,
-                    message="Generating transform configuration...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                ).model_dump()
+            # Step 6. Generate DAG from all configs (100%)
+            yield CreateETLResponse(
+                ids=request.ids,
+                processing_done=False,
+                processing_percentage_done=100.0,
+                processing_message="Generating DAG...",
+                success=True,
+            ).model_dump_json() + "\n"
+
+            dag = await generate_dag_from_configs(
+                extract_config, transform_config, load_config, ddl
             )
-            + "\n"
-        )
-        await asyncio.sleep(1)
 
-        # Step 4: Generating load config
-        yield (
-            json.dumps(
-                GenerateETLResponse(
-                    ids=ids,
-                    message="Generating load configuration...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                    load_config=generate_mock_load_config(),
-                ).model_dump()
-            )
-            + "\n"
-        )
-        await asyncio.sleep(1)
+            # Final response with all artefacts
+            yield CreateETLResponse(
+                ids=request.ids,
+                processing_done=True,
+                processing_percentage_done=100.0,
+                processing_message="ETL creation completed successfully!",
+                success=True,
+                extract_config=extract_config,
+                transform_config=transform_config,
+                load_config=load_config,
+                ddl=ddl,
+                dag=dag,
+            ).model_dump_json() + "\n"
 
-        # Step 5: Generating DDL
-        yield (
-            json.dumps(
-                GenerateETLResponse(
-                    ids=ids,
-                    message="Generating DDL statements...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                    load_config=generate_mock_load_config(),
-                    ddl=generate_mock_ddl(),
-                ).model_dump()
-            )
-            + "\n"
-        )
-        await asyncio.sleep(1)
+        except Exception as e:
+            yield CreateETLResponse(
+                ids=request.ids,
+                processing_done=True,
+                processing_percentage_done=0.0,
+                processing_message=f"Error during ETL creation: {str(e)}",
+                success=False,
+                error_message=str(e),
+            ).model_dump_json() + "\n"
 
-        # Step 6: Generating DAG
-        yield (
-            json.dumps(
-                GenerateETLResponse(
-                    ids=ids,
-                    message="Generating DAG structure...",
-                    done=False,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                    load_config=generate_mock_load_config(),
-                    ddl=generate_mock_ddl(),
-                    dag=generate_mock_dag(),
-                ).model_dump()
-            )
-            + "\n"
-        )
-        await asyncio.sleep(1)
-
-        # Final: Complete
-        yield (
-            json.dumps(
-                GenerateETLResponse(
-                    ids=ids,
-                    message="ETL generation complete.",
-                    done=True,
-                    extract_config=generate_mock_extract_config(),
-                    transform_config=generate_mock_transform_config(),
-                    load_config=generate_mock_load_config(),
-                    ddl=generate_mock_ddl(),
-                    dag=generate_mock_dag(),
-                ).model_dump()
-            )
-            + "\n"
-        )
-
-    return StreamingResponse(generate(), media_type="application/x-ndjson")
+    return StreamingResponse(create(request), media_type="application/x-ndjson")

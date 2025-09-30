@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.logging import setup_logger
 from core.settings import settings
 
-from .routers import create_router, execute_router, update_router
+from .routers import create_router, publish_router, update_router
 
 
 @asynccontextmanager
@@ -43,5 +43,5 @@ app.add_middleware(
 
 # Include routers
 app.include_router(create_router)
-app.include_router(execute_router)
+app.include_router(publish_router)
 app.include_router(update_router)

@@ -5,54 +5,59 @@ import CreationReport from './components/CreationReport';
 import FeedbackForm from './components/FeedbackForm';
 import DeploymentProgress from './components/DeploymentProgress';
 import DeploymentReport from './components/DeploymentReport';
-import { generateETL, updateETL, executeETL, type GenerateETLRequest, type Feedback, type ThreadUserIds, type GenerateETLResponse } from './services/api';
+import { createETL, updateETL, publishETL, type CreateETLRequest, type Feedback, type ThreadUserIds, type ETLResponse } from './services/api';
 
-type Step = 'input' | 'generating' | 'report' | 'feedback' | 'updating' | 'deploying' | 'deployed';
+type Step = 'input' | 'generating' | 'report' | 'feedback' | 'updating' | 'publishing' | 'published';
 
 function App() {
   const [step, setStep] = useState<Step>('input');
   const [ids, setIds] = useState<ThreadUserIds | null>(null);
   const [progressMessages, setProgressMessages] = useState<string[]>([]);
-  const [latestResponse, setLatestResponse] = useState<GenerateETLResponse | null>(null);
+  const [latestResponse, setLatestResponse] = useState<ETLResponse | null>(null);
   const [deploymentMessages, setDeploymentMessages] = useState<string[]>([]);
   const [deploymentSuccess, setDeploymentSuccess] = useState<boolean>(false);
 
-  const handleGenerate = async (request: GenerateETLRequest) => {
+  const handleCreate = async (request: CreateETLRequest) => {
     setIds(request.ids);
     setStep('generating');
     setProgressMessages([]);
     setLatestResponse(null);
 
     try {
-      for await (const response of generateETL(request)) {
-        setProgressMessages(prev => [...prev, response.message]);
-        if (response.done) {
-          setLatestResponse(response);
-          setStep('report');
+      for await (const response of createETL(request)) {
+        setProgressMessages(prev => [...prev, response.processing_message]);
+        if (response.processing_done) {
+          if (response.success) {
+            setLatestResponse(response);
+            setStep('report');
+          } else {
+            setProgressMessages(prev => [...prev, `Error: ${response.error_message || 'Unknown error'}`]);
+            // Stay in generating state to show error
+          }
         }
       }
     } catch (error) {
-      console.error('Generation failed:', error);
-      setProgressMessages(prev => [...prev, 'Generation failed']);
+      console.error('Creation failed:', error);
+      setProgressMessages(prev => [...prev, 'Creation failed']);
     }
   };
 
   const handleSatisfied = async () => {
     if (!ids) return;
-    setStep('deploying');
+    setStep('publishing');
     setDeploymentMessages([]);
 
     try {
-      for await (const response of executeETL({ ids })) {
-        setDeploymentMessages(prev => [...prev, response.message]);
-        if (response.done) {
+      for await (const response of publishETL({ ids })) {
+        setDeploymentMessages(prev => [...prev, response.processing_message]);
+        if (response.processing_done) {
           setDeploymentSuccess(response.success);
-          setStep('deployed');
+          setStep('published');
         }
       }
     } catch (error) {
-      console.error('Execution failed:', error);
-      setDeploymentMessages(prev => [...prev, 'Execution failed']);
+      console.error('Publishing failed:', error);
+      setDeploymentMessages(prev => [...prev, 'Publishing failed']);
     }
   };
 
@@ -61,14 +66,22 @@ function App() {
   };
 
   const handleFeedbackSubmit = async (feedback: Feedback) => {
-    if (!ids) return;
+    if (!ids || !latestResponse) return;
     setStep('updating');
     setProgressMessages([]);
 
     try {
-      for await (const response of updateETL({ feedback, ids })) {
-        setProgressMessages(prev => [...prev, response.message]);
-        if (response.done) {
+      for await (const response of updateETL({
+        feedback,
+        ids,
+        extract_config: latestResponse.extract_config,
+        transform_config: latestResponse.transform_config,
+        load_config: latestResponse.load_config,
+        ddl: latestResponse.ddl,
+        dag: latestResponse.dag
+      })) {
+        setProgressMessages(prev => [...prev, response.processing_message]);
+        if (response.processing_done) {
           setLatestResponse(response);
           setStep('report');
         }
@@ -86,7 +99,7 @@ function App() {
   const renderStep = () => {
     switch (step) {
       case 'input':
-        return <InputForm onSubmit={handleGenerate} />;
+        return <InputForm onSubmit={handleCreate} />;
       case 'generating':
       case 'updating':
         return <ProgressBar messages={progressMessages} isComplete={false} />;
@@ -104,9 +117,9 @@ function App() {
         );
       case 'feedback':
         return <FeedbackForm onSubmit={handleFeedbackSubmit} onCancel={handleFeedbackCancel} />;
-      case 'deploying':
+      case 'publishing':
         return <DeploymentProgress messages={deploymentMessages} isComplete={false} />;
-      case 'deployed':
+      case 'published':
         return <DeploymentReport success={deploymentSuccess} messages={deploymentMessages} />;
       default:
         return <div>Unknown step</div>;
