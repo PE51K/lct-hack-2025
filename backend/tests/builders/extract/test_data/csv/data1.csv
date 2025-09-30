@@ -1,5 +1,5 @@
-name,age,city
-Alice,25,NYC
-Bob,30
-Charlie,35,SF
-Diana,28
+name,age,city,height
+Alice,25,NYC,189
+Bob,30,,167
+Charlie,35,SF,176
+Diana,28,,159

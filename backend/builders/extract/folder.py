@@ -42,13 +42,11 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
                         'properties': {},
                         'required': []
                     }
-                
                 content = Content(
                     message_name=file_name,
                     metamodel=metamodel
                 )
                 contents.append(content)
-        
         return contents
 
 
@@ -159,7 +157,8 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
                 'analysis_summary': {
                     'row_count': analysis_result.get('row_count', 0),
                     'column_count': len(analysis_result.get('columns', [])),
-                    'file_size': analysis_result.get('file_size', 0)
+                    'file_size': analysis_result.get('file_size', 0),
+                    'variables': analysis_result.get('variables', 0),
                 }
             }
             
@@ -173,6 +172,7 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
                 "folder_path": folder_path,
                 "status": "analysis_failed"
             }
+
 
     @classmethod
     async def _analyze_csv_file(cls, file_path: Path) -> Dict[str, Any]:

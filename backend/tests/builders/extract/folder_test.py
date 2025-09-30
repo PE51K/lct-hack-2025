@@ -139,6 +139,11 @@ async def test_get_content_statistics_csv(csv_source: Source):
     stats = await FolderExtractConfigBuilder.get_content_statistics(csv_source)
     assert isinstance(stats, dict)
 
+    # Check stats
+    stats_dir = Path(__file__).parent / "test_stats" / "csv"
+    expected_stats = json.loads((stats_dir / "stats1.json").read_text())
+    assert stats == expected_stats
+
 
 @pytest.mark.asyncio
 async def test_get_content_statistics_json(json_source: Source):

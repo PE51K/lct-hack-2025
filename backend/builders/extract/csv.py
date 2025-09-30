@@ -26,7 +26,13 @@ def clean_profile_data(profile_data: Any, exclude_keys: list[str] | None = None)
             'category_alias_char_counts',
             'word_counts',
             'histogram',
-            'counts'
+            'counts',
+            'block_alias_counts',
+            'category_alias_counts',
+            'script_counts',
+            'n_scripts',
+            'n_characters_distinct'
+
         ]
 
     if isinstance(profile_data, dict):
