@@ -5,93 +5,96 @@ from typing import Annotated
 
 from pydantic import BaseModel
 
+
 class PostgreSqlDataType(Enum):
+    """PostgreSQL data types enumeration."""
+
     # Числовые типы
-    SMALLINT = 'smallint'
-    INTEGER = 'integer'
-    BIGINT = 'bigint'
-    DECIMAL = 'decimal'
-    NUMERIC = 'numeric'
-    REAL = 'real'
-    DOUBLE_PRECISION = 'double precision'
-    SMALLSERIAL = 'smallserial'
-    SERIAL = 'serial'
-    BIGSERIAL = 'bigserial'
-    
+    SMALLINT = "smallint"
+    INTEGER = "integer"
+    BIGINT = "bigint"
+    DECIMAL = "decimal"
+    NUMERIC = "numeric"
+    REAL = "real"
+    DOUBLE_PRECISION = "double precision"
+    SMALLSERIAL = "smallserial"
+    SERIAL = "serial"
+    BIGSERIAL = "bigserial"
+
     # Символьные типы
-    CHARACTER_VARYING = 'character varying'
-    VARCHAR = 'varchar'
-    CHARACTER = 'character'
-    CHAR = 'char'
-    TEXT = 'text'
-    
+    CHARACTER_VARYING = "character varying"
+    VARCHAR = "varchar"
+    CHARACTER = "character"
+    CHAR = "char"
+    TEXT = "text"
+
     # Бинарные типы
-    BYTEA = 'bytea'
-    
+    BYTEA = "bytea"
+
     # Дата/время
-    TIMESTAMP = 'timestamp without time zone'
-    TIMESTAMPTZ = 'timestamp with time zone'
-    DATE = 'date'
-    TIME = 'time without time zone'
-    TIMETZ = 'time with time zone'
-    INTERVAL = 'interval'
-    
+    TIMESTAMP = "timestamp without time zone"
+    TIMESTAMPTZ = "timestamp with time zone"
+    DATE = "date"
+    TIME = "time without time zone"
+    TIMETZ = "time with time zone"
+    INTERVAL = "interval"
+
     # Логический тип
-    BOOLEAN = 'boolean'
-    BOOL = 'bool'
-    
+    BOOLEAN = "boolean"
+    BOOL = "bool"
+
     # Перечисляемые типы
-    ENUM = 'USER-DEFINED'  # В information_schema enum'ы отображаются как USER-DEFINED
-    
+    ENUM = "USER-DEFINED"  # In information_schema enum'ы отображаются как USER-DEFINED
+
     # Геометрические тимы
-    POINT = 'point'
-    LINE = 'line'
-    LSEG = 'lseg'
-    BOX = 'box'
-    PATH = 'path'
-    POLYGON = 'polygon'
-    CIRCLE = 'circle'
-    
+    POINT = "point"
+    LINE = "line"
+    LSEG = "lseg"
+    BOX = "box"
+    PATH = "path"
+    POLYGON = "polygon"
+    CIRCLE = "circle"
+
     # Сетевые адреса
-    INET = 'inet'
-    CIDR = 'cidr'
-    MACADDR = 'macaddr'
-    MACADDR8 = 'macaddr8'
-    
+    INET = "inet"
+    CIDR = "cidr"
+    MACADDR = "macaddr"
+    MACADDR8 = "macaddr8"
+
     # Bit строки
-    BIT = 'bit'
-    BIT_VARYING = 'bit varying'
-    VARBIT = 'varbit'
-    
+    BIT = "bit"
+    BIT_VARYING = "bit varying"
+    VARBIT = "varbit"
+
     # Текстовые поисковые типы
-    TSVECTOR = 'tsvector'
-    TSQUERY = 'tsquery'
-    
+    TSVECTOR = "tsvector"
+    TSQUERY = "tsquery"
+
     # UUID
-    UUID = 'uuid'
-    
+    UUID = "uuid"
+
     # XML
-    XML = 'xml'
-    
+    XML = "xml"
+
     # JSON
-    JSON = 'json'
-    JSONB = 'jsonb'
-    
+    JSON = "json"
+    JSONB = "jsonb"
+
     # Массивы
-    ARRAY = 'ARRAY'  # Массивы в information_schema имеют суффикс []
-    
+    ARRAY = "ARRAY"  # Массивы в information_schema имеют суффикс []
+
     # Другие типы
-    OID = 'oid'
-    REGPROC = 'regproc'
-    REGPROCEDURE = 'regprocedure'
-    REGOPER = 'regoper'
-    REGOPERATOR = 'regoperator'
-    REGCLASS = 'regclass'
-    REGTYPE = 'regtype'
-    REGROLE = 'regrole'
-    REGNAMESPACE = 'regnamespace'
-    REGCONFIG = 'regconfig'
-    REGDICTIONARY = 'regdictionary'
+    OID = "oid"
+    REGPROC = "regproc"
+    REGPROCEDURE = "regprocedure"
+    REGOPER = "regoper"
+    REGOPERATOR = "regoperator"
+    REGCLASS = "regclass"
+    REGTYPE = "regtype"
+    REGROLE = "regrole"
+    REGNAMESPACE = "regnamespace"
+    REGCONFIG = "regconfig"
+    REGDICTIONARY = "regdictionary"
 
 
 class SourceType(str, Enum):
@@ -131,9 +134,10 @@ class Source(BaseModel):
     content_type: Annotated[str, ContentType] | None = None
     table_name: str | None = None
 
+
 class Attribute(BaseModel):
-    """ 
-    description for single atribute 
+    """
+    Description for single attribute.
 
     Attributes:
         order_no: order of attribute in metamodel
@@ -215,13 +219,15 @@ class Attribute(BaseModel):
     numeric_precision: int
     numeric_scale: int
 
+
 class Content(BaseModel):
     """
-    Metadata fore single pice of source data. flat for flat source, nested for nested source.
+    Metadata for single piece of source data. Flat for flat source, nested for nested source.
 
     Attributes:
         message_name: file name, topic from kafka, table name from db etc
-        is_complex_nesting_present: is complex nesting present in message (we store messges with complex nesting in hdfs)
+        is_complex_nesting_present: is complex nesting present in message
+            (we store messages with complex nesting in hdfs)
         metamodel: metamodel of message in source in json schema format (https://json-schema.org/specification)
     """
 
