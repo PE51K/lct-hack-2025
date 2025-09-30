@@ -1,7 +1,5 @@
 """Models for data loading configurations."""
 
-from __future__ import annotations
-
 from enum import Enum
 from typing import Annotated
 
