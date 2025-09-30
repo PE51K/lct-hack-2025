@@ -24,7 +24,7 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
     """
     ids = request.ids
 
-    async def generate():
+    async def publish(request: PublishETLRequest) -> PublishETLResponse:
         # Step 1: Starting publishing
         yield (
             json.dumps(
@@ -84,5 +84,5 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
             + "\n"
         )
 
-    return StreamingResponse(generate(), media_type="application/x-ndjson")
+    return StreamingResponse(publish(request), media_type="application/x-ndjson")
 

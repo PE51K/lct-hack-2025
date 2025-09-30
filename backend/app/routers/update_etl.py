@@ -29,7 +29,7 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
     """
     ids = request.ids
 
-    async def generate():
+    async def publish(request: UpdateETLRequest) -> UpdateETLResponse:
         try:
             # Step 1: Processing feedback (10%)
             yield UpdateETLResponse(
@@ -134,4 +134,4 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
                 error_message=str(e),
             ).model_dump_json() + "\n"
 
-    return StreamingResponse(generate(), media_type="application/x-ndjson")
+    return StreamingResponse(publish(request), media_type="application/x-ndjson")
