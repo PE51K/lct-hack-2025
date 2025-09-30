@@ -1,11 +1,9 @@
 """Folder extract configuration builder."""
 
-import sys
 import os
 import glob
 from pathlib import Path
-from typing import Dict, List, Any
-import asyncio
+from typing import Dict, Any
 import json
 import pandas as pd
 from ydata_profiling import ProfileReport
@@ -13,6 +11,7 @@ from ydata_profiling import ProfileReport
 from models.extract import Content, ContentType, Source
 
 from .base import BaseExtractConfigBuilder
+from .csv import clean_profile_data
 
 
 class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
@@ -27,7 +26,6 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
         folder_path = source.connection_string
         contents = []
         
-        # Ищем файлы в папке
         supported_extensions = ['*.csv', '*.json', '*.xml']
         
         for extension in supported_extensions:
@@ -35,28 +33,14 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
             for file_path in glob.glob(pattern):
                 file_name = os.path.basename(file_path)
                 
-                # Для CSV файлов используем ваш анализатор
                 if file_path.endswith('.csv'):
                     analysis_result = await cls._analyze_csv_file(file_path)
+                    metamodel = cls._convert_analysis_to_metamodel(analysis_result, file_name)
+                elif file_path.endswith('.json') or file_path.endswith('.xml'):
                     metamodel = {
-                        'file_type': 'csv',
-                        'analysis': analysis_result,
-                        'file_name': file_name
-                    }
-                # Для JSON и XML - заглушки
-                elif file_path.endswith('.json'):
-                    metamodel = {
-                        'file_type': 'json',
-                        'status': 'not_implemented',
-                        'file_name': file_name,
-                        'file_size': os.path.getsize(file_path)
-                    }
-                elif file_path.endswith('.xml'):
-                    metamodel = {
-                        'file_type': 'xml', 
-                        'status': 'not_implemented',
-                        'file_name': file_name,
-                        'file_size': os.path.getsize(file_path)
+                        'type': 'object',
+                        'properties': {},
+                        'required': []
                     }
                 
                 content = Content(
@@ -66,6 +50,63 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
                 contents.append(content)
         
         return contents
+
+
+    @classmethod
+    def _convert_analysis_to_metamodel(cls, analysis_result: Dict[str, Any], file_name: str) -> Dict[str, Any]:
+        """Convert analysis result to JSON Schema metamodel."""
+        if 'error' in analysis_result:
+            return {
+                'type': 'object',
+                'properties': {},
+                'required': []
+            }
+        
+        properties = {}
+        required = []
+        
+        # Используем информацию о колонках для создания свойств
+        columns = analysis_result.get('columns', [])
+        variables_data = analysis_result.get('variables', {})
+        
+        for column in columns:
+            if column in variables_data:
+                var_info = variables_data[column]
+                # Определяем тип на основе анализа
+                inferred_type = cls._infer_json_schema_type(var_info, column)
+                properties[column] = {'type': inferred_type}
+                # Все поля считаем обязательными для простоты
+                required.append(column)
+            else:
+                # Если нет детальной информации, используем string как fallback
+                properties[column] = {'type': 'string'}
+                required.append(column)
+        
+        return {
+            'type': 'object',
+            'properties': properties,
+            'required': required
+        }
+
+    @classmethod
+    def _infer_json_schema_type(cls, var_info: Dict[str, Any], column_name: str) -> str:
+        """Infer JSON Schema type from variable analysis with improved logic."""
+        # Анализируем тип из переменных
+        var_type = var_info.get('type', '').lower()
+        
+        # Улучшенная логика определения типов
+        if var_type in ['integer', 'int']:
+            return 'integer'
+        elif var_type in ['float', 'numeric', 'number']:
+            return 'number'
+        elif var_type == 'boolean' or var_type == 'bool':
+            return 'boolean'
+        else:
+            # Эвристика на основе имени колонки
+            if column_name.lower() in ['age', 'year', 'id']:
+                return 'integer'
+            else:
+                return 'string'
 
     @classmethod
     async def get_src_content_type(cls, source: Source) -> ContentType:
@@ -87,18 +128,9 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
         except Exception:
             return ContentType.na
 
-
     @classmethod
     async def get_content_statistics(cls, source: Source) -> dict:
-        """Retrieve statistics about the source content.
-
-        Args:
-            source: The source configuration.
-
-        Returns:
-            Dictionary containing content statistics with
-            any additional information about the source.
-        """
+        """Retrieve statistics about the source content."""
         folder_path = source.connection_string
         
         try:
@@ -108,18 +140,27 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
             if not csv_files:
                 return {"error": "No CSV files found in folder"}
             
-            # Анализируем первый CSV файл (или можно проанализировать все и объединить)
+            # Анализируем первый CSV файл
             first_csv_file = csv_files[0]
             analysis_result = await cls._analyze_csv_file(first_csv_file)
             
-            # Возвращаем variables_data как основную статистику
+            if 'error' in analysis_result:
+                return {
+                    "error": analysis_result['error'],
+                    "folder_path": folder_path,
+                    "status": "analysis_failed"
+                }
+            
+            # Создаем статистику в ожидаемом формате
             statistics = {
                 'file_analyzed': os.path.basename(first_csv_file),
-                'variables_statistics': analysis_result.get('variables', {}),
-                'table_summary': analysis_result.get('table', {}),
-                'columns': analysis_result.get('columns', []),
-                'row_count': analysis_result.get('row_count', 0),
-                'total_csv_files': len(csv_files)
+                'total_files': len(csv_files),
+                'file_types': ['csv'],
+                'analysis_summary': {
+                    'row_count': analysis_result.get('row_count', 0),
+                    'column_count': len(analysis_result.get('columns', [])),
+                    'file_size': analysis_result.get('file_size', 0)
+                }
             }
             
             return statistics
@@ -133,12 +174,10 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
                 "status": "analysis_failed"
             }
 
-
     @classmethod
     async def _analyze_csv_file(cls, file_path: Path) -> Dict[str, Any]:
-        """Analyze CSV file (placeholder for future implementation)."""
+        """Analyze CSV file with improved type detection."""
         try:
-       
             SAMPLE_SIZE = 10000
             separators = [',', ';', '\t', '|']
 
@@ -161,11 +200,8 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
             data = json.loads(profile_json)
             cleaned_data = clean_profile_data(data)
 
-            # Возвращаем variables_data как основную статистику
-            variables_data = cleaned_data.get('variables', {})
-            
             return {
-                'variables': variables_data,
+                'variables': cleaned_data.get('variables', {}),
                 'table': data.get('table', {}),
                 'columns': list(df.columns),
                 'row_count': len(df),
@@ -174,4 +210,5 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
             }
             
         except Exception as e:
+            print(f"Error analyzing CSV file {file_path}: {e}")
             return {'error': str(e)}
