@@ -8,9 +8,10 @@ from fastapi.responses import StreamingResponse
 
 from models.execute_etl import ExecuteETLRequest, ExecuteETLResponse
 
-router = APIRouter()
+execute_router = APIRouter()
 
-@router.post("/execute_etl")
+
+@execute_router.post("/execute_etl")
 async def execute_etl(request: ExecuteETLRequest) -> StreamingResponse:
     """
     Executes the ETL pipeline with provided metadata.

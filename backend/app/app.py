@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 
 from core.logging import setup_logger
 from core.settings import settings
@@ -13,6 +12,7 @@ from core.settings import settings
 from .routers import create_router, execute_router, update_router
 
 # ================== Setting up FastAPI ===================
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
