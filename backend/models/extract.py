@@ -55,16 +55,70 @@ class Content(BaseModel):
     metamodel: dict
 
 
+class ExtractSchedule(BaseModel):
+    """Scheduling configuration for data extraction."""
+    
+    interval: str = "@daily"  # Cron expression
+    start_date: str = "2025-01-01"
+    end_date: str | None = None
+    catchup: bool = False
+    max_active_runs: int = 1
+    depends_on_past: bool = False
+
+
+class ExtractResourceConfig(BaseModel):
+    """Resource requirements for extraction."""
+    
+    cpu_request: float = 1.0
+    memory_request_mb: int = 512
+    disk_space_gb: int = 10
+    timeout_minutes: int = 60
+    retry_count: int = 3
+    parallel_workers: int = 1
+
+
+class IncrementalConfig(BaseModel):
+    """Configuration for incremental data loading."""
+    
+    enabled: bool = False
+    key_field: str | None = None
+    lookback_days: int = 1
+    checkpoint_enabled: bool = True
+
+
+class DataQualityProfile(BaseModel):
+    """Data quality metrics and thresholds."""
+    
+    completeness_threshold: float = 0.95
+    accuracy_threshold: float = 0.98
+    consistency_checks: list[str] = ["date_format", "data_types"]
+    freshness_hours: int = 24
+    volume_min_records: int = 1
+    volume_max_records: int | None = None
+    schema_validation: bool = True
+    duplicate_detection: bool = True
+    schema_drift_detection: bool = True
+    duplicate_threshold: float = 0.05
+
+
 class ExtractConfig(BaseModel):
     """
-    Main extract config model.
+    Enhanced extract configuration model.
 
     Attributes:
         source_metadata - section with tech source metadata
         content_metadata - list of content samples metadata (for every file, topic, etc.)
         content_statistics - content statistic section (any additional statistics about content)
+        schedule - scheduling configuration for extraction
+        resources - resource requirements for extraction
+        incremental - incremental loading configuration
+        data_quality - data quality profile and validation rules
     """
 
     source_metadata: Source | None = None
     content_metadata: list[Content] = Field(default_factory=list)
     content_statistics: dict | None = None
+    schedule: ExtractSchedule = Field(default_factory=ExtractSchedule)
+    resources: ExtractResourceConfig = Field(default_factory=ExtractResourceConfig)
+    incremental: IncrementalConfig = Field(default_factory=IncrementalConfig)
+    data_quality: DataQualityProfile = Field(default_factory=DataQualityProfile)
