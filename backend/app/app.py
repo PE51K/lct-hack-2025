@@ -1,20 +1,11 @@
-"""
-Main FastAPI application module.
+"""FastAPI application module for ETL generation, execution, and updates."""
 
-This module sets up the FastAPI application with lifespan management,
-logging, and API endpoints.
-"""
-
-import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-
-# Add parent directory to sys.path for local imports
-sys.path.insert(0, "..")
 
 from core.logging import setup_logger
 from core.settings import settings
@@ -26,6 +17,7 @@ from .execute import execute_etl_endpoint
 from .generate import generate_etl_endpoint
 from .update import update_etl_endpoint
 
+# ================== Setting up FastAPI ===================
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -37,12 +29,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Setup logging
     app.state.logger = await setup_logger(__name__)
 
-    # Startup
-    await app.state.logger.info("Starting up application...")
+    # Finalize startup
     yield
 
-    # Shutdown
-    await app.state.logger.info("Application shutdown")
+    # Shutdown logging
     await app.state.logger.shutdown()
 
 
@@ -60,7 +50,6 @@ app.add_middleware(
 
 # ================== ETL Generation ===================
 
-
 @app.post("/generate_etl")
 async def generate_etl(request: GenerateETLRequest) -> StreamingResponse:
     """
@@ -74,9 +63,7 @@ async def generate_etl(request: GenerateETLRequest) -> StreamingResponse:
     """
     return generate_etl_endpoint(request)
 
-
 # ================== ETL Execution ===================
-
 
 @app.post("/execute_etl")
 async def execute_etl(request: ExecuteETLRequest) -> StreamingResponse:
@@ -91,9 +78,7 @@ async def execute_etl(request: ExecuteETLRequest) -> StreamingResponse:
     """
     return execute_etl_endpoint(request)
 
-
 # ================== ETL Update based on Feedback or Error ===================
-
 
 @app.post("/update_etl")
 async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
