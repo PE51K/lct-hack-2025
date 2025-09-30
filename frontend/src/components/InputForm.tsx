@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import type { GenerateETLRequest } from '../services/api';
+import type { CreateETLRequest } from '../services/api';
 
 const generateRandomId = () => Math.random().toString(36).substring(2, 15);
 
 interface InputFormProps {
-  onSubmit: (request: GenerateETLRequest) => void;
+  onSubmit: (request: CreateETLRequest) => void;
 }
 
 const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
-  const [dataUri, setDataUri] = useState('');
+  const [userPrompt, setUserPrompt] = useState('');
   const [threadId, setThreadId] = useState('');
   const [userId, setUserId] = useState('');
 
@@ -20,7 +20,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
-      data_uri: dataUri,
+      user_prompt: userPrompt,
       ids: {
         thread_id: threadId,
         user_id: userId,
@@ -31,12 +31,13 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label>Data URI:</label>
-        <input
-          type="text"
-          value={dataUri}
-          onChange={(e) => setDataUri(e.target.value)}
+        <label>User Prompt:</label>
+        <textarea
+          value={userPrompt}
+          onChange={(e) => setUserPrompt(e.target.value)}
           required
+          rows={4}
+          placeholder="Describe your ETL requirements..."
         />
       </div>
       <div>
@@ -57,7 +58,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
           required
         />
       </div>
-      <button type="submit">Generate ETL</button>
+      <button type="submit">Create ETL</button>
     </form>
   );
 };

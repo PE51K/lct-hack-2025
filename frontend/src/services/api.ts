@@ -5,21 +5,26 @@ export interface ThreadUserIds {
   user_id: string;
 }
 
-export interface GenerateETLRequest {
-  data_uri: string;
+export interface CreateETLRequest {
+  user_prompt: string;
   ids: ThreadUserIds;
 }
 
-export interface GenerateETLResponse {
+export interface ETLResponse {
   ids: ThreadUserIds;
-  message: string;
-  done: boolean;
+  processing_done: boolean;
+  processing_percentage_done: number;
+  processing_message: string;
+  success: boolean;
+  error_message?: string;
   extract_config?: Record<string, unknown>;
   transform_config?: Record<string, unknown>;
   load_config?: Record<string, unknown>;
   ddl?: Record<string, unknown>;
   dag?: Record<string, unknown>;
 }
+
+export type CreateETLResponse = ETLResponse;
 
 export interface FeedbackItem {
   area: string;
@@ -35,12 +40,6 @@ export interface Feedback {
 export interface UpdateETLRequest {
   feedback: Feedback;
   ids: ThreadUserIds;
-}
-
-export interface UpdateETLResponse {
-  ids: ThreadUserIds;
-  message: string;
-  done: boolean;
   extract_config?: Record<string, unknown>;
   transform_config?: Record<string, unknown>;
   load_config?: Record<string, unknown>;
@@ -48,19 +47,16 @@ export interface UpdateETLResponse {
   dag?: Record<string, unknown>;
 }
 
-export interface ExecuteETLRequest {
+export type UpdateETLResponse = ETLResponse;
+
+export interface PublishETLRequest {
   ids: ThreadUserIds;
 }
 
-export interface ExecuteETLResponse {
-  ids: ThreadUserIds;
-  message: string;
-  done: boolean;
-  success: boolean;
-}
+export type PublishETLResponse = ETLResponse;
 
-export async function* generateETL(request: GenerateETLRequest): AsyncGenerator<GenerateETLResponse> {
-  const response = await fetch(`${API_BASE_URL}/generate_etl`, {
+export async function* createETL(request: CreateETLRequest): AsyncGenerator<CreateETLResponse> {
+  const response = await fetch(`${API_BASE_URL}/create_etl`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -133,8 +129,8 @@ export async function* updateETL(request: UpdateETLRequest): AsyncGenerator<Upda
   }
 }
 
-export async function* executeETL(request: ExecuteETLRequest): AsyncGenerator<ExecuteETLResponse> {
-  const response = await fetch(`${API_BASE_URL}/execute_etl`, {
+export async function* publishETL(request: PublishETLRequest): AsyncGenerator<PublishETLResponse> {
+  const response = await fetch(`${API_BASE_URL}/publish_etl`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
