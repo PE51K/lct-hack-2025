@@ -28,9 +28,11 @@ flowchart TD
     %% GUI Input
     GUI1[GUI: Data URI connection string\n+ button] -->|URI + thread/user ids| API1[FastAPI: Generate AI ETL request]
 
+    %% Source Generation
+    API1 --> SOURCEGEN[Generate Source from User prompt]
+    SOURCEGEN --> DETECT[Detect source type and metadata]
+
     %% Extract phase
-    API1 --> CALL1[Callable: Input Data Analyzer Pipe]
-    CALL1 --> DETECT[Detect source type and metadata]
     DETECT --> SRC1[files S3]
     DETECT --> SRC2[Postgres]
     DETECT --> SRC3[Clickhouse]

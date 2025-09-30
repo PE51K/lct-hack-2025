@@ -10,7 +10,8 @@ from models.extract import ExtractConfig, Source, SourceType
 from .base import BaseExtractConfigBuilder
 from .clickhouse import ClickHouseExtractConfigBuilder
 from .folder import FolderExtractConfigBuilder
-from .kafka import KafkaExtractConfigBuilder
+
+# from .kafka import KafkaExtractConfigBuilder  # Commented out due to kafka package issues
 from .postgres import PostgresExtractConfigBuilder
 from .s3 import S3ExtractConfigBuilder
 
@@ -24,76 +25,70 @@ class ExtractConfigBuilder:
 
     source_to_builder_map: ClassVar[dict[SourceType, type[BaseExtractConfigBuilder]]] = {
         SourceType.folder: FolderExtractConfigBuilder,
-        SourceType.kafka: KafkaExtractConfigBuilder,
+        # SourceType.kafka: KafkaExtractConfigBuilder,  # Commented out due to kafka package issues
         SourceType.PostgreSQL: PostgresExtractConfigBuilder,
         SourceType.ClickHouse: ClickHouseExtractConfigBuilder,
         SourceType.s3: S3ExtractConfigBuilder,
     }
 
-    @staticmethod
-    async def recognise_source(source: str) -> Source:
-        """Recognize source type and extract connection string from URI.
-
-        Parses URI prefixes to determine the source type and strips the prefix
-        to get the connection string.
-
-        Args:
-            source: The input URI string.
-
-        Returns:
-            A Source object with type and connection string.
-        """
-        if "file:" in source:
-            src = Source(
-                source_type=SourceType.folder, connection_string=source.replace("file:", "")
-            )
-        elif "kafka:" in source:
-            src = Source(
-                source_type=SourceType.kafka, connection_string=source.replace("kafka:", "")
-            )
-        elif "postgres:" in source:
-            src = Source(
-                source_type=SourceType.PostgreSQL, connection_string=source.replace("postgres:", "")
-            )
-        elif "clickhouse:" in source:
-            src = Source(
-                source_type=SourceType.ClickHouse,
-                connection_string=source.replace("clickhouse:", ""),
-            )
-        elif "s3:" in source:
-            src = Source(source_type=SourceType.s3, connection_string=source.replace("s3:", ""))
-        else:
-            src = Source(source_type=SourceType.na, connection_string="")
-
-        return src
-
     @classmethod
-    async def from_uri(cls, uri: str) -> ExtractConfig:
+    async def from_source(cls, src: Source) -> ExtractConfig:
         """Build an ExtractConfig from a URI.
 
-        Recognizes the source type, then uses the appropriate builder to
-        extract metadata, content type, and statistics.
+        For now, returns a mock ExtractConfig.
 
         Args:
-            uri: The source URI.
+            src: The source object.
 
         Returns:
-            A complete ExtractConfig object.
+            A mock ExtractConfig object.
         """
-        src = await cls.recognise_source(uri)
+        # src.content_type = await cls.source_to_builder_map[src.source_type].get_src_content_type(
+        #     src
+        # )
+        # content_metadata = await cls.source_to_builder_map[src.source_type].get_content_metadata(
+        #     src
+        # )
+        # content_statistics = await cls.source_to_builder_map[
+        #     src.source_type
+        # ].get_content_statistics(src)
 
-        src.content_type = await cls.source_to_builder_map[src.source_type].get_src_content_type(
-            src
-        )
-        content_metadata = await cls.source_to_builder_map[src.source_type].get_content_metadata(
-            src
-        )
-        content_statistics = await cls.source_to_builder_map[
-            src.source_type
-        ].get_content_statistics(src)
+        # return ExtractConfig(
+        #     source_metadata=src,
+        #     content_metadata=content_metadata,
+        #     content_statistics=content_statistics,
+        # )
 
+        # Mock implementation
+        import asyncio
+
+        from models.extract import Attribute, Content
+
+        await asyncio.sleep(1)
         return ExtractConfig(
             source_metadata=src,
-            content_metadata=content_metadata,
-            content_statistics=content_statistics,
+            content_metadata=Content(
+                message_name="mock_data",
+                metamodel=[
+                    Attribute(
+                        order_no=1,
+                        column_name="id",
+                        data_type="integer",
+                        is_nullable=False,
+                        character_maximum_length=0,
+                        numeric_precision=10,
+                        numeric_scale=0,
+                    ),
+                    Attribute(
+                        order_no=2,
+                        column_name="name",
+                        data_type="character varying",
+                        is_nullable=False,
+                        character_maximum_length=255,
+                        numeric_precision=0,
+                        numeric_scale=0,
+                    ),
+                ],
+            ),
+            content_statistics={"total_files": 1, "total_size": 1024},
         )
