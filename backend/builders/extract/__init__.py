@@ -8,11 +8,28 @@ sys.path.insert(0, ".")
 from models.extract import ExtractConfig, Source, SourceType
 
 from .base import BaseExtractConfigBuilder
-from .clickhouse import ClickHouseExtractConfigBuilder
 from .folder import FolderExtractConfigBuilder
-from .kafka import KafkaExtractConfigBuilder
-from .postgres import PostgresExtractConfigBuilder
-from .s3 import S3ExtractConfigBuilder
+
+# Опциональные импорты для builders, которые требуют дополнительных зависимостей
+try:
+    from .postgres import PostgresExtractConfigBuilder
+except ImportError:
+    PostgresExtractConfigBuilder = None
+
+try:
+    from .clickhouse import ClickHouseExtractConfigBuilder
+except ImportError:
+    ClickHouseExtractConfigBuilder = None
+
+try:
+    from .kafka import KafkaExtractConfigBuilder  
+except ImportError:
+    KafkaExtractConfigBuilder = None
+
+try:
+    from .s3 import S3ExtractConfigBuilder
+except ImportError:
+    S3ExtractConfigBuilder = None
 
 
 class ExtractConfigBuilder:
@@ -22,13 +39,28 @@ class ExtractConfigBuilder:
     metadata extraction to specific builder classes.
     """
 
-    source_to_builder_map: ClassVar[dict[SourceType, type[BaseExtractConfigBuilder]]] = {
-        SourceType.folder: FolderExtractConfigBuilder,
-        SourceType.kafka: KafkaExtractConfigBuilder,
-        SourceType.PostgreSQL: PostgresExtractConfigBuilder,
-        SourceType.ClickHouse: ClickHouseExtractConfigBuilder,
-        SourceType.s3: S3ExtractConfigBuilder,
-    }
+    # Динамическое создание карты builders только для доступных модулей
+    @classmethod
+    def _get_source_to_builder_map(cls):
+        """Получение карты builders с проверкой доступности."""
+        builder_map = {
+            SourceType.folder: FolderExtractConfigBuilder,
+        }
+        
+        # Добавляем опциональные builders если они доступны
+        if PostgresExtractConfigBuilder is not None:
+            builder_map[SourceType.PostgreSQL] = PostgresExtractConfigBuilder
+            
+        if ClickHouseExtractConfigBuilder is not None:
+            builder_map[SourceType.ClickHouse] = ClickHouseExtractConfigBuilder
+            
+        if KafkaExtractConfigBuilder is not None:
+            builder_map[SourceType.kafka] = KafkaExtractConfigBuilder
+            
+        if S3ExtractConfigBuilder is not None:
+            builder_map[SourceType.s3] = S3ExtractConfigBuilder
+            
+        return builder_map
 
     @staticmethod
     async def recognise_source(source: str) -> Source:
@@ -44,7 +76,7 @@ class ExtractConfigBuilder:
             A Source object with type and connection string.
         """
         if "file:" in source:
-            src = Source(
+            src = Source(   
                 source_type=SourceType.folder, connection_string=source.replace("file:", "")
             )
         elif "kafka:" in source:
@@ -82,15 +114,17 @@ class ExtractConfigBuilder:
         """
         src = await cls.recognise_source(uri)
 
-        src.content_type = await cls.source_to_builder_map[src.source_type].get_src_content_type(
-            src
-        )
-        content_metadata = await cls.source_to_builder_map[src.source_type].get_content_metadata(
-            src
-        )
-        content_statistics = await cls.source_to_builder_map[
-            src.source_type
-        ].get_content_statistics(src)
+        # Получаем карту доступных builders
+        builder_map = cls._get_source_to_builder_map()
+        
+        if src.source_type not in builder_map:
+            raise ValueError(f"Builder для типа источника '{src.source_type}' не доступен")
+        
+        builder = builder_map[src.source_type]
+        
+        src.content_type = await builder.get_src_content_type(src)
+        content_metadata = await builder.get_content_metadata(src)
+        content_statistics = await builder.get_content_statistics(src)
 
         return ExtractConfig(
             source_metadata=src,
