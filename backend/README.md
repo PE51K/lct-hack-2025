@@ -19,7 +19,6 @@ This folder contains the backend code for the AI Data Assistant
 - **pydantic-settings** - Configuration management
 - **LangChain** - LLM orchestration and agent framework
 - **LangGraph** - Agentic workflow management
-- **LangFuse** - Observability and tracing for LLM applications
 - **YandexGPT** - Foundation models for text generation and embeddings
 - **PostgreSQL** - Relational database for structured data
 - **Docker & Docker Compose** - Containerization and orchestration
@@ -52,7 +51,7 @@ backend/
 │   ├── __init__.py
 │   ├── logging.py               # Logging configuration
 │   └── settings.py              # Application settings and configuration
-├── docker-compose.langfuse.yaml # Docker Compose for LangFuse
+├── docker-compose.airflow.yaml   # Docker Compose for Airflow
 ├── docker-compose.test-dbs.yaml # Docker Compose for test databases
 ├── docker-compose.yaml          # Main Docker Compose configuration
 ├── dockerfile                   # Dockerfile for backend container
@@ -73,24 +72,18 @@ backend/
 ├── README.md                    # This file
 ├── uv.lock                      # Dependency lock file
 └── volumes/                     # Docker volumes for persistent data
-    ├── clickhouse/              # ClickHouse data and logs
-    │   ├── data
-    │   └── logs
-    ├── minio/                   # MinIO data for LangFuse
-    │   └── langfuse
-    ├── postgres                 # PostgreSQL data
-    ├── redis/                   # Redis data
-    │   └── dump.rdb
-    ├── test_airflow/            # Test Airflow data
+    ├── airflow/                 # Airflow data
     │   ├── dags
     │   ├── logs
     │   └── postgres
-    ├── test_clickhouse/         # Test ClickHouse data
+    ├── clickhouse/              # ClickHouse data and logs
     │   ├── data
     │   └── logs
-    ├── test_minio/              # Test MinIO data
-    │   └── test
-    └── test_postgres            # Test PostgreSQL data
+    ├── minio/                   # MinIO data
+    │   └── langfuse
+    ├── postgres                 # PostgreSQL data
+    └── redis/                   # Redis data
+        └── dump.rdb
 ```
 
 ## Development Setup
@@ -116,10 +109,10 @@ cp .env.dev.example .env
 # Edit .env to set your configurations
 ```
 
-6. **Start supporting services (Postgres, LangFuse) from the project root directory**:
+6. **Start supporting services (Postgres) from the project root directory**:
 ```bash
 # Run from the project root directory
-docker compose up -d postgres langfuse-web
+docker compose up -d postgres
 ```
 
 7. Run local fastapi server:

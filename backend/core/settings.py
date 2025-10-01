@@ -83,36 +83,6 @@ class YandexGPTSettings(BaseSettings):
         return f"gpt://{self.folder_id}/{self.model}"
 
 
-class LangfuseSettings(BaseSettings):
-    """
-    Settings for LangFuse AI-tracing integration.
-
-    Attributes:
-        public_key (str): Public key for LangFuse.
-        secret_key (str): Secret
-        host (str): Host for LangFuse.
-        port (int): Port for LangFuse.
-        enabled (bool): Whether LangFuse integration is enabled.
-        base_url (str): Constructed base URL for LangFuse API.
-    """
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        extra="ignore",
-        env_prefix="LANGFUSE_",
-    )
-
-    public_key: str
-    secret_key: str
-    host: str
-    port: int
-    enabled: bool
-
-    @property
-    def base_url(self) -> str:
-        """Get the base URL for LangFuse API."""
-        return f"http://{self.host}:{self.port}"
-
 
 class LanggraphCheckpointerPostgresSettings(BaseSettings):
     """
@@ -154,14 +124,12 @@ class AISettings(BaseSettings):
         yandex_gpt (YandexGPTSettings): Settings for Yandex GPT integration.
         langgraph_checkpointer (LanggraphCheckpointerPostgresSettings):
             Settings for Langgraph Checkpointer PostgreSQL connection.
-        langfuse (LangfuseSettings): Settings for LangFuse integration.
     """
 
     yandex_gpt: YandexGPTSettings = YandexGPTSettings()
     langgraph_checkpointer: LanggraphCheckpointerPostgresSettings = (
         LanggraphCheckpointerPostgresSettings()
     )
-    langfuse: LangfuseSettings = LangfuseSettings()
 
 
 # ============ Main Settings Aggregator ============

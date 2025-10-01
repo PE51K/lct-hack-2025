@@ -10,7 +10,6 @@ dependencies = [
     "kafka-python>=2.2.15",
     "langchain>=0.3.27",
     "langchain-openai>=0.3.33",
-    "langfuse>=3.4.0",
     "pydantic-settings>=2.10.1",
     "python-multipart>=0.0.20",
     "uvicorn>=0.35.0",
