@@ -51,14 +51,24 @@ class PostgresExtractConfigBuilder(BaseExtractConfigBuilder):
             cnt = Content(message_name=source.table_name, metamodel=[])
 
             for i in range(len(df)):
+                # Handle NaN values from database by converting to None
+                char_max_len = df.loc[i, "character_maximum_length"]
+                character_maximum_length = None if pd.isna(char_max_len) else int(char_max_len)
+
+                num_prec = df.loc[i, "numeric_precision"]
+                numeric_precision = None if pd.isna(num_prec) else int(num_prec)
+
+                num_scale = df.loc[i, "numeric_scale"]
+                numeric_scale = None if pd.isna(num_scale) else int(num_scale)
+
                 attribute = Attribute(
                     order_no=i + 1,
                     column_name=df.loc[i, "column_name"],
                     data_type=df.loc[i, "data_type"],
                     is_nullable=df.loc[i, "is_nullable"] == "YES",
-                    character_maximum_length=df.loc[i, "character_maximum_length"],
-                    numeric_precision=df.loc[i, "numeric_precision"],
-                    numeric_scale=df.loc[i, "numeric_scale"],
+                    character_maximum_length=character_maximum_length,
+                    numeric_precision=numeric_precision,
+                    numeric_scale=numeric_scale,
                 )
                 cnt.metamodel.append(attribute)
 

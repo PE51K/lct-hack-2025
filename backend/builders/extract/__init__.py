@@ -45,21 +45,27 @@ class ExtractConfigBuilder:
         """
         # Use LLM to extract Source from user prompt
         src = await BaseExtractConfigBuilder.extract_source_from_user_prompt(user_prompt)
+        logger.debug(f"Extracted source from user prompt: {src}")
 
         # Now build the config from the source
         builder = cls.source_to_builder_map.get(src.source_type)
         if not builder:
             # Fallback to base builder with mocked data
             builder = BaseExtractConfigBuilder
+        logger.debug(f"Using builder {builder.__name__} for source type {src.source_type}")
 
         content_metadata = await builder.get_content_metadata(src)
+        logger.debug(f"Content metadata: {content_metadata}")
         content_statistics = await builder.get_content_statistics(src)
+        logger.debug(f"Content statistics: {content_statistics}")
         schedule = await builder.get_schedule(src)
+        logger.debug(f"Schedule: {schedule}")
         resources = await builder.get_resources(src)
+        logger.debug(f"Resources: {resources}")
         incremental = await builder.get_incremental(src)
+        logger.debug(f"Incremental: {incremental}")
         data_quality = await builder.get_data_quality(src)
-
-        logger.debug(f"ExtractConfig fields - source_metadata: {src}, content_metadata: {content_metadata}, content_statistics: {content_statistics}, schedule: {schedule}, resources: {resources}, incremental: {incremental}, data_quality: {data_quality}")
+        logger.debug(f"Data quality: {data_quality}")
 
         return ExtractConfig(
             source_metadata=src,
