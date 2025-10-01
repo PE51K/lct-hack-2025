@@ -39,15 +39,15 @@ class DDLBuilder:
         )
 
         if target_type == "postgres":
-            query = f'''CREATE TABLE public.{load_config.flat_meta_model.table_name} ('''
+            query = f"""CREATE TABLE public.{load_config.flat_meta_model.table_name} ("""
 
             for field in load_config.flat_meta_model.fields:
-                query += f'''
-                    {field.name} {field.data_type} { 'NULL' if field .nullable else 'NOT NULL'},'''
-        
-            query += f'''
+                query += f"""
+                    {field.name} {field.data_type} {"NULL" if field.nullable else "NOT NULL"},"""
+
+            query += f"""
                 PRIMARY KEY ({load_config.flat_meta_model.partitioning_key})
-            );'''
+            );"""
 
             return query
         else:

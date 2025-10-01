@@ -31,7 +31,9 @@ class ColumnField(BaseModel):
     """Description for field in table."""
 
     name: str = Field(..., description="Name of the field.")
-    data_type: str | None = Field(None, description="Data type of the field.", examples=["VARCHAR(255)", "INT", "DATE"])
+    data_type: str | None = Field(
+        None, description="Data type of the field.", examples=["VARCHAR(255)", "INT", "DATE"]
+    )
     nullable: bool | None = Field(None, description="Whether the field is nullable.")
     indexing_order: str | None = Field(None, description="Indexing order for the field.")
 
