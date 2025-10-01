@@ -153,6 +153,9 @@ class Content(BaseModel):
     is_complex_nesting_present: bool = Field(
         False, description="Is complex nesting present in message."
     )
+    content_type: Annotated[str, ContentType] | None = Field(
+        None, description="Type of content in source."
+    )
     metamodel: list[Attribute] | None = Field(None, description="Metamodel of message.")
 
 
@@ -210,7 +213,7 @@ class ExtractConfig(BaseModel):
     """Enhanced extract configuration model."""
 
     source_metadata: Source | None = Field(None, description="Section with tech source metadata.")
-    content_metadata: Content | None = Field(
+    content_metadata: list[Content] | None = Field(
         None, description="Content metadata aggregated from all samples."
     )
     content_statistics: dict | None = Field(None, description="Content statistic section.")
@@ -225,7 +228,4 @@ class ExtractConfig(BaseModel):
     )
     data_quality: DataQualityProfile = Field(
         default_factory=DataQualityProfile, description="Data quality profile and validation rules."
-    )
-    content_type: Annotated[str, ContentType] | None = Field(
-        None, description="Type of content in source."
     )
