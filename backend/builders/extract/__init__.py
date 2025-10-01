@@ -17,10 +17,10 @@ from .base import BaseExtractConfigBuilder
 
 
 class ExtractConfigBuilder:
-    """Builder class for creating ExtractConfig instances from URIs.
+    """Builder class for creating ExtractConfig instances from user prompts.
 
-    This class recognizes source types from URI prefixes and delegates
-    metadata extraction to specific builder classes.
+    This class uses LLM to extract Source from user prompt, then recognizes source types
+    and delegates metadata extraction to specific builder classes.
     """
 
     source_to_builder_map: ClassVar[dict[SourceType, type[BaseExtractConfigBuilder]]] = {
@@ -32,21 +32,24 @@ class ExtractConfigBuilder:
     }
 
     @classmethod
-    async def from_source(cls, src: Source) -> ExtractConfig:
-        """Build an ExtractConfig from a Source.
+    async def from_user_prompt(cls, user_prompt: str) -> ExtractConfig:
+        """Build an ExtractConfig from a user prompt using LLM.
 
         Args:
-            src: The source object.
+            user_prompt: The user's description of the data source.
 
         Returns:
             An ExtractConfig object with all fields populated.
         """
+        # Use LLM to extract Source from user prompt
+        src = await BaseExtractConfigBuilder.extract_source_from_user_prompt(user_prompt)
+
+        # Now build the config from the source
         builder = cls.source_to_builder_map.get(src.source_type)
         if not builder:
             # Fallback to base builder with mocked data
             builder = BaseExtractConfigBuilder
 
-        content_type = await builder.get_src_content_type(src)
         content_metadata = await builder.get_content_metadata(src)
         content_statistics = await builder.get_content_statistics(src)
         schedule = await builder.get_schedule(src)
@@ -62,5 +65,4 @@ class ExtractConfigBuilder:
             resources=resources,
             incremental=incremental,
             data_quality=data_quality,
-            content_type=content_type,
         )

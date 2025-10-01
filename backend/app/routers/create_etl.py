@@ -2,7 +2,6 @@
 
 from collections.abc import AsyncGenerator
 
-from ai.workflows.extract_source import extract_source_from_user_prompt
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
@@ -12,7 +11,6 @@ from builders.extract import ExtractConfigBuilder
 from builders.load import LoadConfigBuilder
 from builders.transform import TransformConfigBuilder
 from models.app import CreateETLRequest, CreateETLResponse
-from models.extract import Source
 
 create_router = APIRouter()
 
@@ -24,21 +22,7 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
     # Define async streaming generator
     async def create(request: CreateETLRequest) -> AsyncGenerator[str, None]:
         try:
-            # Step 1. Extract Source object from user prompt (10%)
-            yield (
-                CreateETLResponse(
-                    ids=request.ids,
-                    processing_done=False,
-                    processing_percentage_done=10.0,
-                    processing_message="Extracting source from user prompt...",
-                    success=True,
-                ).model_dump_json()
-                + "\n"
-            )
-
-            source: Source = await extract_source_from_user_prompt(request.user_prompt)
-
-            # Step 2. Build ExtractConfig from source (20%)
+            # Step 1. Build ExtractConfig from user prompt (20%)
             yield (
                 CreateETLResponse(
                     ids=request.ids,
@@ -50,7 +34,7 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            extract_config = await ExtractConfigBuilder.from_source(source)
+            extract_config = await ExtractConfigBuilder.from_user_prompt(request.user_prompt)
 
             # Step 3. Generate LoadConfig from ExtractConfig and user prompt (40%)
             yield (
