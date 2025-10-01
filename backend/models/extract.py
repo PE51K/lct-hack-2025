@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PostgreSqlDataType(Enum):

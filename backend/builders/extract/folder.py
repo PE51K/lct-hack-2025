@@ -1,17 +1,14 @@
 """Folder extract configuration builder."""
 
-import glob
 import json
 import logging
 import os
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 from ydata_profiling import ProfileReport
-
-import xml.etree.ElementTree as ET
-from pathlib import Path
 
 from models.extract import Attribute, Content, ContentType, PostgreSqlDataType, Source
 from parsers.xml_parser import XMLParser
@@ -24,50 +21,6 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
 
     Extracts metadata from folder sources.
     """
-
-    @classmethod
-    def _clean_profile_data(cls, profile_data: dict, exclude_keys: list[str] | None = None) -> dict:
-        """Recursively remove specified keys from profile data."""
-        if exclude_keys is None:
-            exclude_keys = [
-                "value_counts_without_nan",
-                "value_counts_index_sorted",
-                "value_counts",
-                "value_counts_with_nan",
-                "histogram_data",
-                "histogram_frequency",
-                "mini_histogram",
-                "first_rows",
-                "length_histogram",
-                "histogram_length",
-                "bin_edges",
-                "character_counts",
-                "category_alias_values",
-                "block_alias_values",
-                "block_alias_char_counts",
-                "script_char_counts",
-                "category_alias_char_counts",
-                "word_counts",
-                "histogram",
-                "counts",
-                "block_alias_counts",
-                "category_alias_counts",
-                "script_counts",
-                "n_scripts",
-                "n_characters_distinct",
-            ]
-
-        if isinstance(profile_data, dict):
-            return {
-                key: cls._clean_profile_data(value, exclude_keys)
-                for key, value in profile_data.items()
-                if key not in exclude_keys
-            }
-        elif isinstance(profile_data, list):
-            return [cls._clean_profile_data(item, exclude_keys) for item in profile_data]
-        else:
-            return profile_data
-
 
     @classmethod
     async def get_content_metadata(cls, source: Source) -> Content:
@@ -84,10 +37,7 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
             if content_type == ContentType.xml:
                 return await cls._analyze_xml_folder(folder_path)
             elif content_type == ContentType.csv:
-                file_name = os.path.basename(folder_path)
-                analysis_result = await cls._analyze_csv_file(folder_path)
-                metamodel = await cls._convert_analysis_to_metamodel(analysis_result, file_name)
-                return Content(message_name=file_name, metamodel=metamodel)
+                return await cls._convert_csv_analysis_to_metamodel(folder_path)
             else:
                 return Content(
                     message_name=folder_path.name, is_complex_nesting_present=False, metamodel=[]
@@ -95,8 +45,8 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
 
         except Exception as e:
             print(f"Ошибка анализа папки: {e}")
+            logging.getLogger(__name__).error(f"Ошибка анализа папки: {e}")
             return Content(message_name="error_folder", metamodel=[])
-
 
     @classmethod
     async def _analyze_xml_folder(cls, folder_path: Path) -> Content:
@@ -133,9 +83,9 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
 
         except Exception as e:
             print(f"❌ Ошибка анализа XML структуры: {e}")
+            logging.getLogger(__name__).error(f"❌ Ошибка анализа XML структуры: {e}")
             # Fallback на простой анализ
             return await cls._analyze_xml_folder_simple(folder_path)
-
 
     @classmethod
     async def _analyze_xml_folder_simple(cls, folder_path: Path) -> Content:
@@ -183,6 +133,7 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
 
         except Exception as e:
             print(f"❌ Ошибка простого анализа XML: {e}")
+            logging.getLogger(__name__).error(f"❌ Ошибка простого анализа XML: {e}")
             return Content(
                 message_name="xml_analysis_error", is_complex_nesting_present=True, metamodel=[]
             )
@@ -360,61 +311,196 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
 
         except Exception as e:
             print(f"⚠️ Ошибка оценки XML записей: {e}")
+            logging.getLogger(__name__).error(f"⚠️ Ошибка оценки XML записей: {e}")
             # Fallback оценка
             return len(xml_files) * 1000
 
-    
     @classmethod
-    async def _convert_analysis_to_metamodel(
-        cls, analysis_result: dict[str, Any], file_name: str
-    ) -> dict[str, Any]:
-        """Convert analysis result to JSON Schema metamodel."""
-        if "error" in analysis_result:
-            return {"type": "object", "properties": {}, "required": []}
+    async def _convert_csv_analysis_to_metamodel(cls, folder_path: Path) -> Content:
+        """Convert CSV analysis result to Content type."""
+        csv_files = list(folder_path.glob("*.csv"))
 
-        properties = {}
-        required = []
+        if not csv_files:
+            return Content(message_name="no_csv_files", metamodel=[])
 
-        # Use column information to create properties
-        columns = analysis_result.get("columns", [])
-        variables_data = analysis_result.get("variables", {})
+        try:
+            print(f"📊 Анализирую CSV папку: {folder_path}")
+            print(f"📄 Найдено CSV файлов: {len(csv_files)}")
 
-        for column in columns:
-            if column in variables_data:
-                var_info = variables_data[column]
-                # Determine type based on analysis
-                inferred_type = await cls._infer_json_schema_type(var_info, column)
-                properties[column] = {"type": inferred_type}
-                # Consider all fields as required for simplicity
-                required.append(column)
-            else:
-                # If no detailed information is available, use string as fallback
-                properties[column] = {"type": "string"}
-                required.append(column)
+            # Анализируем первый CSV файл
+            first_csv_file = csv_files[0]
+            analysis_result = await cls._analyze_csv_file(first_csv_file)
 
-        return {"type": "object", "properties": properties, "required": required}
+            if "error" in analysis_result:
+                print(f"❌ Ошибка анализа CSV файла: {analysis_result['error']}")
+                return Content(
+                    message_name="csv_analysis_error",
+                    is_complex_nesting_present=False,
+                    metamodel=[],
+                )
 
+            # Преобразуем результат анализа в атрибуты
+            attributes = []
+            order = 1
+
+            # Получаем информацию о переменных из анализа
+            variables = analysis_result.get("variables", {})
+            columns = analysis_result.get("columns", [])
+
+            for column_name in columns:
+                var_info = variables.get(column_name, {})
+
+                # Определяем тип данных
+                data_type = cls._detect_csv_data_type(var_info, column_name)
+
+                # Определяем максимальную длину для строковых типов
+                char_max_length = 255  # Значение по умолчанию
+                if data_type in [PostgreSqlDataType.TEXT, PostgreSqlDataType.VARCHAR]:
+                    char_max_length = var_info.get("max_length", 255)
+                    # Убеждаемся, что значение валидное
+                    if char_max_length is None or char_max_length <= 0:
+                        char_max_length = 255
+
+                # Определяем точность для числовых типов
+                numeric_precision = 10  # Значение по умолчанию
+                numeric_scale = 0  # Значение по умолчанию
+
+                if data_type in [PostgreSqlDataType.NUMERIC, PostgreSqlDataType.DECIMAL]:
+                    numeric_precision = 10
+                    numeric_scale = 2
+                elif data_type == PostgreSqlDataType.INTEGER:
+                    numeric_precision = 10
+                    numeric_scale = 0
+
+                # Для нечисловых типов оставляем значения по умолчанию
+
+                attr = Attribute(
+                    order_no=order,
+                    column_name=column_name.replace(" ", "_").replace("-", "_").lower(),
+                    data_type=data_type,
+                    is_nullable=var_info.get("n_missing", 0) > 0,
+                    character_maximum_length=char_max_length,
+                    numeric_precision=numeric_precision,
+                    numeric_scale=numeric_scale,
+                )
+                attributes.append(attr)
+                order += 1
+
+            print(f"✅ Проанализировано колонок: {len(attributes)}")
+            # Исправленная строка - убрал .value, так как data_type уже строка
+            print(f"📊 Типы данных: {[attr.data_type for attr in attributes]}")
+
+            # CSV обычно не имеет сложной вложенности
+            is_complex = len(attributes) > 20  # Считаем сложным если много колонок
+
+            return Content(
+                message_name=f"csv_files_{len(csv_files)}",
+                is_complex_nesting_present=is_complex,
+                metamodel=attributes,
+            )
+
+        except Exception as e:
+            print(f"❌ Ошибка анализа CSV: {e}")
+            logging.getLogger(__name__).error(f"❌ Ошибка анализа CSV: {e}")
+            return Content(
+                message_name="csv_analysis_error", is_complex_nesting_present=False, metamodel=[]
+            )
 
     @classmethod
-    async def _infer_json_schema_type(cls, var_info: dict[str, Any], column_name: str) -> str:
-        """Infer JSON Schema type from variable analysis with improved logic."""
-        # Analyze type from variables
-        var_type = var_info.get("type", "").lower()
+    def _detect_csv_data_type(cls, var_info: dict, column_name: str) -> PostgreSqlDataType:
+        """Определение типа данных CSV на основе анализа переменных."""
+        try:
+            var_type = var_info.get("type", "").lower()
+            distinct_count = var_info.get("n_distinct", 0)
 
-        # Improved type determination logic
-        if var_type in ["integer", "int"]:
-            return "integer"
-        elif var_type in ["float", "numeric", "number"]:
-            return "number"
-        elif var_type == "boolean" or var_type == "bool":
-            return "boolean"
-        else:
-            # Heuristics based on column name
-            if column_name.lower() in ["age", "year", "id"]:
-                return "integer"
+            # Анализируем тип из профилирования данных
+            if var_type == "numeric":
+                # Для числовых типов проверяем, целое или с плавающей точкой
+                if var_info.get("fraction", 0) > 0:  # Если есть дробная часть
+                    return PostgreSqlDataType.NUMERIC
+                else:
+                    return PostgreSqlDataType.INTEGER
+
+            elif var_type == "boolean" or distinct_count == 2:
+                # Проверяем, действительно ли это булево значение
+                # Смотрим на уникальные значения
+                value_counts = var_info.get("value_counts", {})
+                if len(value_counts) == 2:
+                    keys = list(value_counts.keys())
+                    # Проверяем, являются ли значения булевыми
+                    if all(
+                        str(key).lower() in ["true", "false", "1", "0", "yes", "no"] for key in keys
+                    ):
+                        return PostgreSqlDataType.BOOLEAN
+                return PostgreSqlDataType.VARCHAR  # Если не булево, то текст
+
+            elif var_type == "datetime":
+                return PostgreSqlDataType.TIMESTAMP
+
+            elif var_type == "categorical":
+                # Для категориальных данных используем VARCHAR
+                return PostgreSqlDataType.VARCHAR
+
             else:
-                return "string"
+                # Эвристики на основе имени колонки и данных
+                column_lower = column_name.lower()
 
+                # Сначала проверяем по имени колонки
+                if any(
+                    keyword in column_lower
+                    for keyword in ["id", "code", "num", "count", "index", "number"]
+                ):
+                    # Проверяем, действительно ли это число
+                    if var_type == "numeric":
+                        return PostgreSqlDataType.INTEGER
+                    else:
+                        # Пытаемся определить, можно ли преобразовать в число
+                        try:
+                            # Проверяем примеры значений
+                            value_counts = var_info.get("value_counts", {})
+                            if value_counts:
+                                sample_value = list(value_counts.keys())[0]
+                                float(str(sample_value))  # Пробуем преобразовать
+                                return PostgreSqlDataType.INTEGER
+                        except (ValueError, TypeError):
+                            pass
+                        return PostgreSqlDataType.VARCHAR
+
+                elif any(
+                    keyword in column_lower
+                    for keyword in ["amount", "price", "cost", "rate", "percent", "ratio", "value"]
+                ):
+                    if var_type == "numeric":
+                        return PostgreSqlDataType.NUMERIC
+                    else:
+                        return PostgreSqlDataType.VARCHAR
+
+                elif any(
+                    keyword in column_lower
+                    for keyword in ["flag", "is_", "has_", "active", "enabled", "status"]
+                ):
+                    if distinct_count <= 3:  # Малое количество уникальных значений
+                        return PostgreSqlDataType.BOOLEAN
+                    else:
+                        return PostgreSqlDataType.VARCHAR
+
+                elif any(
+                    keyword in column_lower
+                    for keyword in ["date", "time", "created", "updated", "timestamp"]
+                ):
+                    return PostgreSqlDataType.TIMESTAMP
+
+                else:
+                    if var_type == "numeric":
+                        return PostgreSqlDataType.INTEGER
+                    elif distinct_count <= 40:  # Категориальные данные
+                        return PostgreSqlDataType.VARCHAR
+                    else:
+                        return PostgreSqlDataType.TEXT
+
+        except Exception as e:
+            print(f"⚠️ Ошибка определения типа для {column_name}: {e}")
+            return PostgreSqlDataType.VARCHAR
 
     @classmethod
     async def _analyze_csv_file(cls, file_path: Path) -> dict[str, Any]:
@@ -459,3 +545,46 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
         except Exception as e:
             logging.getLogger(__name__).error(f"Error analyzing CSV file {file_path}: {e}")
             return {"error": str(e)}
+
+    @classmethod
+    def _clean_profile_data(cls, profile_data: dict, exclude_keys: list[str] | None = None) -> dict:
+        """Recursively remove specified keys from profile data."""
+        if exclude_keys is None:
+            exclude_keys = [
+                "value_counts_without_nan",
+                "value_counts_index_sorted",
+                "value_counts",
+                "value_counts_with_nan",
+                "histogram_data",
+                "histogram_frequency",
+                "mini_histogram",
+                "first_rows",
+                "length_histogram",
+                "histogram_length",
+                "bin_edges",
+                "character_counts",
+                "category_alias_values",
+                "block_alias_values",
+                "block_alias_char_counts",
+                "script_char_counts",
+                "category_alias_char_counts",
+                "word_counts",
+                "histogram",
+                "counts",
+                "block_alias_counts",
+                "category_alias_counts",
+                "script_counts",
+                "n_scripts",
+                "n_characters_distinct",
+            ]
+
+        if isinstance(profile_data, dict):
+            return {
+                key: cls._clean_profile_data(value, exclude_keys)
+                for key, value in profile_data.items()
+                if key not in exclude_keys
+            }
+        elif isinstance(profile_data, list):
+            return [cls._clean_profile_data(item, exclude_keys) for item in profile_data]
+        else:
+            return profile_data
