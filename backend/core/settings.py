@@ -83,39 +83,6 @@ class YandexGPTSettings(BaseSettings):
         return f"gpt://{self.folder_id}/{self.model}"
 
 
-
-class LanggraphCheckpointerPostgresSettings(BaseSettings):
-    """
-    Settings for Langgraph Checkpointer PostgreSQL connection.
-
-    Attributes:
-        db (str): Database name.
-        user (str): Database user.
-        password (str): Database password.
-        host (str): Database host.
-        port (int): Database port.
-        connection_string (str): Constructed PostgreSQL connection string.
-    """
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        extra="ignore",
-        env_prefix="LANGGRAPH_CHECKPOINTER_POSTGRES_",
-        validate_by_alias=True,
-    )
-
-    db: str
-    user: str = Field(..., alias="POSTGRES_USER")
-    password: str = Field(..., alias="POSTGRES_PASSWORD")
-    host: str = Field(..., alias="POSTGRES_HOST")
-    port: int = Field(..., alias="POSTGRES_PORT")
-
-    @property
-    def connection_string(self) -> str:
-        """Constructs a PostgreSQL connection string from the settings."""
-        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
-
-
 class AISettings(BaseSettings):
     """
     Settings for AI-related configurations.
@@ -127,9 +94,6 @@ class AISettings(BaseSettings):
     """
 
     yandex_gpt: YandexGPTSettings = YandexGPTSettings()
-    langgraph_checkpointer: LanggraphCheckpointerPostgresSettings = (
-        LanggraphCheckpointerPostgresSettings()
-    )
 
 
 # ============ Main Settings Aggregator ============

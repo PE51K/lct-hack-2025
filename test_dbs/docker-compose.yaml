@@ -38,43 +38,37 @@ services:
       timeout: 3s
       retries: 10
 
-    test-minio:
-      image: minio/minio
-      restart: unless-stopped
-      entrypoint: sh
-      command: -c 'mkdir -p /data/test && minio server --address ":9000" --console-address ":9001" /data'
-      environment:
-        MINIO_ROOT_USER: ${TEST_MINIO_ROOT_USER:-minio}
-        MINIO_ROOT_PASSWORD: ${TEST_MINIO_ROOT_PASSWORD:-miniosecret}
-      ports:
-        - "${TEST_MINIO_PORT:-9002}:9000"
-        - "${TEST_MINIO_CONSOLE_PORT:-9003}:9001"
-      volumes:
-        - ${TEST_MINIO_VOLUME}:/data
-      healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-        interval: 1s
-        timeout: 5s
-        retries: 5
-        start_period: 1s
- 
-    test-minio-init:
-      image: python:3.12-slim
-      depends_on:
-        test-minio:
-          condition: service_healthy
-      environment:
-        TEST_MINIO_ROOT_USER: ${TEST_MINIO_ROOT_USER:-minio}
-        TEST_MINIO_ROOT_PASSWORD: ${TEST_MINIO_ROOT_PASSWORD:-miniosecret}
-        TEST_MINIO_HOST: test-minio
-      volumes:
-        - .:/app
-      working_dir: /app
-      command: >
-        sh -c "
-        pip install boto3 &&
-        python init_test_dbs.py
-        "
-      restart: "no"
+  test-minio:
+    image: minio/minio
+    restart: unless-stopped
+    entrypoint: sh
+    command: -c 'mkdir -p /data/test && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: ${TEST_MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${TEST_MINIO_ROOT_PASSWORD:-miniosecret}
+    ports:
+      - "${TEST_MINIO_PORT:-9002}:9000"
+      - "${TEST_MINIO_CONSOLE_PORT:-9003}:9001"
+    volumes:
+      - ${TEST_MINIO_VOLUME}:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
 
-      
+  test-minio-init:
+    image: python:3.12-slim
+    depends_on:
+      test-minio:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      sh -c "
+      pip install boto3 pydantic pydantic-settings &&
+      python init_test_dbs.py
+      "
+    restart: "no"

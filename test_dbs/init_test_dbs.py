@@ -8,69 +8,10 @@ Connects to test databases (PostgreSQL, ClickHouse, MinIO) and inserts test data
 import os
 import sys
 from pathlib import Path
-from typing import List
 
 import boto3
-import psycopg2
-from clickhouse_driver import Client
 
 from core import logger, settings
-
-
-def init_postgres() -> None:
-    """Initialize PostgreSQL with test data."""
-    logger.info("Initializing PostgreSQL...")
-
-    try:
-        conn = psycopg2.connect(settings.postgres.connection_string)
-        conn.autocommit = True
-        cursor = conn.cursor()
-
-        # Read and execute SQL file
-        sql_file = Path(__file__).parent / "test_data" / "postgres" / "init.sql"
-        with open(sql_file, "r") as f:
-            sql = f.read()
-
-        cursor.execute(sql)
-        logger.info("PostgreSQL test data inserted successfully")
-
-    except Exception as e:
-        logger.error(f"Failed to initialize PostgreSQL: {e}")
-        raise
-    finally:
-        if 'conn' in locals():
-            conn.close()
-
-
-def init_clickhouse() -> None:
-    """Initialize ClickHouse with test data."""
-    logger.info("Initializing ClickHouse...")
-
-    try:
-        client = Client(
-            host=settings.clickhouse.host,
-            port=settings.clickhouse.port,
-            user=settings.clickhouse.user,
-            password=settings.clickhouse.password,
-        )
-
-        # Read and execute SQL file
-        sql_file = Path(__file__).parent / "test_data" / "clickhouse" / "init.sql"
-        with open(sql_file, "r") as f:
-            sql = f.read()
-
-        # Split SQL into individual statements
-        statements = [stmt.strip() for stmt in sql.split(';') if stmt.strip()]
-
-        for statement in statements:
-            if statement:
-                client.execute(statement)
-
-        logger.info("ClickHouse test data inserted successfully")
-
-    except Exception as e:
-        logger.error(f"Failed to initialize ClickHouse: {e}")
-        raise
 
 
 def init_minio() -> None:
@@ -122,16 +63,14 @@ def init_minio() -> None:
 
 
 def main() -> None:
-    """Main function to initialize all test databases."""
-    logger.info("Starting test databases initialization...")
+    """Main function to initialize MinIO test data."""
+    logger.info("Starting MinIO initialization...")
 
     try:
-        init_postgres()
-        init_clickhouse()
         init_minio()
-        logger.info("All test databases initialized successfully!")
+        logger.info("MinIO initialized successfully!")
     except Exception as e:
-        logger.error(f"Failed to initialize test databases: {e}")
+        logger.error(f"Failed to initialize MinIO: {e}")
         sys.exit(1)
 
 

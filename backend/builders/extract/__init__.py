@@ -8,12 +8,11 @@ sys.path.insert(0, ".")
 from models.extract import ExtractConfig, Source, SourceType
 
 from .base import BaseExtractConfigBuilder
-from .clickhouse import ClickHouseExtractConfigBuilder
-from .folder import FolderExtractConfigBuilder
-
+# from .clickhouse import ClickHouseExtractConfigBuilder
+# from .folder import FolderExtractConfigBuilder
 # from .kafka import KafkaExtractConfigBuilder  # Commented out due to kafka package issues
-from .postgres import PostgresExtractConfigBuilder
-from .s3 import S3ExtractConfigBuilder
+# from .postgres import PostgresExtractConfigBuilder
+# from .s3 import S3ExtractConfigBuilder
 
 
 class ExtractConfigBuilder:
@@ -24,11 +23,11 @@ class ExtractConfigBuilder:
     """
 
     source_to_builder_map: ClassVar[dict[SourceType, type[BaseExtractConfigBuilder]]] = {
-        SourceType.folder: FolderExtractConfigBuilder,
+        # SourceType.folder: FolderExtractConfigBuilder,
         # SourceType.kafka: KafkaExtractConfigBuilder,  # Commented out due to kafka package issues
-        SourceType.PostgreSQL: PostgresExtractConfigBuilder,
-        SourceType.ClickHouse: ClickHouseExtractConfigBuilder,
-        SourceType.s3: S3ExtractConfigBuilder,
+        # SourceType.PostgreSQL: PostgresExtractConfigBuilder,
+        # SourceType.ClickHouse: ClickHouseExtractConfigBuilder,
+        # SourceType.s3: S3ExtractConfigBuilder,
     }
 
     @classmethod
