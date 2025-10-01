@@ -1,4 +1,21 @@
 services:
+  langfuse-postgres:
+    image: postgres:${LANGFUSE_POSTGRES_VERSION:-17}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LANGFUSE_POSTGRES_USER}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    environment:
+      POSTGRES_USER: ${LANGFUSE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${LANGFUSE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${LANGFUSE_POSTGRES_DB}
+    ports:
+      - "${LANGFUSE_POSTGRES_PORT}:5432"
+    volumes:
+      - ${LANGFUSE_POSTGRES_VOLUME}:/var/lib/postgresql/data
+          
   langfuse-clickhouse:
     image: clickhouse/clickhouse-server
     restart: unless-stopped

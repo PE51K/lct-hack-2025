@@ -3,3 +3,5 @@ include:
     env_file: "backend/.env"
   - path: "frontend/docker-compose.yaml"
     env_file: "frontend/.env"
+  - path: "test_dbs/docker-compose.yaml"
+    env_file: "test_dbs/.env"
