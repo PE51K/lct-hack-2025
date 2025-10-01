@@ -35,32 +35,28 @@ class BaseExtractConfigBuilder:
 
         system_prompt = """
         Extract the data source information from the user's prompt.
-        Determine the source_type based on the description (e.g., folder, PostgreSQL, ClickHouse, kafka, s3).
+        Determine the source_type based on the description
+        (e.g., folder, PostgreSQL, ClickHouse, kafka, s3).
         Extract connection_string if mentioned (e.g., database URL, file path).
         Extract table_name if it's a database table.
         If unsure, use 'na' for source_type.
         """
 
-        return await structured_llm.ainvoke([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ])
+        return await structured_llm.ainvoke(
+            [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+        )
 
     @classmethod
-    async def get_content_metadata(cls, source: Source) -> Content:
+    async def get_content_metadata(cls, source: Source) -> list[Content] | None:
         """Retrieve content metadata from the source.
 
         Args:
             source: The source configuration.
 
         Returns:
-            Content metadata object.
-
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses.
+            List of Content metadata objects or None.
         """
-        raise NotImplementedError("get_content_metadata must be implemented by subclasses")
-
+        return None
 
     @classmethod
     async def get_content_statistics(cls, source: Source) -> dict | None:
