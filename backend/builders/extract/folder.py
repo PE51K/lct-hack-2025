@@ -1,10 +1,11 @@
 """Folder extract configuration builder."""
 
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from models.extract import Attribute, Content, ContentType, PostgreSqlDataType, Source
+from defusedxml import ElementTree
 from parsers.xml_parser import XMLParser
+
+from models.extract import Attribute, Content, ContentType, PostgreSqlDataType, Source
 
 from .base import BaseExtractConfigBuilder
 
@@ -40,7 +41,7 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
 
     @classmethod
     async def _analyze_xml_folder(cls, folder_path: Path) -> Content:
-        """Анализ XML файлов в папке с использованием полноценного парсера."""
+        """Analysis of XML files in folder using full parser."""
         xml_files = list(folder_path.glob("*.xml"))
 
         if not xml_files:
@@ -89,7 +90,7 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
         attributes = []
 
         try:
-            tree = ET.parse(sample_file)
+            tree = ElementTree.parse(sample_file)
             root = tree.getroot()
 
             order = 1
@@ -257,7 +258,7 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
                     total_records += analysis.total_records
                 except Exception:
                     # Fallback для отдельного файла
-                    tree = ET.parse(xml_file)
+                    tree = ElementTree.parse(xml_file)
                     root = tree.getroot()
                     records_in_file = len(
                         [elem for elem in root.iter() if elem.text and elem.text.strip()]

@@ -112,7 +112,9 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
             )
 
             transform_builder = TransformConfigBuilder()
-            transform_config = await transform_builder(ddl, extract_config, load_config, feedback_text)
+            transform_config = await transform_builder(
+                ddl, extract_config, load_config, feedback_text
+            )
 
             # Step 6: Updating DAG (100%)
             yield (

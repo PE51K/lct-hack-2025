@@ -22,6 +22,7 @@ class BaseExtractConfigBuilder(ABC):
     """
 
     @classmethod
+    @abstractmethod
     async def get_content_metadata(cls, source: Source) -> Content:
         """Retrieve content metadata from the source.
 
@@ -31,14 +32,10 @@ class BaseExtractConfigBuilder(ABC):
         Returns:
             Content metadata object.
         """
-        # Mocked data
-        return Content(
-            message_name="mock_content",
-            is_complex_nesting_present=False,
-            metamodel=[],
-        )
+        pass
 
     @classmethod
+    @abstractmethod
     async def get_src_content_type(cls, source: Source) -> ContentType:
         """Determine the content type of the source.
 
@@ -48,10 +45,10 @@ class BaseExtractConfigBuilder(ABC):
         Returns:
             The ContentType enum value.
         """
-        # Mocked data
-        return ContentType.na
+        pass
 
     @classmethod
+    @abstractmethod
     async def get_content_statistics(cls, source: Source) -> dict:
         """Retrieve statistics about the source content.
 
@@ -62,10 +59,10 @@ class BaseExtractConfigBuilder(ABC):
             Dictionary containing content statistics with
             any additional information about the source.
         """
-        # Mocked data
-        return {"total_files": 0, "total_size_mb": 0.0}
+        pass
 
     @classmethod
+    @abstractmethod
     async def get_schedule(cls, source: Source) -> ExtractSchedule:
         """Retrieve schedule configuration for the source.
 
@@ -75,10 +72,10 @@ class BaseExtractConfigBuilder(ABC):
         Returns:
             ExtractSchedule configuration.
         """
-        # Mocked data
-        return ExtractSchedule()
+        pass
 
     @classmethod
+    @abstractmethod
     async def get_resources(cls, source: Source) -> ExtractResourceConfig:
         """Retrieve resource configuration for the source.
 
@@ -88,10 +85,10 @@ class BaseExtractConfigBuilder(ABC):
         Returns:
             ExtractResourceConfig configuration.
         """
-        # Mocked data
-        return ExtractResourceConfig()
+        pass
 
     @classmethod
+    @abstractmethod
     async def get_incremental(cls, source: Source) -> IncrementalConfig:
         """Retrieve incremental configuration for the source.
 
@@ -101,10 +98,10 @@ class BaseExtractConfigBuilder(ABC):
         Returns:
             IncrementalConfig configuration.
         """
-        # Mocked data
-        return IncrementalConfig()
+        pass
 
     @classmethod
+    @abstractmethod
     async def get_data_quality(cls, source: Source) -> DataQualityProfile:
         """Retrieve data quality profile for the source.
 
@@ -114,5 +111,4 @@ class BaseExtractConfigBuilder(ABC):
         Returns:
             DataQualityProfile configuration.
         """
-        # Mocked data
-        return DataQualityProfile()
+        pass

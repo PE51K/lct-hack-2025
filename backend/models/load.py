@@ -27,7 +27,7 @@ class TargetStorageTypeRecommendation(BaseModel):
     explanation: str
 
 
-class Field(BaseModel):
+class ColumnField(BaseModel):
     """Description for field in table."""
 
     name: str
@@ -41,13 +41,13 @@ class Index(BaseModel):
 
     name: str
     is_clustered: bool
-    fields: list[Field]
+    fields: list[ColumnField]
 
 
 class FlatMetaModel(BaseModel):
     """Metamodel for relational or columnstore db structured data."""
 
-    fields: list[Field]
+    fields: list[ColumnField]
     indexes: list[Index] | None = None
     partitioning_key: str
 

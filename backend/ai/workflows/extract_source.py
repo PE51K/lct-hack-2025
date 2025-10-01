@@ -2,7 +2,7 @@
 
 import asyncio
 
-from models.extract import ContentType, Source, SourceType
+from models.extract import Source, SourceType
 
 
 async def extract_source_from_user_prompt(user_prompt: str) -> Source:

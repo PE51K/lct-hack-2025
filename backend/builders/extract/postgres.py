@@ -74,11 +74,12 @@ class PostgresExtractConfigBuilder:
             engine = create_engine(source.connection_string)
 
             with engine.connect() as connection:
-                # Получаем статистику по таблице
+                # Get table statistics
                 stats_query = text("""
-                    SELECT 
+                    SELECT
                         COUNT(*) as total_records,
-                        pg_total_relation_size(quote_ident(:table_name)::regclass) as total_size_bytes,
+                        pg_total_relation_size(quote_ident(:table_name)::regclass)
+                            as total_size_bytes,
                         pg_relation_size(quote_ident(:table_name)::regclass) as table_size_bytes
                 """)
 
