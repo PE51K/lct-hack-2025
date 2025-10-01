@@ -6,10 +6,8 @@ from typing import ClassVar
 
 sys.path.insert(0, ".")
 
-logger = logging.getLogger(__name__)
-
-from models.extract import ExtractConfig, SourceType
 from models.app.update_etl import FeedbackItem
+from models.extract import ExtractConfig, SourceType
 
 from .base import BaseExtractConfigBuilder
 from .clickhouse import ClickHouseExtractConfigBuilder
@@ -17,6 +15,8 @@ from .folder import FolderExtractConfigBuilder
 from .kafka import KafkaExtractConfigBuilder
 from .postgres import PostgresExtractConfigBuilder
 from .s3 import S3ExtractConfigBuilder
+
+logger = logging.getLogger(__name__)
 
 
 class ExtractConfigBuilder:
@@ -40,7 +40,7 @@ class ExtractConfigBuilder:
         user_prompt: str,
         old_extract_config: ExtractConfig | None = None,
         feedback_items: list[FeedbackItem] | None = None,
-        overall_feedback: str | None = None
+        overall_feedback: str | None = None,
     ) -> ExtractConfig:
         """Build an ExtractConfig from a user prompt using LLM.
 

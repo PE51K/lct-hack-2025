@@ -1,7 +1,6 @@
 """FastAPI application module for ETL generation, execution, and updates."""
 
 import logging
-
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 

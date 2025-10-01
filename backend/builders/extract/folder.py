@@ -9,9 +9,6 @@ from pathlib import Path
 
 from defusedxml import ElementTree
 
-logger = logging.getLogger(__name__)
-
-from core.logging import setup_logger
 from models.extract import (
     Attribute,
     Content,
@@ -21,6 +18,8 @@ from models.extract import (
 )
 
 from .base import BaseExtractConfigBuilder
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -426,7 +425,6 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
     @classmethod
     async def _analyze_xml_folder(cls, folder_path: Path) -> Content:
         """Analyze XML files in folder using full parser."""
-        logger = await setup_logger(__name__)
         xml_files = list(folder_path.glob("*.xml"))
 
         if not xml_files:
@@ -434,7 +432,7 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
 
         # Use full XML parser
         xml_parser = XMLParser(max_sample_values=20)
-        analysis, processed_files = xml_parser.analyze_xml_folder(folder_path)
+        analysis, _ = xml_parser.analyze_xml_folder(folder_path)
 
         # Convert analysis results to attributes
         attributes = xml_parser.convert_to_extract_attributes(analysis)

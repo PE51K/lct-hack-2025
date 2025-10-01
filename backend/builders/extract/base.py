@@ -2,11 +2,7 @@
 
 import logging
 
-from langchain_openai import ChatOpenAI
-
 from ai.llm import llm
-
-logger = logging.getLogger(__name__)
 from models.extract import (
     Content,
     DataQualityProfile,
@@ -15,6 +11,8 @@ from models.extract import (
     IncrementalConfig,
     Source,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class BaseExtractConfigBuilder:
@@ -31,7 +29,7 @@ class BaseExtractConfigBuilder:
         user_prompt: str,
         old_source: Source | None = None,
         feedback_items: list | None = None,
-        overall_feedback: str | None = None
+        overall_feedback: str | None = None,
     ) -> Source:
         """Extract Source object from user prompt using LLM.
 
@@ -49,8 +47,10 @@ class BaseExtractConfigBuilder:
         if old_source:
             system_prompt = """
             Refine the existing data source information based on user feedback and new prompt.
-            Start with the existing source configuration and modify only what's needed based on feedback.
-            Determine the source_type based on the description (e.g., folder, PostgreSQL, ClickHouse, kafka, s3).
+            Start with the existing source configuration and modify only what's needed
+            based on feedback.
+            Determine the source_type based on the description
+            (e.g., folder, PostgreSQL, ClickHouse, kafka, s3).
             Extract connection_string if mentioned (e.g., database URL, file path).
             Extract table_name if it's a database table.
             If unsure, use 'na' for source_type.
@@ -60,7 +60,9 @@ class BaseExtractConfigBuilder:
             New Prompt: {user_prompt}
             """
             if feedback_items:
-                user_content += f"\nFeedback Items: {[item.model_dump() for item in feedback_items]}"
+                user_content += (
+                    f"\nFeedback Items: {[item.model_dump() for item in feedback_items]}"
+                )
             if overall_feedback:
                 user_content += f"\nOverall Feedback: {overall_feedback}"
         else:
@@ -75,7 +77,10 @@ class BaseExtractConfigBuilder:
             user_content = user_prompt
 
         source = await structured_llm.ainvoke(
-            [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_content}]
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ]
         )
         return source
 

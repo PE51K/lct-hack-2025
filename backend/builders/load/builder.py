@@ -3,26 +3,13 @@
 import logging
 
 from ai.llm import llm
-
-from models.extract import ExtractConfig
 from models.app.update_etl import FeedbackItem
+from models.extract import ExtractConfig
+from models.load import (
+    LoadConfig,
+)
 
 logger = logging.getLogger(__name__)
-from models.load import (
-    BatchConfig,
-    ColumnField,
-    CompressionConfig,
-    FlatMetaModel,
-    Index,
-    IndexingConfig,
-    LoadConfig,
-    LoadResourceConfig,
-    LoadStrategy,
-    MonitoringConfig,
-    NestingMetaModel,
-    PartitioningConfig,
-    TargetStorageTypeRecommendation,
-)
 
 
 class LoadConfigBuilder:
@@ -34,7 +21,7 @@ class LoadConfigBuilder:
         prompt: str,
         old_load_config: LoadConfig | None = None,
         feedback_items: list[FeedbackItem] | None = None,
-        overall_feedback: str | None = None
+        overall_feedback: str | None = None,
     ) -> LoadConfig:
         """Build LoadConfig from ExtractConfig and prompt using LLM.
 
@@ -52,7 +39,8 @@ class LoadConfigBuilder:
 
         if old_load_config:
             system_prompt = """
-            Refine the existing LoadConfig for an ETL pipeline based on user feedback and new requirements.
+            Refine the existing LoadConfig for an ETL pipeline based on user feedback
+            and new requirements.
 
             Start with the existing configuration and modify only what's needed based on feedback.
             Analyze the ExtractConfig to understand current source structure.
@@ -63,7 +51,8 @@ class LoadConfigBuilder:
             - Indexes, partitioning, load strategy
             - Other configurations
 
-            Preserve good parts of the existing config and only change what's specifically requested in feedback.
+            Preserve good parts of the existing config and only change what's specifically
+            requested in feedback.
             """
             user_message = f"""
             Existing LoadConfig: {old_load_config.model_dump_json()}
@@ -71,12 +60,15 @@ class LoadConfigBuilder:
             User Prompt: {prompt}
             """
             if feedback_items:
-                user_message += f"\nFeedback Items: {[item.model_dump() for item in feedback_items]}"
+                user_message += (
+                    f"\nFeedback Items: {[item.model_dump() for item in feedback_items]}"
+                )
             if overall_feedback:
                 user_message += f"\nOverall Feedback: {overall_feedback}"
         else:
             system_prompt = """
-            Generate a LoadConfig for an ETL pipeline based on the provided ExtractConfig and user requirements.
+            Generate a LoadConfig for an ETL pipeline based on the provided ExtractConfig
+            and user requirements.
 
             Analyze the ExtractConfig to understand:
             - Source type and metadata
@@ -84,15 +76,18 @@ class LoadConfigBuilder:
             - Data types and constraints
 
             Based on the source and user prompt, determine:
-            - Target storage type (postgres, clickhouse, or hdfs) - choose based on data volume, query patterns, and user needs
-            - Target connection string (use placeholder format like 'postgresql://user:pass@host:port/db' or similar)
+            - Target storage type (postgres, clickhouse, or hdfs) - choose based on data volume,
+              query patterns, and user needs
+            - Target connection string (use placeholder format like 'postgresql://user:pass@host:port/db'
+              or similar)
             - Flat meta model with appropriate fields derived from extract content
             - Indexes for performance (primary keys, clustered indexes)
             - Partitioning strategy
             - Load strategy (append, upsert, etc.)
             - Other configurations (batch, compression, resources, monitoring)
 
-            For flat_meta_model.fields, map from extract content attributes to ColumnField with proper data types.
+            For flat_meta_model.fields, map from extract content attributes to ColumnField
+            with proper data types.
             Suggest reasonable defaults for all configurations.
             Provide explanations for your choices.
             """
@@ -103,7 +98,10 @@ class LoadConfigBuilder:
             """
 
         load_config = await structured_llm.ainvoke(
-            [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}]
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ]
         )
         logger.debug(f"LoadConfig fields: {load_config}")
         return load_config

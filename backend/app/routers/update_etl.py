@@ -7,14 +7,14 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-logger = logging.getLogger(__name__)
-
 from builders.dag import DAGBuilder
 from builders.ddl import DDLBuilder
 from builders.extract import ExtractConfigBuilder
 from builders.load import LoadConfigBuilder
 from builders.transform import TransformConfigBuilder
 from models.app.update_etl import UpdateETLRequest, UpdateETLResponse
+
+logger = logging.getLogger(__name__)
 
 update_router = APIRouter()
 
@@ -68,10 +68,7 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
 
             extract_feedback = [item for item in request.feedback.items if item.area == "extract"]
             extract_config = await ExtractConfigBuilder.from_user_prompt(
-                feedback_text,
-                request.extract_config,
-                extract_feedback,
-                request.feedback.overall
+                feedback_text, request.extract_config, extract_feedback, request.feedback.overall
             )
 
             # Step 3: Updating load config (50%)
@@ -89,7 +86,11 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
             load_builder = LoadConfigBuilder()
             load_feedback = [item for item in request.feedback.items if item.area == "load"]
             load_config = await load_builder(
-                extract_config, feedback_text, request.load_config, load_feedback, request.feedback.overall
+                extract_config,
+                feedback_text,
+                request.load_config,
+                load_feedback,
+                request.feedback.overall,
             )
 
             # Step 4: Updating DDL (70%)
@@ -120,10 +121,17 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
             )
 
             transform_builder = TransformConfigBuilder()
-            transform_feedback = [item for item in request.feedback.items if item.area == "transform"]
+            transform_feedback = [
+                item for item in request.feedback.items if item.area == "transform"
+            ]
             transform_config = await transform_builder(
-                ddl, extract_config, load_config, feedback_text,
-                request.transform_config, transform_feedback, request.feedback.overall
+                ddl,
+                extract_config,
+                load_config,
+                feedback_text,
+                request.transform_config,
+                transform_feedback,
+                request.feedback.overall,
             )
 
             # Step 6: Updating DAG (100%)

@@ -1,13 +1,10 @@
 """Router for ETL creation (generation) endpoints."""
 
 import logging
-
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-
-logger = logging.getLogger(__name__)
 
 from builders.dag import DAGBuilder
 from builders.ddl import DDLBuilder
@@ -15,6 +12,8 @@ from builders.extract import ExtractConfigBuilder
 from builders.load import LoadConfigBuilder
 from builders.transform import TransformConfigBuilder
 from models.app import CreateETLRequest, CreateETLResponse
+
+logger = logging.getLogger(__name__)
 
 create_router = APIRouter()
 

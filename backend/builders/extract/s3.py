@@ -6,14 +6,12 @@ import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
-from defusedxml import ElementTree
 import boto3
-from urllib.parse import urlparse
+from defusedxml import ElementTree
 
 from models.extract import (
     Attribute,
     Content,
-    ContentType,
     PostgreSqlDataType,
     Source,
 )
@@ -143,7 +141,9 @@ class XMLParser:
         self.max_depth = max_depth
         self.type_detector = XMLDataTypeDetector()
 
-    def analyze_xml_content(self, content: str, file_name: str, file_size: int) -> XMLStructureAnalysis:
+    def analyze_xml_content(
+        self, content: str, file_name: str, file_size: int
+    ) -> XMLStructureAnalysis:
         """
         Analyze XML from string content.
 
@@ -174,9 +174,7 @@ class XMLParser:
                     data_type=self.type_detector.detect_data_type(info["values"]),
                     sample_values=info["values"][: self.max_sample_values],
                     is_nullable=True,
-                    max_length=max(len(str(v)) for v in info["values"])
-                    if info["values"]
-                    else 0,
+                    max_length=max(len(str(v)) for v in info["values"]) if info["values"] else 0,
                     is_attribute=info["is_attribute"],
                     parent_path=info["parent_path"],
                     occurrence_count=info["count"],
@@ -313,20 +311,20 @@ class S3ExtractConfigBuilder(BaseExtractConfigBuilder):
         """Extract content metadata from S3 source."""
         # Use S3-compatible storage
         s3 = boto3.client(
-            's3',
+            "s3",
             endpoint_url=source.connection_string,
             aws_access_key_id=source.access_key,
             aws_secret_access_key=source.secret_key,
         )
         bucket = source.bucket_name
-        prefix = source.table_name if source.table_name and source.table_name != 'na' else ''
+        prefix = source.table_name if source.table_name and source.table_name != "na" else ""
 
         response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
 
-        if not response.get('Contents'):
+        if not response.get("Contents"):
             return [Content(message_name="empty_s3_prefix", metamodel=[])]
 
-        xml_objects = [obj for obj in response['Contents'] if obj['Key'].endswith('.xml')]
+        xml_objects = [obj for obj in response["Contents"] if obj["Key"].endswith(".xml")]
 
         if not xml_objects:
             return None
@@ -335,10 +333,10 @@ class S3ExtractConfigBuilder(BaseExtractConfigBuilder):
         xml_parser = XMLParser(max_sample_values=20)
 
         for obj in xml_objects:
-            key = obj['Key']
+            key = obj["Key"]
             response = s3.get_object(Bucket=bucket, Key=key)
-            content = response['Body'].read().decode('utf-8')
-            file_size = obj['Size']
+            content = response["Body"].read().decode("utf-8")
+            file_size = obj["Size"]
 
             analysis = xml_parser.analyze_xml_content(content, key, file_size)
 

@@ -3,14 +3,13 @@
 import logging
 
 from ai.llm import llm
-
+from models.app.update_etl import FeedbackItem
 from models.ddl import DDL
-
-logger = logging.getLogger(__name__)
 from models.extract import ExtractConfig
 from models.load import LoadConfig
 from models.transform import TransformConfig
-from models.app.update_etl import FeedbackItem
+
+logger = logging.getLogger(__name__)
 
 
 class TransformConfigBuilder:
@@ -24,7 +23,7 @@ class TransformConfigBuilder:
         prompt: str,
         old_transform_config: TransformConfig | None = None,
         feedback_items: list[FeedbackItem] | None = None,
-        overall_feedback: str | None = None
+        overall_feedback: str | None = None,
     ) -> TransformConfig:
         """Build TransformConfig from DDL, ExtractConfig, LoadConfig and prompt using LLM.
 
@@ -44,7 +43,8 @@ class TransformConfigBuilder:
 
         if old_transform_config:
             system_prompt = """
-            Refine the existing TransformConfig for an ETL pipeline based on user feedback and new requirements.
+            Refine the existing TransformConfig for an ETL pipeline based on user feedback
+            and new requirements.
 
             Start with the existing configuration and modify only what's needed based on feedback.
             Analyze the DDL, ExtractConfig, LoadConfig to understand current structure.
@@ -53,7 +53,8 @@ class TransformConfigBuilder:
             - Business rules, data type mappings, processing mode
             - Resource configurations
 
-            Preserve good parts of the existing config and only change what's specifically requested in feedback.
+            Preserve good parts of the existing config and only change what's specifically
+            requested in feedback.
             """
             user_message = f"""
             Existing TransformConfig: {old_transform_config.model_dump_json()}
@@ -63,12 +64,15 @@ class TransformConfigBuilder:
             User Prompt: {prompt}
             """
             if feedback_items:
-                user_message += f"\nFeedback Items: {[item.model_dump() for item in feedback_items]}"
+                user_message += (
+                    f"\nFeedback Items: {[item.model_dump() for item in feedback_items]}"
+                )
             if overall_feedback:
                 user_message += f"\nOverall Feedback: {overall_feedback}"
         else:
             system_prompt = """
-            Generate a TransformConfig for an ETL pipeline based on the provided DDL, ExtractConfig, LoadConfig, and user requirements.
+            Generate a TransformConfig for an ETL pipeline based on the provided DDL,
+            ExtractConfig, LoadConfig, and user requirements.
 
             Analyze the configurations to understand:
             - Source data structure from ExtractConfig
@@ -85,7 +89,8 @@ class TransformConfigBuilder:
             - Processing mode (batch, streaming, etc.)
             - Resource configurations
 
-            Create meaningful transformation rules that convert source data to match the target schema.
+            Create meaningful transformation rules that convert source data to match
+            the target schema.
             Include appropriate validation rules for data integrity.
             Suggest reasonable defaults for processing parameters.
             """
@@ -98,7 +103,10 @@ class TransformConfigBuilder:
             """
 
         transform_config = await structured_llm.ainvoke(
-            [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}]
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ]
         )
         logger.debug(f"TransformConfig fields: {transform_config}")
         return transform_config

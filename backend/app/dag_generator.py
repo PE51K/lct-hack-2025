@@ -11,8 +11,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 # Add path to dag_generation module
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -21,6 +19,8 @@ from dag_generation import ETLDAGGenerationSystem
 from models.extract import ExtractConfig
 from models.load import LoadConfig
 from models.transform import TransformConfig
+
+logger = logging.getLogger(__name__)
 
 
 class IntegratedDAGGenerator:
