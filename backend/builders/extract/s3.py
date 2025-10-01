@@ -12,9 +12,9 @@ from defusedxml import ElementTree
 from models.extract import (
     Attribute,
     Content,
+    ContentType,
     PostgreSqlDataType,
     Source,
-    ContentType,
 )
 
 from .base import BaseExtractConfigBuilder
