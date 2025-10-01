@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<employees>
+    <employee>
+        <name>Alice Johnson</name>
+        <age>29</age>
+        <department>HR</department>
+    </employee>
+    <employee>
+        <name>Bob Wilson</name>
+        <age>35</age>
+        <department>Finance</department>
+    </employee>
+</employees>
