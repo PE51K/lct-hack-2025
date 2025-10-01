@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PostgreSqlDataType(Enum):
@@ -120,18 +120,16 @@ class ContentType(str, Enum):
 
 class Source(BaseModel):
     """
-    MetaData describe technological source itself.
+    Metadata describing the technological source itself.
 
     Attributes:
         source_type - tech type of source folder, kafka etc.
         connection_string - connection string to connect to source to get metadata.
-        content_type - type of content in source csv json etc.
         table_name - name of table in db (optional, just for postgresql)
     """
 
     source_type: Annotated[str, SourceType] = SourceType.na
     connection_string: str | None = None
-    content_type: Annotated[str, ContentType] | None = None
     table_name: str | None = None
 
 
@@ -294,6 +292,7 @@ class ExtractConfig(BaseModel):
         resources - resource requirements for extraction
         incremental - incremental loading configuration
         data_quality - data quality profile and validation rules
+        content_type - type of content in source csv json etc.
     """
 
     source_metadata: Source | None = None
@@ -303,3 +302,4 @@ class ExtractConfig(BaseModel):
     resources: ExtractResourceConfig = Field(default_factory=ExtractResourceConfig)
     incremental: IncrementalConfig = Field(default_factory=IncrementalConfig)
     data_quality: DataQualityProfile = Field(default_factory=DataQualityProfile)
+    content_type: ContentType | None = None

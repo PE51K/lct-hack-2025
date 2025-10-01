@@ -33,62 +33,34 @@ class ExtractConfigBuilder:
 
     @classmethod
     async def from_source(cls, src: Source) -> ExtractConfig:
-        """Build an ExtractConfig from a URI.
-
-        For now, returns a mock ExtractConfig.
+        """Build an ExtractConfig from a Source.
 
         Args:
             src: The source object.
 
         Returns:
-            A mock ExtractConfig object.
+            An ExtractConfig object with all fields populated.
         """
-        # src.content_type = await cls.source_to_builder_map[src.source_type].get_src_content_type(
-        #     src
-        # )
-        # content_metadata = await cls.source_to_builder_map[src.source_type].get_content_metadata(
-        #     src
-        # )
-        # content_statistics = await cls.source_to_builder_map[
-        #     src.source_type
-        # ].get_content_statistics(src)
+        builder = cls.source_to_builder_map.get(src.source_type)
+        if not builder:
+            # Fallback to base builder with mocked data
+            builder = BaseExtractConfigBuilder
 
-        # return ExtractConfig(
-        #     source_metadata=src,
-        #     content_metadata=content_metadata,
-        #     content_statistics=content_statistics,
-        # )
+        content_type = await builder.get_src_content_type(src)
+        content_metadata = await builder.get_content_metadata(src)
+        content_statistics = await builder.get_content_statistics(src)
+        schedule = await builder.get_schedule(src)
+        resources = await builder.get_resources(src)
+        incremental = await builder.get_incremental(src)
+        data_quality = await builder.get_data_quality(src)
 
-        # Mock implementation
-        import asyncio
-
-        from models.extract import Attribute, Content
-
-        await asyncio.sleep(1)
         return ExtractConfig(
             source_metadata=src,
-            content_metadata=Content(
-                message_name="mock_data",
-                metamodel=[
-                    Attribute(
-                        order_no=1,
-                        column_name="id",
-                        data_type="integer",
-                        is_nullable=False,
-                        character_maximum_length=0,
-                        numeric_precision=10,
-                        numeric_scale=0,
-                    ),
-                    Attribute(
-                        order_no=2,
-                        column_name="name",
-                        data_type="character varying",
-                        is_nullable=False,
-                        character_maximum_length=255,
-                        numeric_precision=0,
-                        numeric_scale=0,
-                    ),
-                ],
-            ),
-            content_statistics={"total_files": 1, "total_size": 1024},
+            content_metadata=content_metadata,
+            content_statistics=content_statistics,
+            schedule=schedule,
+            resources=resources,
+            incremental=incremental,
+            data_quality=data_quality,
+            content_type=content_type,
         )

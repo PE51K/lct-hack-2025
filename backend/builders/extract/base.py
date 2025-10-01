@@ -2,7 +2,15 @@
 
 from abc import ABC, abstractmethod
 
-from models.extract import Content, ContentType, Source
+from models.extract import (
+    Content,
+    ContentType,
+    DataQualityProfile,
+    ExtractResourceConfig,
+    ExtractSchedule,
+    IncrementalConfig,
+    Source,
+)
 
 
 class BaseExtractConfigBuilder(ABC):
@@ -14,20 +22,23 @@ class BaseExtractConfigBuilder(ABC):
     """
 
     @classmethod
-    @abstractmethod
-    async def get_content_metadata(cls, source: Source) -> list[Content]:
+    async def get_content_metadata(cls, source: Source) -> Content:
         """Retrieve content metadata from the source.
 
         Args:
             source: The source configuration.
 
         Returns:
-            List of Content metadata objects for every content item (e.g., file, topic, etc.).
+            Content metadata object.
         """
-        pass
+        # Mocked data
+        return Content(
+            message_name="mock_content",
+            is_complex_nesting_present=False,
+            metamodel=[],
+        )
 
     @classmethod
-    @abstractmethod
     async def get_src_content_type(cls, source: Source) -> ContentType:
         """Determine the content type of the source.
 
@@ -37,10 +48,10 @@ class BaseExtractConfigBuilder(ABC):
         Returns:
             The ContentType enum value.
         """
-        pass
+        # Mocked data
+        return ContentType.na
 
     @classmethod
-    @abstractmethod
     async def get_content_statistics(cls, source: Source) -> dict:
         """Retrieve statistics about the source content.
 
@@ -51,4 +62,57 @@ class BaseExtractConfigBuilder(ABC):
             Dictionary containing content statistics with
             any additional information about the source.
         """
-        pass
+        # Mocked data
+        return {"total_files": 0, "total_size_mb": 0.0}
+
+    @classmethod
+    async def get_schedule(cls, source: Source) -> ExtractSchedule:
+        """Retrieve schedule configuration for the source.
+
+        Args:
+            source: The source configuration.
+
+        Returns:
+            ExtractSchedule configuration.
+        """
+        # Mocked data
+        return ExtractSchedule()
+
+    @classmethod
+    async def get_resources(cls, source: Source) -> ExtractResourceConfig:
+        """Retrieve resource configuration for the source.
+
+        Args:
+            source: The source configuration.
+
+        Returns:
+            ExtractResourceConfig configuration.
+        """
+        # Mocked data
+        return ExtractResourceConfig()
+
+    @classmethod
+    async def get_incremental(cls, source: Source) -> IncrementalConfig:
+        """Retrieve incremental configuration for the source.
+
+        Args:
+            source: The source configuration.
+
+        Returns:
+            IncrementalConfig configuration.
+        """
+        # Mocked data
+        return IncrementalConfig()
+
+    @classmethod
+    async def get_data_quality(cls, source: Source) -> DataQualityProfile:
+        """Retrieve data quality profile for the source.
+
+        Args:
+            source: The source configuration.
+
+        Returns:
+            DataQualityProfile configuration.
+        """
+        # Mocked data
+        return DataQualityProfile()

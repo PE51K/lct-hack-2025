@@ -5,12 +5,12 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from ai.workflows.build_load_config import build_load_config_from_extract_config_and_prompt
-from ai.workflows.build_transform_config import build_transform_config_from_configs_and_prompt
 from ai.workflows.extract_source import extract_source_from_user_prompt
-from builders.dag import generate_dag_from_configs
-from builders.ddl import generate_ddl_from_configs
+from builders.dag import DAGBuilder
+from builders.ddl import DDLBuilder
 from builders.extract import ExtractConfigBuilder
+from builders.load import LoadConfigBuilder
+from builders.transform import TransformConfigBuilder
 from models.app import CreateETLRequest, CreateETLResponse
 from models.extract import Source
 
@@ -64,9 +64,8 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            load_config = await build_load_config_from_extract_config_and_prompt(
-                extract_config, request.user_prompt
-            )
+            load_builder = LoadConfigBuilder()
+            load_config = await load_builder(extract_config, request.user_prompt)
 
             # Step 4. Generate DDL from ExtractConfig and LoadConfig (60%)
             yield (
@@ -80,7 +79,8 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            ddl = await generate_ddl_from_configs(extract_config, load_config)
+            ddl_builder = DDLBuilder()
+            ddl = await ddl_builder(extract_config, load_config)
 
             # Step 5. Generate TransformConfig from DDL and user prompt (80%)
             yield (
@@ -94,9 +94,8 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            transform_config = await build_transform_config_from_configs_and_prompt(
-                ddl, extract_config, load_config, request.user_prompt
-            )
+            transform_builder = TransformConfigBuilder()
+            transform_config = await transform_builder(ddl, extract_config, load_config, request.user_prompt)
 
             # Step 6. Generate DAG from all configs (100%)
             yield (
@@ -110,9 +109,8 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            dag = await generate_dag_from_configs(
-                extract_config, transform_config, load_config, ddl
-            )
+            dag_builder = DAGBuilder()
+            dag = await dag_builder(extract_config, transform_config, load_config, ddl)
 
             # Final response with all artefacts
             yield (

@@ -13,6 +13,5 @@ async def extract_source_from_user_prompt(user_prompt: str) -> Source:
     return Source(
         source_type=SourceType.PostgreSQL,
         connection_string="postgresql://user:password@localhost/dbname",
-        content_type=ContentType.table,
         table_name="test_table",
     )
