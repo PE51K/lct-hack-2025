@@ -9,13 +9,18 @@ from models.load import LoadConfig
 
 async def generate_ddl_from_configs(extract_config: ExtractConfig, load_config: LoadConfig) -> DDL:
     """Generate DDL from ExtractConfig and LoadConfig."""
-    # Simulate processing
-    await asyncio.sleep(1)
+   
+    query = f'''CREATE TABLE public.{load_config.flat_meta_model.table_name} ('''
+
+    for field in load_config.flat_meta_model.fields:
+        query += f'''
+            {field.name} {field.data_type} { 'NULL' if field .nullable else 'NOT NULL'},'''
+ 
+    query += f'''
+        PRIMARY KEY ({load_config.flat_meta_model.partitioning_key})
+    );'''
 
     # Mock DDL
     return DDL(
-        statements=[
-            "CREATE TABLE etl_target_table (id Int32, name String) "
-            "ENGINE = MergeTree() ORDER BY id;"
-        ]
+        ddl_query=query
     )
