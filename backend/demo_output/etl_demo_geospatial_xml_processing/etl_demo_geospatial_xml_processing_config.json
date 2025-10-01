@@ -1,0 +1,398 @@
+{
+  "pipeline_config": {
+    "metadata": {
+      "pipeline_id": "etl_demo_geospatial_xml_processing",
+      "pipeline_name": "Demo Geospatial XML Processing",
+      "description": "ETL pipeline for xml data processing",
+      "version": "1.0.0",
+      "owner": "demo_user",
+      "team": "demo_team",
+      "business_domain": "data_processing",
+      "criticality": "medium",
+      "documentation_url": null,
+      "source_code_url": null,
+      "tags": [
+        "xml",
+        "folder",
+        "etl",
+        "automated"
+      ]
+    },
+    "pipeline_type": "batch_etl",
+    "extract_config": {
+      "source_id": "Demo Geospatial XML Processing_source",
+      "source_name": "Source for Demo Geospatial XML Processing",
+      "source_type": "folder",
+      "content_type": "xml",
+      "connection_string": "file://d:/lct-hack-2025/backend/parsers/sample/XML/",
+      "source_metrics": {
+        "estimated_size_mb": 150.5,
+        "estimated_records": 25000,
+        "file_count": 5,
+        "avg_record_size_bytes": 6400.0,
+        "complexity_score": 7.2,
+        "nested_levels": 4,
+        "unique_attributes": 45,
+        "nullable_attributes": 12
+      },
+      "data_quality": {
+        "completeness_threshold": 0.95,
+        "accuracy_threshold": 0.98,
+        "consistency_checks": [
+          "date_format",
+          "data_types",
+          "referential_integrity"
+        ],
+        "freshness_hours": 24,
+        "volume_min_records": 1,
+        "volume_max_records": null,
+        "schema_validation": true,
+        "duplicate_detection": true,
+        "schema_drift_detection": true,
+        "duplicate_threshold": 0.05
+      },
+      "batch_size": 1000,
+      "incremental_config": {
+        "enabled": false,
+        "watermark_field": null,
+        "watermark_format": null,
+        "lookback_hours": 24,
+        "state_storage": "airflow_variables"
+      },
+      "schedule": {
+        "frequency": "@daily",
+        "start_date": "2025-09-30 02:00:00",
+        "end_date": null,
+        "depends_on_past": false,
+        "max_active_runs": 1,
+        "catchup": false,
+        "retry_count": 3,
+        "retry_delay_minutes": 5,
+        "execution_timeout_hours": 2
+      },
+      "resources": {
+        "cpu_cores": 2.0,
+        "memory_mb": 1024,
+        "disk_space_mb": 1024,
+        "network_bandwidth_mbps": null,
+        "parallel_workers": 4,
+        "timeout_minutes": 60
+      },
+      "encryption_required": false,
+      "pii_fields": [],
+      "compliance_tags": [],
+      "schema_validation_rules": {},
+      "business_rules": []
+    },
+    "transform_config": {
+      "transform_id": "Demo Geospatial XML Processing_transform",
+      "transform_name": "Transform for Demo Geospatial XML Processing",
+      "description": "Data transformation for xml content",
+      "identity_keys": [
+        "record_id"
+      ],
+      "aggregate_keys": [],
+      "versioning_field": null,
+      "transformation_rules": [
+        {
+          "rule_id": "xml_flatten",
+          "rule_name": "Flatten XML Structure",
+          "transformation_type": "standardization",
+          "source_fields": [
+            "xml_content"
+          ],
+          "target_field": "flattened_data",
+          "expression": "flatten_xml_to_columns(xml_content)",
+          "conditions": null,
+          "priority": 1,
+          "error_handling": "skip"
+        },
+        {
+          "rule_id": "extract_coordinates",
+          "rule_name": "Extract Coordinates",
+          "transformation_type": "enrichment",
+          "source_fields": [
+            "spatial_elements"
+          ],
+          "target_field": "coordinate_array",
+          "expression": "extract_coordinates_from_spatial(spatial_elements)",
+          "conditions": null,
+          "priority": 2,
+          "error_handling": "skip"
+        }
+      ],
+      "data_type_mappings": [
+        {
+          "source_field": "number_pp",
+          "source_type": "string",
+          "target_field": "record_id",
+          "target_type": "varchar(50)",
+          "conversion_function": null,
+          "default_value": null
+        },
+        {
+          "source_field": "sk_id",
+          "source_type": "string",
+          "target_field": "coordinate_system",
+          "target_type": "varchar(20)",
+          "conversion_function": null,
+          "default_value": null
+        }
+      ],
+      "validation_rules": [
+        {
+          "rule_name": "Check Record ID",
+          "field_name": "record_id",
+          "validation_type": "not_null",
+          "parameters": {},
+          "error_message": "Record ID cannot be null",
+          "severity": "error"
+        }
+      ],
+      "processing_mode": "batch",
+      "window_size_minutes": null,
+      "late_arrival_threshold_minutes": 60,
+      "output_format": "table",
+      "partitioning_strategy": null,
+      "sorting_keys": [],
+      "resources": {
+        "cpu_cores": 2.0,
+        "memory_mb": 2048,
+        "temp_storage_mb": 5120,
+        "max_parallelism": 4,
+        "spill_to_disk": true
+      },
+      "checkpoint_interval_minutes": 10,
+      "quality_checks": [
+        {
+          "rule_name": "Check Record ID",
+          "field_name": "record_id",
+          "validation_type": "not_null",
+          "parameters": {},
+          "error_message": "Record ID cannot be null",
+          "severity": "error"
+        }
+      ],
+      "monitoring_metrics": [
+        "rows_processed",
+        "transformation_errors",
+        "processing_time"
+      ]
+    },
+    "load_config": {
+      "load_id": "Demo Geospatial XML Processing_load",
+      "load_name": "Load for Demo Geospatial XML Processing",
+      "description": "Data loading to postgres",
+      "target_storage_type": "postgres",
+      "connection_string": "postgresql://localhost:5432/dwh",
+      "database_name": "dwh",
+      "schema_name": "public",
+      "table_name": "Demo Geospatial XML Processing_data",
+      "load_strategy": "full_refresh",
+      "merge_keys": [],
+      "update_fields": [],
+      "target_schema": [],
+      "indexes": [
+        {
+          "index_name": "idx_record_id",
+          "index_type": "btree",
+          "columns": [
+            "record_id"
+          ],
+          "is_unique": true,
+          "is_primary": false,
+          "is_clustered": false,
+          "fill_factor": null
+        },
+        {
+          "index_name": "idx_created_date",
+          "index_type": "btree",
+          "columns": [
+            "created_date"
+          ],
+          "is_unique": false,
+          "is_primary": false,
+          "is_clustered": false,
+          "fill_factor": null
+        }
+      ],
+      "partitioning": null,
+      "compression": {
+        "enabled": true,
+        "algorithm": "gzip",
+        "level": 1,
+        "columns": null
+      },
+      "resources": {
+        "cpu_cores": 1.0,
+        "memory_mb": 1024,
+        "concurrent_connections": 5,
+        "batch_size": 5000,
+        "commit_frequency": 1000
+      },
+      "pre_load_sql": [],
+      "post_load_sql": [],
+      "retention_policy": {
+        "retention_days": 365,
+        "archive_after_days": 90,
+        "compression_enabled": true,
+        "backup_frequency": "daily"
+      },
+      "compression_type": null,
+      "quality_checks": {
+        "row_count_validation": true,
+        "null_checks": {
+          "record_id": false
+        },
+        "unique_constraints": [
+          "record_id"
+        ],
+        "foreign_key_checks": [],
+        "custom_sql_checks": []
+      },
+      "success_metrics": [
+        "rows_loaded",
+        "load_duration",
+        "data_quality_score"
+      ],
+      "failure_thresholds": {},
+      "notification_channels": [
+        "email",
+        "slack"
+      ]
+    },
+    "dependencies": [],
+    "notifications": {
+      "email_on_success": false,
+      "email_on_failure": true,
+      "email_on_retry": false,
+      "email_addresses": [
+        "demo_user@company.com"
+      ],
+      "slack_webhook": null,
+      "custom_callbacks": []
+    },
+    "sla_minutes": null,
+    "environment": "development",
+    "total_cpu_cores": 4.0,
+    "total_memory_mb": 2765,
+    "estimated_runtime_minutes": 34,
+    "data_classification": "internal",
+    "gdpr_applicable": false,
+    "data_lineage_enabled": true
+  },
+  "ai_recommendations": [
+    {
+      "recommendation_id": "storage_analytical_01",
+      "recommendation_type": "storage_optimization",
+      "title": "Рекомендуется ClickHouse для аналитической нагрузки",
+      "description": "Для сложных XML данных с высокой степенью вложенности ClickHouse обеспечит лучшую производительность аналитических запросов.",
+      "rationale": "Сложность данных: 7.2/10, вложенность: 4 уровней",
+      "confidence_score": 0.85,
+      "impact_level": "high",
+      "implementation_effort": "medium",
+      "estimated_improvement": {
+        "query_performance": 3.5,
+        "compression_ratio": 2.1
+      },
+      "implementation_steps": [
+        "Создать ClickHouse схему с оптимизированными типами данных",
+        "Настроить партиционирование по дате",
+        "Создать материализованные представления для агрегаций"
+      ],
+      "risks": [
+        "Требует изучения ClickHouse SQL диалекта",
+        "Дополнительные расходы на ClickHouse кластер"
+      ]
+    },
+    {
+      "recommendation_id": "storage_transactional_01",
+      "recommendation_type": "storage_optimization",
+      "title": "PostgreSQL подходит для небольших объемов данных",
+      "description": "Для объемов данных менее 100K записей PostgreSQL обеспечит отличную производительность с меньшими затратами на инфраструктуру.",
+      "rationale": "Объем данных: 25000 записей, что позволяет использовать реляционную СУБД",
+      "confidence_score": 0.92,
+      "impact_level": "medium",
+      "implementation_effort": "low",
+      "estimated_improvement": {
+        "cost_reduction": 0.4,
+        "maintenance_simplicity": 0.8
+      },
+      "implementation_steps": [
+        "Создать оптимизированную PostgreSQL схему",
+        "Настроить индексы для часто используемых полей",
+        "Настроить автоматический VACUUM"
+      ],
+      "risks": [
+        "Возможны проблемы с масштабированием при росте данных"
+      ]
+    },
+    {
+      "recommendation_id": "performance_xml_01",
+      "recommendation_type": "performance_tuning",
+      "title": "Оптимизация обработки сложных XML данных",
+      "description": "Рекомендуется использовать стриминговый парсинг и увеличить объем памяти для обработки сложных XML структур.",
+      "rationale": "Высокая сложность XML (7.2/10) требует специальной обработки",
+      "confidence_score": 0.78,
+      "impact_level": "high",
+      "implementation_effort": "medium",
+      "estimated_improvement": {
+        "processing_speed": 2.3,
+        "memory_efficiency": 1.8
+      },
+      "implementation_steps": [
+        "Включить стриминговый XML парсинг",
+        "Увеличить память до 4GB для transformation задач",
+        "Использовать батчи размером 500 записей",
+        "Включить промежуточное кеширование результатов"
+      ],
+      "risks": [
+        "Увеличение потребления памяти",
+        "Необходимость настройки буферизации"
+      ]
+    },
+    {
+      "recommendation_id": "performance_resources_01",
+      "recommendation_type": "resource_allocation",
+      "title": "Увеличение ресурсов для больших объемов данных",
+      "description": "Для обработки больших объемов данных рекомендуется использовать параллельную обработку.",
+      "rationale": "Размер данных 150.5 МБ требует дополнительных ресурсов",
+      "confidence_score": 0.88,
+      "impact_level": "medium",
+      "implementation_effort": "low",
+      "estimated_improvement": {
+        "processing_time": 0.6,
+        "throughput": 2.1
+      },
+      "implementation_steps": [
+        "Увеличить количество параллельных воркеров до 4",
+        "Выделить 8GB оперативной памяти",
+        "Использовать SSD для временных файлов"
+      ],
+      "risks": [
+        "Увеличение стоимости ресурсов"
+      ]
+    }
+  ],
+  "baseline_metrics": {
+    "throughput_records_per_minute": 416.6666666666667,
+    "latency_minutes": 2.0,
+    "resource_utilization_cpu": 0.6,
+    "resource_utilization_memory": 0.7,
+    "cost_per_execution_usd": 0.5,
+    "data_quality_score": 0.85,
+    "reliability_score": 0.9
+  },
+  "target_metrics": {
+    "throughput_records_per_minute": 958.3333333333333,
+    "latency_minutes": 0.8695652173913044,
+    "resource_utilization_cpu": 0.72,
+    "resource_utilization_memory": 0.77,
+    "cost_per_execution_usd": 0.5,
+    "data_quality_score": 0.9,
+    "reliability_score": 0.93
+  },
+  "generated_at": "2025-09-30 20:33:21.706965",
+  "generator_version": "2.0.0",
+  "config_hash": "8e453d1a4ef015d2c5bbbf99a91bcc10"
+}
