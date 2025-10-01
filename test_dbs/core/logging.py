@@ -6,7 +6,6 @@ Configures logging settings.
 
 import logging
 import sys
-from typing import Optional
 
 
 def setup_logger(name: str = "test_dbs_logger", level: str = "INFO") -> logging.Logger:
@@ -30,7 +29,10 @@ def setup_logger(name: str = "test_dbs_logger", level: str = "INFO") -> logging.
 
     # Create formatter
     formatter = logging.Formatter(
-        fmt="%(asctime)s | %(levelname)s | %(name)s:%(module)s:%(funcName)s:%(lineno)d - %(message)s",
+        fmt=(
+            "%(asctime)s | %(levelname)s | "
+            "%(name)s:%(module)s:%(funcName)s:%(lineno)d - %(message)s"
+        ),
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
@@ -46,4 +48,4 @@ def setup_logger(name: str = "test_dbs_logger", level: str = "INFO") -> logging.
 logger = setup_logger()
 
 
-__all__ = ["setup_logger", "logger"]
+__all__ = ["logger", "setup_logger"]

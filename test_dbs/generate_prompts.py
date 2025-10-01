@@ -5,17 +5,27 @@ from core.settings import settings
 
 def generate_postgres_prompt(table_name: str = "employees") -> str:
     """Generate a prompt for PostgreSQL extraction."""
-    return f"Connect to PostgreSQL database using connection string: {settings.postgres.connection_string} and extract data from table: {table_name}"
+    return (
+        f"Connect to PostgreSQL database using connection string: "
+        f"{settings.postgres.connection_string} and extract data from table: {table_name}"
+    )
 
 
 def generate_clickhouse_prompt(table_name: str = "employees") -> str:
     """Generate a prompt for ClickHouse extraction."""
-    return f"Connect to ClickHouse database using connection string: {settings.clickhouse.connection_string} and extract data from table: {table_name}"
+    return (
+        f"Connect to ClickHouse database using connection string: "
+        f"{settings.clickhouse.connection_string} and extract data from table: {table_name}"
+    )
 
 
 def generate_minio_prompt(folder: str = "csv/") -> str:
     """Generate a prompt for MinIO (S3) extraction."""
-    return f"Connect to S3-compatible storage using endpoint: {settings.minio.endpoint_url}, bucket: {settings.minio.bucket_name}, access_key: {settings.minio.root_user}, secret_key: {settings.minio.root_password} and extract data from folder: {folder}"
+    return (
+        f"Connect to S3-compatible storage using endpoint: {settings.minio.endpoint_url}, "
+        f"bucket: {settings.minio.bucket_name}, access_key: {settings.minio.root_user}, "
+        f"secret_key: {settings.minio.root_password} and extract data from folder: {folder}"
+    )
 
 
 def main():

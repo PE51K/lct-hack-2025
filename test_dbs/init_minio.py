@@ -5,7 +5,6 @@ Test databases initialization script.
 Connects to test databases (PostgreSQL, ClickHouse, MinIO) and inserts test data.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -19,13 +18,12 @@ def init_minio() -> None:
     logger.info("Initializing MinIO...")
 
     # Use environment variables if available (for Docker), otherwise use settings
-    minio_host = os.getenv('TEST_MINIO_HOST', settings.minio.host)
-    endpoint_url = f"http://{minio_host}:{settings.minio.port}"
+    endpoint_url = f"http://{settings.minio.host}:{settings.minio.port}"
 
     try:
         # Create S3 client for MinIO
         s3_client = boto3.client(
-            's3',
+            "s3",
             endpoint_url=endpoint_url,
             aws_access_key_id=settings.minio.root_user,
             aws_secret_access_key=settings.minio.root_password,
