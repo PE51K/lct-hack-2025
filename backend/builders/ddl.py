@@ -14,7 +14,7 @@ async def generate_ddl_from_configs(extract_config: ExtractConfig, load_config: 
 
     for field in load_config.flat_meta_model.fields:
         query += f'''
-            {field.name} {field.data_type} { 'NULL' if field .nullable else 'NOT NULL'},'''
+            {field.name} {field.data_type} { 'NULL' if field.nullable else 'NOT NULL'},'''
  
     query += f'''
         PRIMARY KEY ({load_config.flat_meta_model.partitioning_key})
