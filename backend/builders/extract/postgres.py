@@ -11,10 +11,12 @@ from models.extract import (
     Source,
 )
 
+from .base import BaseExtractConfigBuilder
+
 logger = logging.getLogger(__name__)
 
 
-class PostgresExtractConfigBuilder:
+class PostgresExtractConfigBuilder(BaseExtractConfigBuilder):
     """Builder for PostgreSQL source configurations.
 
     Extracts metadata from PostgreSQL sources.
