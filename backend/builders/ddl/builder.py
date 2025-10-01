@@ -39,10 +39,16 @@ class DDLBuilder:
         )
 
         if target_type == "postgres":
-            ddl = f"CREATE TABLE IF NOT EXISTS {table_name} (\n"
+            query = f'''CREATE TABLE public.{load_config.flat_meta_model.table_name} ('''
+
             for field in load_config.flat_meta_model.fields:
-                ddl += f"    {field.name} {field.data_type},\n"
-            ddl = ddl.rstrip(",\n") + "\n);"
-            return ddl
+                query += f'''
+                    {field.name} {field.data_type} { 'NULL' if field .nullable else 'NOT NULL'},'''
+        
+            query += f'''
+                PRIMARY KEY ({load_config.flat_meta_model.partitioning_key})
+            );'''
+
+            return query
         else:
             return f"-- DDL for {target_type} table {table_name}"
