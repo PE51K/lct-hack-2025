@@ -22,11 +22,10 @@ class DDLBuilder:
         Returns:
             DDL with generated statements.
         """
-        logger.info("Building DDL from ExtractConfig and LoadConfig")
         # Generate DDL statements based on load_config
         statements = self._generate_ddl_statements(load_config)
         ddl = DDL(statements=statements)
-        logger.info(f"DDL generated with {len(statements)} statements")
+        logger.debug(f"DDL fields: {ddl}")
         return ddl
 
     def _generate_ddl_statements(self, load_config: LoadConfig) -> str:

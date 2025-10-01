@@ -432,17 +432,9 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
         if not xml_files:
             return Content(message_name="no_xml_files", metamodel=[])
 
-        await logger.info(f"Analyzing XML folder: {folder_path}")
-        await logger.info(f"Found XML files: {len(xml_files)}")
-
         # Use full XML parser
         xml_parser = XMLParser(max_sample_values=20)
         analysis, processed_files = xml_parser.analyze_xml_folder(folder_path)
-
-        await logger.info(f"Processed files: {len(processed_files)}")
-        await logger.info(f"Found unique fields: {analysis.unique_elements}")
-        await logger.info(f"Estimated records: {analysis.total_records}")
-        await logger.info(f"Maximum depth: {analysis.max_depth}")
 
         # Convert analysis results to attributes
         attributes = xml_parser.convert_to_extract_attributes(analysis)

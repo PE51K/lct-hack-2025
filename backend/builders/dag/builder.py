@@ -32,13 +32,11 @@ class DAGBuilder:
         Returns:
             DAG with generated structure.
         """
-        logger.info("Building DAG structure")
         # Generate DAG structure
         dag_id = (
             f"etl_{extract_config.source_metadata.source_type}_"
             f"{load_config.target_storage_type.storage_type}"
         )
-        logger.info(f"Generated DAG ID: {dag_id}")
         tasks = self._generate_tasks(extract_config, transform_config, load_config, ddl)
 
         dag = DAG(
@@ -52,7 +50,7 @@ class DAGBuilder:
             owner="data_team",
             tags=["etl", "auto_generated"],
         )
-        logger.info(f"DAG built with {len(tasks)} tasks")
+        logger.debug(f"DAG fields: {dag}")
         return dag
 
     def _generate_tasks(

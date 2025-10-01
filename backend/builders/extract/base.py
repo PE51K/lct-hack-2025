@@ -35,7 +35,6 @@ class BaseExtractConfigBuilder:
         Returns:
             A Source object extracted from the prompt.
         """
-        logger.info("Extracting source from user prompt using LLM")
         structured_llm = llm.with_structured_output(Source)
 
         system_prompt = """
@@ -50,7 +49,6 @@ class BaseExtractConfigBuilder:
         source = await structured_llm.ainvoke(
             [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
         )
-        logger.info(f"Extracted source: {source}")
         return source
 
     @classmethod
