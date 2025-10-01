@@ -8,6 +8,7 @@ sys.path.insert(0, ".")
 from models.extract import ExtractConfig, Source, SourceType
 
 from .base import BaseExtractConfigBuilder
+
 # from .clickhouse import ClickHouseExtractConfigBuilder
 # from .folder import FolderExtractConfigBuilder
 # from .kafka import KafkaExtractConfigBuilder  # Commented out due to kafka package issues

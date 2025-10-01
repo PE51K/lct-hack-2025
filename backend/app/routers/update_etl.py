@@ -3,10 +3,10 @@
 import asyncio
 from collections.abc import AsyncGenerator
 
+from ai.workflows.extract_source import extract_source_from_user_prompt
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from ai.workflows.extract_source import extract_source_from_user_prompt
 from builders.dag import DAGBuilder
 from builders.ddl import DDLBuilder
 from builders.extract import ExtractConfigBuilder

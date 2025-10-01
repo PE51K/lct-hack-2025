@@ -26,7 +26,11 @@ class DDLBuilder:
         """Generate DDL statements from load configuration."""
         # This is a simplified implementation - in real scenario would generate proper DDL
         target_type = load_config.target_storage_type.storage_type
-        table_name = load_config.flat_meta_model.fields[0].name if load_config.flat_meta_model.fields else "target_table"
+        table_name = (
+            load_config.flat_meta_model.fields[0].name
+            if load_config.flat_meta_model.fields
+            else "target_table"
+        )
 
         if target_type == "postgres":
             ddl = f"CREATE TABLE IF NOT EXISTS {table_name} (\n"

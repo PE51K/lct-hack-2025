@@ -4,7 +4,6 @@ Application settings for the Calculator API application.
 Uses Pydantic's BaseSettings to manage configuration and environment variables.
 """
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # ============ FastAPI backend app ============
