@@ -1,0 +1,36 @@
+# Test Databases Initialization Dockerfile
+#
+# Build: cd test_dbs && docker build -t test-dbs-init .
+# Run: docker run --env-file .env --network host test-dbs-init
+
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+# Set environment variables
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PYTHONUNBUFFERED=1
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-install-project
+
+# Copy the project
+COPY . .
+
+# Install the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
+
+# Default command runs the initialization script
+CMD ["uv", "run", "python", "init_test_dbs.py"]
