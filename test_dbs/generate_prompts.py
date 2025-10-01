@@ -3,12 +3,12 @@
 from core.settings import settings
 
 
-def generate_postgres_prompt(table_name: str = "example_table") -> str:
+def generate_postgres_prompt(table_name: str = "employees") -> str:
     """Generate a prompt for PostgreSQL extraction."""
     return f"Connect to PostgreSQL database using connection string: {settings.postgres.connection_string} and extract data from table: {table_name}"
 
 
-def generate_clickhouse_prompt(table_name: str = "example_table") -> str:
+def generate_clickhouse_prompt(table_name: str = "employees") -> str:
     """Generate a prompt for ClickHouse extraction."""
     return f"Connect to ClickHouse database using connection string: {settings.clickhouse.connection_string} and extract data from table: {table_name}"
 
@@ -23,17 +23,26 @@ def main():
     print("Example Extraction Prompts:")
     print("=" * 50)
 
+    tables = ["employees", "products", "orders"]
+
     print("PostgreSQL:")
-    print(generate_postgres_prompt())
-    print()
+    for table in tables:
+        print(f"Table: {table}")
+        print(generate_postgres_prompt(table))
+        print()
 
     print("ClickHouse:")
-    print(generate_clickhouse_prompt())
-    print()
+    for table in tables:
+        print(f"Table: {table}")
+        print(generate_clickhouse_prompt(table))
+        print()
 
     print("MinIO (S3):")
-    print(generate_minio_prompt())
-    print()
+    folders = ["csv/", "json/", "xml/"]
+    for folder in folders:
+        print(f"Folder: {folder}")
+        print(generate_minio_prompt(folder))
+        print()
 
 
 if __name__ == "__main__":
