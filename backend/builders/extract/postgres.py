@@ -3,7 +3,16 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 
-from models.extract import Attribute, Content, ContentType, PostgreSqlDataType, Source
+from models.extract import (
+    Attribute,
+    Content,
+    ContentType,
+    DataQualityProfile,
+    ExtractResourceConfig,
+    ExtractSchedule,
+    IncrementalConfig,
+    Source,
+)
 
 
 class PostgresExtractConfigBuilder:
@@ -44,7 +53,7 @@ class PostgresExtractConfigBuilder:
                 attribute = Attribute(
                     order_no=i + 1,
                     column_name=df.loc[i, "column_name"],
-                    data_type=PostgreSqlDataType(df.loc[i, "data_type"]),
+                    data_type=df.loc[i, "data_type"],
                     is_nullable=df.loc[i, "is_nullable"] == "YES",
                     character_maximum_length=df.loc[i, "character_maximum_length"],
                     numeric_precision=df.loc[i, "numeric_precision"],
@@ -70,53 +79,60 @@ class PostgresExtractConfigBuilder:
             Dictionary containing content statistics with
             any additional information about the source.
         """
-        try:
-            engine = create_engine(source.connection_string)
+        engine = create_engine(source.connection_string)
 
-            with engine.connect() as connection:
-                # Get table statistics
-                stats_query = text("""
-                    SELECT
-                        COUNT(*) as total_records,
-                        pg_total_relation_size(quote_ident(:table_name)::regclass)
-                            as total_size_bytes,
-                        pg_relation_size(quote_ident(:table_name)::regclass) as table_size_bytes
-                """)
+        with engine.connect() as connection:
+            # Get table statistics
+            stats_query = text("""
+                SELECT
+                    COUNT(*) as total_records,
+                    pg_total_relation_size(quote_ident(:table_name)::regclass)
+                        as total_size_bytes,
+                    pg_relation_size(quote_ident(:table_name)::regclass) as table_size_bytes
+            """)
 
-                result = connection.execute(stats_query, {"table_name": source.table_name})
-                row = result.fetchone()
+            result = connection.execute(stats_query, {"table_name": source.table_name})
+            row = result.fetchone()
 
-                if row:
-                    total_records = row[0] if row[0] is not None else 0
-                    total_size_bytes = row[1] if row[1] is not None else 0
-                    table_size_bytes = row[2] if row[2] is not None else 0
+            if row:
+                total_records = row[0] if row[0] is not None else 0
+                total_size_bytes = row[1] if row[1] is not None else 0
+                table_size_bytes = row[2] if row[2] is not None else 0
 
-                    return {
-                        "total_records": total_records,
-                        "total_size_mb": total_size_bytes / (1024 * 1024),
-                        "table_size_mb": table_size_bytes / (1024 * 1024),
-                        "avg_record_size_bytes": total_size_bytes / max(total_records, 1),
-                        "source_type": "postgresql",
-                        "table_name": source.table_name,
-                    }
-                else:
-                    return {
-                        "total_records": 0,
-                        "total_size_mb": 0,
-                        "table_size_mb": 0,
-                        "avg_record_size_bytes": 0,
-                        "source_type": "postgresql",
-                        "table_name": source.table_name,
-                    }
+                return {
+                    "total_records": total_records,
+                    "total_size_mb": total_size_bytes / (1024 * 1024),
+                    "table_size_mb": table_size_bytes / (1024 * 1024),
+                    "avg_record_size_bytes": total_size_bytes / max(total_records, 1),
+                    "source_type": "postgresql",
+                    "table_name": source.table_name,
+                }
+            else:
+                return {
+                    "total_records": 0,
+                    "total_size_mb": 0,
+                    "table_size_mb": 0,
+                    "avg_record_size_bytes": 0,
+                    "source_type": "postgresql",
+                    "table_name": source.table_name,
+                }
 
-        except Exception as e:
-            print(f"Ошибка получения статистики PostgreSQL: {e}")
-            return {
-                "total_records": 0,
-                "total_size_mb": 0,
-                "table_size_mb": 0,
-                "avg_record_size_bytes": 0,
-                "source_type": "postgresql",
-                "table_name": source.table_name,
-                "error": str(e),
-            }
+    @classmethod
+    async def get_schedule(cls, source: Source) -> ExtractSchedule:
+        """Retrieve schedule configuration for the source."""
+        return ExtractSchedule()
+
+    @classmethod
+    async def get_resources(cls, source: Source) -> ExtractResourceConfig:
+        """Retrieve resource configuration for the source."""
+        return ExtractResourceConfig()
+
+    @classmethod
+    async def get_incremental(cls, source: Source) -> IncrementalConfig:
+        """Retrieve incremental configuration for the source."""
+        return IncrementalConfig()
+
+    @classmethod
+    async def get_data_quality(cls, source: Source) -> DataQualityProfile:
+        """Retrieve data quality profile for the source."""
+        return DataQualityProfile()

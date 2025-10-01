@@ -1,7 +1,6 @@
 """Models for data extraction configurations."""
 
 from enum import Enum
-from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -128,7 +127,7 @@ class Source(BaseModel):
         table_name - name of table in db (optional, just for postgresql)
     """
 
-    source_type: Annotated[str, SourceType] = SourceType.na
+    source_type: SourceType = SourceType.na
     connection_string: str | None = None
     table_name: str | None = None
 
@@ -211,11 +210,11 @@ class Attribute(BaseModel):
 
     order_no: int
     column_name: str
-    data_type: Annotated[str, PostgreSqlDataType] | None = None
+    data_type: str | None = None
     is_nullable: bool
-    character_maximum_length: int
-    numeric_precision: int
-    numeric_scale: int
+    character_maximum_length: int | None = None
+    numeric_precision: int | None = None
+    numeric_scale: int | None = None
 
 
 class Content(BaseModel):

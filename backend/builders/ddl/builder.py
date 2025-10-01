@@ -16,7 +16,23 @@ class DDLBuilder:
             load_config: The load configuration.
 
         Returns:
-            DDL with mocked data.
+            DDL with generated statements.
         """
-        # Mocked data
-        return DDL()
+        # Generate DDL statements based on load_config
+        statements = self._generate_ddl_statements(load_config)
+        return DDL(statements=statements)
+
+    def _generate_ddl_statements(self, load_config: LoadConfig) -> str:
+        """Generate DDL statements from load configuration."""
+        # This is a simplified implementation - in real scenario would generate proper DDL
+        target_type = load_config.target_storage_type.storage_type
+        table_name = load_config.flat_meta_model.fields[0].name if load_config.flat_meta_model.fields else "target_table"
+
+        if target_type == "postgres":
+            ddl = f"CREATE TABLE IF NOT EXISTS {table_name} (\n"
+            for field in load_config.flat_meta_model.fields:
+                ddl += f"    {field.name} {field.data_type},\n"
+            ddl = ddl.rstrip(",\n") + "\n);"
+            return ddl
+        else:
+            return f"-- DDL for {target_type} table {table_name}"
