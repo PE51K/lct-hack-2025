@@ -14,6 +14,7 @@ from models.extract import (
     Content,
     PostgreSqlDataType,
     Source,
+    ContentType,
 )
 
 from .base import BaseExtractConfigBuilder
@@ -347,6 +348,7 @@ class S3ExtractConfigBuilder(BaseExtractConfigBuilder):
             cnt = Content(
                 message_name=key,
                 is_complex_nesting_present=is_complex,
+                content_type=ContentType.xml,
                 metamodel=attributes,
             )
             contents.append(cnt)

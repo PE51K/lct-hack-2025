@@ -39,7 +39,7 @@ class DDLBuilder:
         )
 
         if target_type == "postgres":
-            query = f"""CREATE TABLE public.{load_config.flat_meta_model.table_name} ("""
+            query = f"""CREATE TABLE public.{table_name} ("""
 
             for field in load_config.flat_meta_model.fields:
                 query += f"""
