@@ -7,7 +7,7 @@ from models.extract import ExtractConfig
 from models.load import LoadConfig
 
 
-async def generate_ddl_from_configs(extract_config: ExtractConfig, load_config: LoadConfig) -> DDL:
+async def generate_ddl_from_configs(load_config: LoadConfig) -> DDL:
     """Generate DDL from ExtractConfig and LoadConfig."""
    
     query = f'''CREATE TABLE public.{load_config.flat_meta_model.table_name} ('''
