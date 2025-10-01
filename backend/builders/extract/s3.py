@@ -1,8 +1,12 @@
 """S3 extract configuration builder."""
 
+import logging
+
 from models.extract import Content, Source
 
 from .base import BaseExtractConfigBuilder
+
+logger = logging.getLogger(__name__)
 
 
 class S3ExtractConfigBuilder(BaseExtractConfigBuilder):

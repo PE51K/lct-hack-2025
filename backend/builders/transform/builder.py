@@ -1,6 +1,10 @@
 """Transform configuration builder."""
 
+import logging
+
 from models.ddl import DDL
+
+logger = logging.getLogger(__name__)
 from models.extract import ExtractConfig
 from models.load import LoadConfig
 from models.transform import TransformConfig
@@ -23,8 +27,9 @@ class TransformConfigBuilder:
         Returns:
             TransformConfig with mocked data.
         """
+        logger.info("Building TransformConfig from configs and prompt")
         # Mocked data
-        return TransformConfig(
+        transform_config = TransformConfig(
             identity_keys=["id"],
             aggregate_keys=[],
             versioning_field=None,
@@ -39,3 +44,5 @@ class TransformConfigBuilder:
             partitioning_strategy=None,
             sorting_keys=[],
         )
+        logger.info(f"TransformConfig built with {len(transform_config.transformation_rules)} rules")
+        return transform_config

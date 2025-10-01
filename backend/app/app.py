@@ -1,5 +1,7 @@
 """FastAPI application module for ETL generation, execution, and updates."""
 
+import logging
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -10,6 +12,11 @@ from core.logging import setup_logger
 from core.settings import settings
 
 from .routers import create_router, publish_router, update_router
+
+logger = logging.getLogger(__name__)
+
+# Configure standard logging level
+logging.basicConfig(level=getattr(logging, settings.app.logging.log_level.upper()))
 
 
 @asynccontextmanager

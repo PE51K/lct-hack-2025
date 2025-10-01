@@ -1,5 +1,6 @@
 """Folder extract configuration builder."""
 
+import logging
 import re
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
@@ -7,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from defusedxml import ElementTree
+
+logger = logging.getLogger(__name__)
 
 from core.logging import setup_logger
 from models.extract import (

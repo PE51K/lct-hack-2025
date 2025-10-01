@@ -1,10 +1,13 @@
 """Router for ETL update endpoints."""
 
 import asyncio
+import logging
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+
+logger = logging.getLogger(__name__)
 
 from builders.dag import DAGBuilder
 from builders.ddl import DDLBuilder

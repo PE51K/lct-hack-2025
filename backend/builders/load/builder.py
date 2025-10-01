@@ -1,6 +1,10 @@
 """Load configuration builder."""
 
+import logging
+
 from models.extract import ExtractConfig
+
+logger = logging.getLogger(__name__)
 from models.load import (
     BatchConfig,
     CompressionConfig,
@@ -31,8 +35,9 @@ class LoadConfigBuilder:
         Returns:
             LoadConfig with mocked data.
         """
+        logger.info("Building LoadConfig from ExtractConfig and prompt")
         # Mocked data
-        return LoadConfig(
+        load_config = LoadConfig(
             target_storage_type=TargetStorageTypeRecommendation(
                 storage_type="postgres",
                 explanation="Mocked target storage",
@@ -64,3 +69,5 @@ class LoadConfigBuilder:
             resources=LoadResourceConfig(),
             monitoring=MonitoringConfig(),
         )
+        logger.info(f"LoadConfig built for target: {load_config.target_storage_type.storage_type}")
+        return load_config

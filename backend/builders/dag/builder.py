@@ -1,10 +1,14 @@
 """DAG configuration builder."""
 
+import logging
+
 from models.dag import DAG
 from models.ddl import DDL
 from models.extract import ExtractConfig
 from models.load import LoadConfig
 from models.transform import TransformConfig
+
+logger = logging.getLogger(__name__)
 
 
 class DAGBuilder:
@@ -28,14 +32,16 @@ class DAGBuilder:
         Returns:
             DAG with generated structure.
         """
+        logger.info("Building DAG structure")
         # Generate DAG structure
         dag_id = (
             f"etl_{extract_config.source_metadata.source_type}_"
             f"{load_config.target_storage_type.storage_type}"
         )
+        logger.info(f"Generated DAG ID: {dag_id}")
         tasks = self._generate_tasks(extract_config, transform_config, load_config, ddl)
 
-        return DAG(
+        dag = DAG(
             dag_id=dag_id,
             description=(
                 f"ETL pipeline from {extract_config.source_metadata.source_type} "
@@ -46,6 +52,8 @@ class DAGBuilder:
             owner="data_team",
             tags=["etl", "auto_generated"],
         )
+        logger.info(f"DAG built with {len(tasks)} tasks")
+        return dag
 
     def _generate_tasks(
         self,

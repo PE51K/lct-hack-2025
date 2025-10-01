@@ -1,9 +1,13 @@
 """Router for ETL creation (generation) endpoints."""
 
+import logging
+
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+
+logger = logging.getLogger(__name__)
 
 from builders.dag import DAGBuilder
 from builders.ddl import DDLBuilder
@@ -18,11 +22,14 @@ create_router = APIRouter()
 @create_router.post("/create_etl")
 async def create_etl(request: CreateETLRequest) -> StreamingResponse:
     """Create an ETL pipeline."""
+    logger.info(f"Starting ETL creation for request IDs: {request.ids}")
 
     # Define async streaming generator
     async def create(request: CreateETLRequest) -> AsyncGenerator[str, None]:
         try:
+            logger.info("Initializing ETL creation process")
             # Step 1. Build ExtractConfig from user prompt (20%)
+            logger.info("Step 1: Building extract configuration")
             yield (
                 CreateETLResponse(
                     ids=request.ids,
@@ -35,6 +42,7 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
             )
 
             extract_config = await ExtractConfigBuilder.from_user_prompt(request.user_prompt)
+            logger.info(f"Extract config built: {extract_config.source_metadata.source_type}")
 
             # Step 3. Generate LoadConfig from ExtractConfig and user prompt (40%)
             yield (
@@ -116,6 +124,7 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
             )
 
         except Exception as e:
+            logger.error(f"Error during ETL creation: {e}", exc_info=True)
             yield (
                 CreateETLResponse(
                     ids=request.ids,

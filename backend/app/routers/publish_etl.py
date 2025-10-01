@@ -2,12 +2,15 @@
 
 import asyncio
 import json
+import logging
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from models.app.publish_etl import PublishETLRequest, PublishETLResponse
+
+logger = logging.getLogger(__name__)
 
 publish_router = APIRouter()
 

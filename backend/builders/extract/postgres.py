@@ -1,5 +1,7 @@
 """PostgreSQL extract configuration builder."""
 
+import logging
+
 import pandas as pd
 from sqlalchemy import create_engine, text
 
@@ -8,6 +10,8 @@ from models.extract import (
     Content,
     Source,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class PostgresExtractConfigBuilder:

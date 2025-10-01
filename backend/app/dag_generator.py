@@ -6,9 +6,12 @@ from the main LCT-hack-2025 application.
 """
 
 import asyncio
+import logging
 import sys
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # Add path to dag_generation module
 sys.path.append(str(Path(__file__).parent.parent))
@@ -60,6 +63,7 @@ class IntegratedDAGGenerator:
             Result of DAG creation with metadata
         """
         try:
+            logger.info(f"Creating DAG: {pipeline_name} from source: {source_url}")
             print(f"🚀 Creating DAG: {pipeline_name}")
             print(f"📂 Source: {source_url}")
 

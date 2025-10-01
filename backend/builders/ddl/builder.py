@@ -1,8 +1,12 @@
 """DDL configuration builder."""
 
+import logging
+
 from models.ddl import DDL
 from models.extract import ExtractConfig
 from models.load import LoadConfig
+
+logger = logging.getLogger(__name__)
 
 
 class DDLBuilder:
@@ -18,9 +22,12 @@ class DDLBuilder:
         Returns:
             DDL with generated statements.
         """
+        logger.info("Building DDL from ExtractConfig and LoadConfig")
         # Generate DDL statements based on load_config
         statements = self._generate_ddl_statements(load_config)
-        return DDL(statements=statements)
+        ddl = DDL(statements=statements)
+        logger.info(f"DDL generated with {len(statements)} statements")
+        return ddl
 
     def _generate_ddl_statements(self, load_config: LoadConfig) -> str:
         """Generate DDL statements from load configuration."""

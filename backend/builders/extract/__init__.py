@@ -1,9 +1,12 @@
 """Extract configuration builders for various data sources."""
 
+import logging
 import sys
 from typing import ClassVar
 
 sys.path.insert(0, ".")
+
+logger = logging.getLogger(__name__)
 
 from models.extract import ExtractConfig, SourceType
 
@@ -40,8 +43,10 @@ class ExtractConfigBuilder:
         Returns:
             An ExtractConfig object with all fields populated.
         """
+        logger.info("Building ExtractConfig from user prompt")
         # Use LLM to extract Source from user prompt
         src = await BaseExtractConfigBuilder.extract_source_from_user_prompt(user_prompt)
+        logger.info(f"Extracted source: {src.source_type} - {src.connection_string}")
 
         # Now build the config from the source
         builder = cls.source_to_builder_map.get(src.source_type)
@@ -56,6 +61,7 @@ class ExtractConfigBuilder:
         incremental = await builder.get_incremental(src)
         data_quality = await builder.get_data_quality(src)
 
+        logger.info(f"ExtractConfig built successfully for {src.source_type}")
         return ExtractConfig(
             source_metadata=src,
             content_metadata=content_metadata,

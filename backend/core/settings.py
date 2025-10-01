@@ -9,6 +9,23 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # ============ FastAPI backend app ============
 
 
+class AppLoggingSettings(BaseSettings):
+    """
+    Settings for application logging.
+
+    Attributes:
+        level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="APP_",
+        extra="ignore",
+    )
+
+    log_level: str = "INFO"
+
+
 class AppCORSSettings(BaseSettings):
     """
     Settings for FastAPI application CORS configuration.
@@ -37,9 +54,11 @@ class AppSettings(BaseSettings):
     Settings for FastAPI application.
 
     Attributes:
+        logging (AppLoggingSettings): Logging configuration settings.
         cors (AppCORSSettings): CORS configuration settings.
     """
 
+    logging: AppLoggingSettings = AppLoggingSettings()
     cors: AppCORSSettings = AppCORSSettings()
 
 
