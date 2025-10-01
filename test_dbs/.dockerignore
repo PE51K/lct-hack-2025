@@ -1,4 +1,4 @@
 /.env
 /.venv
 /volumes
-/__pycache__
+*__pycache__

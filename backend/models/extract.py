@@ -130,6 +130,15 @@ class Source(BaseModel):
     table_name: str | None = Field(
         None, description="Name of table in db (optional, just for postgresql)."
     )
+    bucket_name: str | None = Field(
+        None, description="Bucket name for S3 sources (optional, just for S3)."
+    )
+    access_key: str | None = Field(
+        None, description="Access key for S3 sources (optional, just for S3)."
+    )
+    secret_key: str | None = Field(
+        None, description="Secret key for S3 sources (optional, just for S3)."
+    )
 
 
 class Attribute(BaseModel):
