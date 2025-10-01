@@ -3,7 +3,6 @@
 import asyncio
 from collections.abc import AsyncGenerator
 
-from ai.workflows.extract_source import extract_source_from_user_prompt
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
@@ -65,9 +64,7 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            # Re-extract source with feedback
-            source = await extract_source_from_user_prompt(feedback_text)
-            extract_config = await ExtractConfigBuilder.from_source(source)
+            extract_config = await ExtractConfigBuilder.from_user_prompt(feedback_text)
 
             # Step 3: Updating load config (50%)
             yield (
