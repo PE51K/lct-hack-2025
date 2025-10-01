@@ -2,6 +2,7 @@
 
 from langchain_openai import ChatOpenAI
 
+from ai.llm import llm
 from models.extract import (
     Content,
     DataQualityProfile,
@@ -30,7 +31,6 @@ class BaseExtractConfigBuilder:
         Returns:
             A Source object extracted from the prompt.
         """
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         structured_llm = llm.with_structured_output(Source)
 
         system_prompt = """
