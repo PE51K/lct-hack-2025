@@ -26,28 +26,56 @@ class BaseExtractConfigBuilder:
     """
 
     @classmethod
-    async def extract_source_from_user_prompt(cls, user_prompt: str) -> Source:
+    async def extract_source_from_user_prompt(
+        cls,
+        user_prompt: str,
+        old_source: Source | None = None,
+        feedback_items: list | None = None,
+        overall_feedback: str | None = None
+    ) -> Source:
         """Extract Source object from user prompt using LLM.
 
         Args:
             user_prompt: The user's description of the data source.
+            old_source: Existing source to refine (optional).
+            feedback_items: Specific feedback items (optional).
+            overall_feedback: General feedback (optional).
 
         Returns:
             A Source object extracted from the prompt.
         """
         structured_llm = llm.with_structured_output(Source)
 
-        system_prompt = """
-        Extract the data source information from the user's prompt.
-        Determine the source_type based on the description
-        (e.g., folder, PostgreSQL, ClickHouse, kafka, s3).
-        Extract connection_string if mentioned (e.g., database URL, file path).
-        Extract table_name if it's a database table.
-        If unsure, use 'na' for source_type.
-        """
+        if old_source:
+            system_prompt = """
+            Refine the existing data source information based on user feedback and new prompt.
+            Start with the existing source configuration and modify only what's needed based on feedback.
+            Determine the source_type based on the description (e.g., folder, PostgreSQL, ClickHouse, kafka, s3).
+            Extract connection_string if mentioned (e.g., database URL, file path).
+            Extract table_name if it's a database table.
+            If unsure, use 'na' for source_type.
+            """
+            user_content = f"""
+            Existing Source: {old_source.model_dump_json()}
+            New Prompt: {user_prompt}
+            """
+            if feedback_items:
+                user_content += f"\nFeedback Items: {[item.model_dump() for item in feedback_items]}"
+            if overall_feedback:
+                user_content += f"\nOverall Feedback: {overall_feedback}"
+        else:
+            system_prompt = """
+            Extract the data source information from the user's prompt.
+            Determine the source_type based on the description
+            (e.g., folder, PostgreSQL, ClickHouse, kafka, s3).
+            Extract connection_string if mentioned (e.g., database URL, file path).
+            Extract table_name if it's a database table.
+            If unsure, use 'na' for source_type.
+            """
+            user_content = user_prompt
 
         source = await structured_llm.ainvoke(
-            [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+            [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_content}]
         )
         return source
 

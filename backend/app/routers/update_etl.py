@@ -47,8 +47,7 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
             )
             await asyncio.sleep(1)
 
-            # For update, we start with existing configs and modify based on feedback
-            # For simplicity, we'll regenerate from scratch with feedback incorporated into prompt
+            # For update, we refine existing configs based on feedback
             feedback_text = " ".join(
                 [f"{item.area}: {item.message}" for item in request.feedback.items]
             )
@@ -67,7 +66,13 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            extract_config = await ExtractConfigBuilder.from_user_prompt(feedback_text)
+            extract_feedback = [item for item in request.feedback.items if item.area == "extract"]
+            extract_config = await ExtractConfigBuilder.from_user_prompt(
+                feedback_text,
+                request.extract_config,
+                extract_feedback,
+                request.feedback.overall
+            )
 
             # Step 3: Updating load config (50%)
             yield (
@@ -82,7 +87,10 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
             )
 
             load_builder = LoadConfigBuilder()
-            load_config = await load_builder(extract_config, feedback_text)
+            load_feedback = [item for item in request.feedback.items if item.area == "load"]
+            load_config = await load_builder(
+                extract_config, feedback_text, request.load_config, load_feedback, request.feedback.overall
+            )
 
             # Step 4: Updating DDL (70%)
             yield (
@@ -112,8 +120,10 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
             )
 
             transform_builder = TransformConfigBuilder()
+            transform_feedback = [item for item in request.feedback.items if item.area == "transform"]
             transform_config = await transform_builder(
-                ddl, extract_config, load_config, feedback_text
+                ddl, extract_config, load_config, feedback_text,
+                request.transform_config, transform_feedback, request.feedback.overall
             )
 
             # Step 6: Updating DAG (100%)

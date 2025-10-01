@@ -9,6 +9,7 @@ sys.path.insert(0, ".")
 logger = logging.getLogger(__name__)
 
 from models.extract import ExtractConfig, SourceType
+from models.app.update_etl import FeedbackItem
 
 from .base import BaseExtractConfigBuilder
 from .clickhouse import ClickHouseExtractConfigBuilder
@@ -34,17 +35,29 @@ class ExtractConfigBuilder:
     }
 
     @classmethod
-    async def from_user_prompt(cls, user_prompt: str) -> ExtractConfig:
+    async def from_user_prompt(
+        cls,
+        user_prompt: str,
+        old_extract_config: ExtractConfig | None = None,
+        feedback_items: list[FeedbackItem] | None = None,
+        overall_feedback: str | None = None
+    ) -> ExtractConfig:
         """Build an ExtractConfig from a user prompt using LLM.
 
         Args:
             user_prompt: The user's description of the data source.
+            old_extract_config: Existing config to refine (optional).
+            feedback_items: Specific feedback items for extract (optional).
+            overall_feedback: General feedback (optional).
 
         Returns:
             An ExtractConfig object with all fields populated.
         """
         # Use LLM to extract Source from user prompt
-        src = await BaseExtractConfigBuilder.extract_source_from_user_prompt(user_prompt)
+        old_source = old_extract_config.source_metadata if old_extract_config else None
+        src = await BaseExtractConfigBuilder.extract_source_from_user_prompt(
+            user_prompt, old_source, feedback_items, overall_feedback
+        )
         logger.debug(f"Extracted source from user prompt: {src}")
 
         # Now build the config from the source
