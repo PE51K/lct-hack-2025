@@ -1,0 +1,330 @@
+services:
+  # Nginx - Reverse proxy and load balancer
+  nginx:
+    build:
+      context: ./config/nginx
+      dockerfile: Dockerfile
+    container_name: bigdata-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:${NGINX_PORT:-80}"
+    environment:
+      - NGINX_PORT=${NGINX_PORT:-80}
+      - NGINX_SERVER_NAME=${NGINX_SERVER_NAME:-localhost}
+      - BACKEND_HOST=${BACKEND_HOST:-backend}
+      - BACKEND_PORT=${BACKEND_INTERNAL_PORT:-8000}
+      - FRONTEND_HOST=${FRONTEND_HOST:-frontend}
+      - FRONTEND_PORT=${FRONTEND_INTERNAL_PORT:-3000}
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - bigdata-network
+    volumes:
+      - ./logs/nginx:/var/log/nginx:rw
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:${NGINX_PORT:-80}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Frontend - React application
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost
+        - VITE_WS_URL=http://localhost
+    container_name: bigdata-frontend
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - bigdata-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Backend - FastAPI application
+  backend:
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: bigdata-backend
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - AIRFLOW_PASSWORD=${AIRFLOW_PASSWORD}
+      - CLICKHOUSE_URL=${CLICKHOUSE_URL:-http://clickhouse:8123/default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+      - HDFS_NAMENODE_URL=${HDFS_NAMENODE_URL:-hdfs://namenode:9000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-http://frontend:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:rw
+      - ./logs/backend:/app/logs:rw
+    networks:
+      - bigdata-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # DLT Worker - ETL processing
+  dlt-worker:
+    build:
+      context: ./services/dlt-worker
+      dockerfile: Dockerfile
+    container_name: bigdata-dlt-worker
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://bigdata_user:bigdata_pass@postgres:5432/bigdata_db}
+      - CLICKHOUSE_URL=${CLICKHOUSE_URL:-http://clickhouse:8123/default}
+      - HDFS_NAMENODE_URL=${HDFS_NAMENODE_URL:-hdfs://namenode:9000}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      namenode:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:rw
+      - ./logs/dlt-worker:/app/logs:rw
+    networks:
+      - bigdata-network
+    healthcheck:
+      test: ["CMD", "python", "/app/healthcheck.py"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+
+  # PostgreSQL - Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: bigdata-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-bigdata_db}
+      - POSTGRES_USER=${POSTGRES_USER:-bigdata_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw
+      - ./config/postgres/01-init-airflow-db.sh:/docker-entrypoint-initdb.d/01-init-airflow-db.sh:ro
+      - ./config/postgres/init.sql:/docker-entrypoint-initdb.d/02-init.sql:ro
+    networks:
+      - bigdata-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bigdata_user} -d ${POSTGRES_DB:-bigdata_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ClickHouse - Analytics database
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8-alpine
+    container_name: bigdata-clickhouse
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+      - "9001:9000"
+    environment:
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-default}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse:rw
+      - clickhouse_logs:/var/log/clickhouse-server:rw
+      - ./config/clickhouse/config.xml:/etc/clickhouse-server/config.xml:ro
+      - ./config/clickhouse/users.xml:/etc/clickhouse-server/users.xml:ro
+    networks:
+      - bigdata-network
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8123/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # HDFS Namenode
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: bigdata-namenode
+    restart: unless-stopped
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    volumes:
+      - namenode_data:/hadoop/dfs/name:rw
+      - ./logs/hdfs:/opt/hadoop/logs:rw
+    environment:
+      - CLUSTER_NAME=${HDFS_CLUSTER_NAME:-hadoop-cluster}
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - CORE_CONF_hadoop_http_staticuser_user=root
+      - HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_permissions_enabled=false
+      - HDFS_CONF_dfs_webhdfs_enabled=true
+      - HDFS_CONF_dfs_namenode_name_dir=/hadoop/dfs/name
+    networks:
+      - bigdata-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # HDFS Datanode
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: bigdata-datanode
+    restart: unless-stopped
+    volumes:
+      - datanode_data:/hadoop/dfs/data:rw
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_datanode_data_dir=/hadoop/dfs/data
+    depends_on:
+      namenode:
+        condition: service_healthy
+    networks:
+      - bigdata-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://namenode:9870/dfshealth.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Apache Airflow - Workflow orchestration
+  airflow:
+    build:
+      context: ./services/airflow
+      dockerfile: Dockerfile
+    container_name: bigdata-airflow
+    restart: unless-stopped
+    stop_grace_period: 60s
+    ports:
+      - "8080:8080"
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=${AIRFLOW_EXECUTOR:-LocalExecutor}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DATABASE_URL:-postgresql://bigdata_user:bigdata_pass@postgres:5432/airflow_db}
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-lv9mGx11ed56ksPBhVfNSLqwTRFapSFNAjWiOEjU2As=}
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY:-your-secret-webserver-key}
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=true
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+      - AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG=1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./services/airflow/dags:/opt/airflow/dags:rw
+      - ./data:/opt/airflow/data:rw
+      - ./logs/airflow:/opt/airflow/logs:rw
+    networks:
+      - bigdata-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Redis - Cache and message broker
+  redis:
+    image: redis:7-alpine
+    container_name: bigdata-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data:rw
+      - ./logs/redis:/var/log/redis:rw
+    networks:
+      - bigdata-network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # PgAdmin - Database management interface (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: bigdata-pgadmin
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-admin}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bigdata-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  clickhouse_data:
+    driver: local
+  clickhouse_logs:
+    driver: local
+  namenode_data:
+    driver: local
+  datanode_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  bigdata-network:
+    driver: bridge
