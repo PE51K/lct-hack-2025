@@ -38,7 +38,7 @@ services:
     command: >
       bash -c "
       airflow db migrate &&
-      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com ||
+      airflow users create --username ${AIRFLOW_ADMIN_USER:-admin} --password ${AIRFLOW_ADMIN_PASSWORD:-secure_password} --firstname Admin --lastname User --role Admin --email admin@example.com ||
       echo 'User already exists' &&
       airflow scheduler &
       airflow webserver
