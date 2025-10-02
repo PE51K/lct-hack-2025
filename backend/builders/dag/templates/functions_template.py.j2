@@ -692,8 +692,8 @@ def load_to_postgres(data: List[Dict]):
         admin_conn.autocommit = True
         admin_cursor = admin_conn.cursor()
 
-        # Create user if not exists
-        logger.info(f"Creating user '{username}' if not exists...")
+        # Create user if not exists, or update password if exists
+        logger.info(f"Creating/updating user '{username}'...")
         admin_cursor.execute(f"""
             DO $$
             BEGIN
@@ -701,7 +701,8 @@ def load_to_postgres(data: List[Dict]):
                     CREATE USER "{username}" WITH PASSWORD '{password}';
                     RAISE NOTICE 'User created: {username}';
                 ELSE
-                    RAISE NOTICE 'User already exists: {username}';
+                    ALTER USER "{username}" WITH PASSWORD '{password}';
+                    RAISE NOTICE 'User password updated: {username}';
                 END IF;
             END
             $$;

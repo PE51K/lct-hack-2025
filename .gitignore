@@ -64,6 +64,7 @@ airflow-webserver.pid
 standalone_admin_password.txt
 
 # Docker
+.env
 .env.local
 
 # Generated files
