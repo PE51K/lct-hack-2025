@@ -5,20 +5,61 @@ export interface ThreadUserIds {
   user_id: string;
 }
 
-export interface GenerateETLRequest {
-  data_uri: string;
+export interface CreateETLRequest {
+  user_prompt: string;
   ids: ThreadUserIds;
 }
 
-export interface GenerateETLResponse {
+export interface CredentialField {
+  name: string;
+  label: string;
+  type: string;
+  placeholder?: string;
+  default?: unknown;
+  required: boolean;
+}
+
+export interface CredentialsRequired {
+  target_type: string;
+  fields: CredentialField[];
+}
+
+export interface ETLResponse {
   ids: ThreadUserIds;
-  message: string;
-  done: boolean;
+  processing_done: boolean;
+  processing_percentage_done: number;
+  processing_message: string;
+  success: boolean;
+  error_message?: string;
   extract_config?: Record<string, unknown>;
   transform_config?: Record<string, unknown>;
   load_config?: Record<string, unknown>;
   ddl?: Record<string, unknown>;
   dag?: Record<string, unknown>;
+  credentials_required?: CredentialsRequired;
+  next_step?: string;
+}
+
+export type CreateETLResponse = ETLResponse;
+
+export interface CreateDAGRequest {
+  ids: ThreadUserIds;
+  target_credentials: Record<string, unknown>;
+  extract_config: Record<string, unknown>;
+  transform_config: Record<string, unknown>;
+  load_config: Record<string, unknown>;
+  ddl: Record<string, unknown>;
+}
+
+export interface CreateDAGResponse {
+  ids: ThreadUserIds;
+  processing_done: boolean;
+  processing_percentage_done: number;
+  processing_message: string;
+  success: boolean;
+  dag?: Record<string, unknown>;
+  updated_load_config?: Record<string, unknown>;
+  error_message?: string;
 }
 
 export interface FeedbackItem {
@@ -35,12 +76,6 @@ export interface Feedback {
 export interface UpdateETLRequest {
   feedback: Feedback;
   ids: ThreadUserIds;
-}
-
-export interface UpdateETLResponse {
-  ids: ThreadUserIds;
-  message: string;
-  done: boolean;
   extract_config?: Record<string, unknown>;
   transform_config?: Record<string, unknown>;
   load_config?: Record<string, unknown>;
@@ -48,19 +83,16 @@ export interface UpdateETLResponse {
   dag?: Record<string, unknown>;
 }
 
-export interface ExecuteETLRequest {
+export type UpdateETLResponse = ETLResponse;
+
+export interface PublishETLRequest {
   ids: ThreadUserIds;
 }
 
-export interface ExecuteETLResponse {
-  ids: ThreadUserIds;
-  message: string;
-  done: boolean;
-  success: boolean;
-}
+export type PublishETLResponse = ETLResponse;
 
-export async function* generateETL(request: GenerateETLRequest): AsyncGenerator<GenerateETLResponse> {
-  const response = await fetch(`${API_BASE_URL}/generate_etl`, {
+export async function* createETL(request: CreateETLRequest): AsyncGenerator<CreateETLResponse> {
+  const response = await fetch(`${API_BASE_URL}/create_etl`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -133,8 +165,8 @@ export async function* updateETL(request: UpdateETLRequest): AsyncGenerator<Upda
   }
 }
 
-export async function* executeETL(request: ExecuteETLRequest): AsyncGenerator<ExecuteETLResponse> {
-  const response = await fetch(`${API_BASE_URL}/execute_etl`, {
+export async function* publishETL(request: PublishETLRequest): AsyncGenerator<PublishETLResponse> {
+  const response = await fetch(`${API_BASE_URL}/publish_etl`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -168,4 +200,20 @@ export async function* executeETL(request: ExecuteETLRequest): AsyncGenerator<Ex
       }
     }
   }
+}
+
+export async function createDAG(request: CreateDAGRequest): Promise<CreateDAGResponse> {
+  const response = await fetch(`${API_BASE_URL}/create_dag`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
 }

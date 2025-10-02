@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<geospatial_data>
+    <metadata>
+        <source>LCT Hack 2025 Sample</source>
+        <version>1.0</version>
+        <created_date>2025-09-30</created_date>
+        <total_records>15000</total_records>
+    </metadata>
+    <locations>
+        <location id="1">
+            <coordinates>
+                <latitude>55.7558</latitude>
+                <longitude>37.6173</longitude>
+            </coordinates>
+            <address>
+                <city>Moscow</city>
+                <district>Central</district>
+                <street>Red Square</street>
+                <building_number>1</building_number>
+            </address>
+            <properties>
+                <type>landmark</type>
+                <category>historical</category>
+                <importance>high</importance>
+                <visitor_count>5000000</visitor_count>
+                <open_hours>24/7</open_hours>
+                <accessibility>true</accessibility>
+            </properties>
+            <services>
+                <service id="s1">
+                    <name>Tourist Information</name>
+                    <available>true</available>
+                    <rating>4.8</rating>
+                </service>
+                <service id="s2">
+                    <name>Security</name>
+                    <available>true</available>
+                    <rating>4.9</rating>
+                </service>
+            </services>
+        </location>
+        <location id="2">
+            <coordinates>
+                <latitude>59.9311</latitude>
+                <longitude>30.3609</longitude>
+            </coordinates>
+            <address>
+                <city>Saint Petersburg</city>
+                <district>Central</district>
+                <street>Palace Embankment</street>
+                <building_number>34</building_number>
+            </address>
+            <properties>
+                <type>museum</type>
+                <category>cultural</category>
+                <importance>high</importance>
+                <visitor_count>3000000</visitor_count>
+                <open_hours>10:30-18:00</open_hours>
+                <accessibility>true</accessibility>
+            </properties>
+            <services>
+                <service id="s3">
+                    <name>Audio Guide</name>
+                    <available>true</available>
+                    <rating>4.7</rating>
+                </service>
+                <service id="s4">
+                    <name>Gift Shop</name>
+                    <available>true</available>
+                    <rating>4.5</rating>
+                </service>
+            </services>
+        </location>
+        <location id="3">
+            <coordinates>
+                <latitude>56.8431</latitude>
+                <longitude>60.6454</longitude>
+            </coordinates>
+            <address>
+                <city>Ekaterinburg</city>
+                <district>Leninsky</district>
+                <street>Lenin Avenue</street>
+                <building_number>51</building_number>
+            </address>
+            <properties>
+                <type>business_center</type>
+                <category>commercial</category>
+                <importance>medium</importance>
+                <visitor_count>50000</visitor_count>
+                <open_hours>09:00-21:00</open_hours>
+                <accessibility>true</accessibility>
+            </properties>
+            <services>
+                <service id="s5">
+                    <name>Conference Rooms</name>
+                    <available>true</available>
+                    <rating>4.3</rating>
+                </service>
+            </services>
+        </location>
+    </locations>
+</geospatial_data>

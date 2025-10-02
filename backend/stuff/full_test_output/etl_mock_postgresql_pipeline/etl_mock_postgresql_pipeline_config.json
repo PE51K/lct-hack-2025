@@ -1,0 +1,267 @@
+{
+  "pipeline_config": {
+    "metadata": {
+      "pipeline_id": "etl_mock_postgresql_pipeline",
+      "pipeline_name": "Mock PostgreSQL Pipeline",
+      "description": "ETL pipeline for table data processing",
+      "version": "1.0.0",
+      "owner": "test_user",
+      "team": "test_team",
+      "business_domain": "data_processing",
+      "criticality": "medium",
+      "documentation_url": null,
+      "source_code_url": null,
+      "tags": [
+        "table",
+        "postgres",
+        "etl",
+        "automated"
+      ]
+    },
+    "pipeline_type": "batch_etl",
+    "extract_config": {
+      "source_id": "Mock PostgreSQL Pipeline_source",
+      "source_name": "Source for Mock PostgreSQL Pipeline",
+      "source_type": "postgres",
+      "content_type": "table",
+      "connection_string": "postgres://mock_user:mock_pass@localhost:5432/mock_db",
+      "source_metrics": {
+        "estimated_size_mb": 1024.0,
+        "estimated_records": 1000000,
+        "file_count": null,
+        "avg_record_size_bytes": 1100.0,
+        "complexity_score": 4.5,
+        "nested_levels": 0,
+        "unique_attributes": 25,
+        "nullable_attributes": 8
+      },
+      "data_quality": {
+        "completeness_threshold": 0.95,
+        "accuracy_threshold": 0.98,
+        "consistency_checks": [
+          "date_format",
+          "data_types",
+          "referential_integrity"
+        ],
+        "freshness_hours": 24,
+        "volume_min_records": 1,
+        "volume_max_records": null,
+        "schema_validation": true,
+        "duplicate_detection": true,
+        "schema_drift_detection": true,
+        "duplicate_threshold": 0.05
+      },
+      "batch_size": 1000,
+      "incremental_config": {
+        "enabled": false,
+        "watermark_field": null,
+        "watermark_format": null,
+        "lookback_hours": 24,
+        "state_storage": "airflow_variables"
+      },
+      "schedule": {
+        "frequency": "@daily",
+        "start_date": "2025-09-30 02:00:00",
+        "end_date": null,
+        "depends_on_past": false,
+        "max_active_runs": 1,
+        "catchup": false,
+        "retry_count": 3,
+        "retry_delay_minutes": 5,
+        "execution_timeout_hours": 2
+      },
+      "resources": {
+        "cpu_cores": 1.0,
+        "memory_mb": 1024,
+        "disk_space_mb": 1024,
+        "network_bandwidth_mbps": null,
+        "parallel_workers": 1,
+        "timeout_minutes": 60
+      },
+      "encryption_required": false,
+      "pii_fields": [],
+      "compliance_tags": [],
+      "schema_validation_rules": {},
+      "business_rules": []
+    },
+    "transform_config": {
+      "transform_id": "Mock PostgreSQL Pipeline_transform",
+      "transform_name": "Transform for Mock PostgreSQL Pipeline",
+      "description": "Data transformation for table content",
+      "identity_keys": [
+        "record_id"
+      ],
+      "aggregate_keys": [],
+      "versioning_field": null,
+      "transformation_rules": [],
+      "data_type_mappings": [],
+      "validation_rules": [],
+      "processing_mode": "batch",
+      "window_size_minutes": null,
+      "late_arrival_threshold_minutes": 60,
+      "output_format": "table",
+      "partitioning_strategy": null,
+      "sorting_keys": [],
+      "resources": {
+        "cpu_cores": 2.0,
+        "memory_mb": 1024,
+        "temp_storage_mb": 5120,
+        "max_parallelism": 4,
+        "spill_to_disk": true
+      },
+      "checkpoint_interval_minutes": 10,
+      "quality_checks": [],
+      "monitoring_metrics": [
+        "rows_processed",
+        "transformation_errors",
+        "processing_time"
+      ]
+    },
+    "load_config": {
+      "load_id": "Mock PostgreSQL Pipeline_load",
+      "load_name": "Load for Mock PostgreSQL Pipeline",
+      "description": "Data loading to postgres",
+      "target_storage_type": "postgres",
+      "connection_string": "postgresql://localhost:5432/dwh",
+      "database_name": "dwh",
+      "schema_name": "public",
+      "table_name": "Mock PostgreSQL Pipeline_data",
+      "load_strategy": "incremental",
+      "merge_keys": [],
+      "update_fields": [],
+      "target_schema": [],
+      "indexes": [
+        {
+          "index_name": "idx_record_id",
+          "index_type": "btree",
+          "columns": [
+            "record_id"
+          ],
+          "is_unique": true,
+          "is_primary": false,
+          "is_clustered": false,
+          "fill_factor": null
+        },
+        {
+          "index_name": "idx_created_date",
+          "index_type": "btree",
+          "columns": [
+            "created_date"
+          ],
+          "is_unique": false,
+          "is_primary": false,
+          "is_clustered": false,
+          "fill_factor": null
+        }
+      ],
+      "partitioning": null,
+      "compression": {
+        "enabled": true,
+        "algorithm": "gzip",
+        "level": 1,
+        "columns": null
+      },
+      "resources": {
+        "cpu_cores": 1.0,
+        "memory_mb": 1024,
+        "concurrent_connections": 5,
+        "batch_size": 10000,
+        "commit_frequency": 1000
+      },
+      "pre_load_sql": [],
+      "post_load_sql": [],
+      "retention_policy": {
+        "retention_days": 365,
+        "archive_after_days": 90,
+        "compression_enabled": true,
+        "backup_frequency": "daily"
+      },
+      "compression_type": null,
+      "quality_checks": {
+        "row_count_validation": true,
+        "null_checks": {
+          "record_id": false
+        },
+        "unique_constraints": [
+          "record_id"
+        ],
+        "foreign_key_checks": [],
+        "custom_sql_checks": []
+      },
+      "success_metrics": [
+        "rows_loaded",
+        "load_duration",
+        "data_quality_score"
+      ],
+      "failure_thresholds": {},
+      "notification_channels": [
+        "email",
+        "slack"
+      ]
+    },
+    "dependencies": [],
+    "notifications": {
+      "email_on_success": false,
+      "email_on_failure": true,
+      "email_on_retry": false,
+      "email_addresses": [
+        "test_user@company.com"
+      ],
+      "slack_webhook": null,
+      "custom_callbacks": []
+    },
+    "sla_minutes": null,
+    "environment": "development",
+    "total_cpu_cores": 4.0,
+    "total_memory_mb": 3972,
+    "estimated_runtime_minutes": 116,
+    "data_classification": "internal",
+    "gdpr_applicable": false,
+    "data_lineage_enabled": true
+  },
+  "ai_recommendations": [
+    {
+      "recommendation_id": "performance_resources_01",
+      "recommendation_type": "resource_allocation",
+      "title": "Увеличение ресурсов для больших объемов данных",
+      "description": "Для обработки больших объемов данных рекомендуется использовать параллельную обработку.",
+      "rationale": "Размер данных 1024.0 МБ требует дополнительных ресурсов",
+      "confidence_score": 0.88,
+      "impact_level": "medium",
+      "implementation_effort": "low",
+      "estimated_improvement": {
+        "processing_time": 0.6,
+        "throughput": 2.1
+      },
+      "implementation_steps": [
+        "Увеличить количество параллельных воркеров до 4",
+        "Выделить 8GB оперативной памяти",
+        "Использовать SSD для временных файлов"
+      ],
+      "risks": [
+        "Увеличение стоимости ресурсов"
+      ]
+    }
+  ],
+  "baseline_metrics": {
+    "throughput_records_per_minute": 16666.666666666668,
+    "latency_minutes": 2.0,
+    "resource_utilization_cpu": 0.6,
+    "resource_utilization_memory": 0.7,
+    "cost_per_execution_usd": 0.5,
+    "data_quality_score": 0.85,
+    "reliability_score": 0.9
+  },
+  "target_metrics": {
+    "throughput_records_per_minute": 16666.666666666668,
+    "latency_minutes": 2.0,
+    "resource_utilization_cpu": 0.72,
+    "resource_utilization_memory": 0.77,
+    "cost_per_execution_usd": 0.5,
+    "data_quality_score": 0.9,
+    "reliability_score": 0.93
+  },
+  "generated_at": "2025-09-30 22:03:49.889414",
+  "generator_version": "2.0.0",
+  "config_hash": "b5225e13011a2e218c3fb68c5516415b"
+}

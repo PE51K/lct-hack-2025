@@ -1,8 +1,19 @@
 """PostgreSQL extract configuration builder."""
 
-from models.extract import Content, ContentType, Source
+import logging
+
+import pandas as pd
+from sqlalchemy import create_engine, text
+
+from models.extract import (
+    Attribute,
+    Content,
+    Source,
+)
 
 from .base import BaseExtractConfigBuilder
+
+logger = logging.getLogger(__name__)
 
 
 class PostgresExtractConfigBuilder(BaseExtractConfigBuilder):
@@ -14,31 +25,51 @@ class PostgresExtractConfigBuilder(BaseExtractConfigBuilder):
     @classmethod
     async def get_content_metadata(cls, source: Source) -> list[Content]:
         """Extract content metadata from PostgreSQL source."""
-        raise NotImplementedError("Metadata extraction not implemented for PostgreSQL sources.")
+        engine = create_engine(source.connection_string)
 
-    @classmethod
-    async def get_src_content_type(cls, source: Source) -> ContentType:
-        """Get content type for PostgreSQL source.
+        with engine.connect() as connection:
+            column_data_query = text("""
+                                        SELECT
+                                            column_name,
+                                            data_type,
+                                            is_nullable,
+                                            character_maximum_length,
+                                            numeric_precision,
+                                            numeric_scale
+                                        FROM information_schema.columns
+                                        WHERE table_name = :table_name
+                                        ORDER BY ordinal_position;
+                                     """)
 
-        Args:
-            source: PostgreSQL source configuration.
+            result = connection.execute(column_data_query, {"table_name": source.table_name})
 
-        Returns:
-            ContentType for PostgreSQL.
-        """
-        raise NotImplementedError("Content type extraction not implemented for PostgreSQL sources.")
+            rows = result.fetchall()
+            columns = result.keys()
 
-    @classmethod
-    async def get_content_statistics(cls, source: Source) -> dict:
-        """Retrieve statistics about the source content.
+            df = pd.DataFrame(rows, columns=columns)
 
-        Args:
-            source: The source configuration.
+            cnt = Content(message_name=source.table_name, metamodel=[])
 
-        Returns:
-            Dictionary containing content statistics with
-            any additional information about the source.
-        """
-        raise NotImplementedError(
-            "Content statistics extraction not implemented for PostgreSQL sources."
-        )
+            for i in range(len(df)):
+                # Handle NaN values from database by converting to None
+                char_max_len = df.loc[i, "character_maximum_length"]
+                character_maximum_length = None if pd.isna(char_max_len) else int(char_max_len)
+
+                num_prec = df.loc[i, "numeric_precision"]
+                numeric_precision = None if pd.isna(num_prec) else int(num_prec)
+
+                num_scale = df.loc[i, "numeric_scale"]
+                numeric_scale = None if pd.isna(num_scale) else int(num_scale)
+
+                attribute = Attribute(
+                    order_no=i + 1,
+                    column_name=df.loc[i, "column_name"],
+                    data_type=df.loc[i, "data_type"],
+                    is_nullable=df.loc[i, "is_nullable"] == "YES",
+                    character_maximum_length=character_maximum_length,
+                    numeric_precision=numeric_precision,
+                    numeric_scale=numeric_scale,
+                )
+                cnt.metamodel.append(attribute)
+
+            return [cnt]

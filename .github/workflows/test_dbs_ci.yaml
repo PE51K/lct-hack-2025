@@ -1,0 +1,23 @@
+name: Test Databases CI
+
+on:
+  push:
+    paths:
+      - "test_dbs/**"
+      - ".github/workflows/test_dbs_ci.yml"
+  pull_request:
+    paths:
+      - "test_dbs/**"
+      - ".github/workflows/test_dbs_ci.yml"
+
+jobs:
+  lint:
+    name: Lint test_dbs python code using Ruff
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/demo'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+            args: check
+            src: "./test_dbs"

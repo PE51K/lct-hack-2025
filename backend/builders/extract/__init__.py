@@ -1,11 +1,13 @@
 """Extract configuration builders for various data sources."""
 
+import logging
 import sys
 from typing import ClassVar
 
 sys.path.insert(0, ".")
 
-from models.extract import ExtractConfig, Source, SourceType
+from models.app.update_etl import FeedbackItem
+from models.extract import ExtractConfig, SourceType
 
 from .base import BaseExtractConfigBuilder
 from .clickhouse import ClickHouseExtractConfigBuilder
@@ -14,12 +16,14 @@ from .kafka import KafkaExtractConfigBuilder
 from .postgres import PostgresExtractConfigBuilder
 from .s3 import S3ExtractConfigBuilder
 
+logger = logging.getLogger(__name__)
+
 
 class ExtractConfigBuilder:
-    """Builder class for creating ExtractConfig instances from URIs.
+    """Builder class for creating ExtractConfig instances from user prompts.
 
-    This class recognizes source types from URI prefixes and delegates
-    metadata extraction to specific builder classes.
+    This class uses LLM to extract Source from user prompt, then recognizes source types
+    and delegates metadata extraction to specific builder classes.
     """
 
     source_to_builder_map: ClassVar[dict[SourceType, type[BaseExtractConfigBuilder]]] = {
@@ -30,70 +34,61 @@ class ExtractConfigBuilder:
         SourceType.s3: S3ExtractConfigBuilder,
     }
 
-    @staticmethod
-    async def recognise_source(source: str) -> Source:
-        """Recognize source type and extract connection string from URI.
-
-        Parses URI prefixes to determine the source type and strips the prefix
-        to get the connection string.
-
-        Args:
-            source: The input URI string.
-
-        Returns:
-            A Source object with type and connection string.
-        """
-        if "file:" in source:
-            src = Source(
-                source_type=SourceType.folder, connection_string=source.replace("file:", "")
-            )
-        elif "kafka:" in source:
-            src = Source(
-                source_type=SourceType.kafka, connection_string=source.replace("kafka:", "")
-            )
-        elif "postgres:" in source:
-            src = Source(
-                source_type=SourceType.PostgreSQL, connection_string=source.replace("postgres:", "")
-            )
-        elif "clickhouse:" in source:
-            src = Source(
-                source_type=SourceType.ClickHouse,
-                connection_string=source.replace("clickhouse:", ""),
-            )
-        elif "s3:" in source:
-            src = Source(source_type=SourceType.s3, connection_string=source.replace("s3:", ""))
-        else:
-            src = Source(source_type=SourceType.na, connection_string="")
-
-        return src
-
     @classmethod
-    async def from_uri(cls, uri: str) -> ExtractConfig:
-        """Build an ExtractConfig from a URI.
-
-        Recognizes the source type, then uses the appropriate builder to
-        extract metadata, content type, and statistics.
+    async def from_user_prompt(
+        cls,
+        user_prompt: str,
+        old_extract_config: ExtractConfig | None = None,
+        feedback_items: list[FeedbackItem] | None = None,
+        overall_feedback: str | None = None,
+    ) -> ExtractConfig:
+        """Build an ExtractConfig from a user prompt using LLM.
 
         Args:
-            uri: The source URI.
+            user_prompt: The user's description of the data source.
+            old_extract_config: Existing config to refine (optional).
+            feedback_items: Specific feedback items for extract (optional).
+            overall_feedback: General feedback (optional).
 
         Returns:
-            A complete ExtractConfig object.
+            An ExtractConfig object with all fields populated.
         """
-        src = await cls.recognise_source(uri)
+        # Use LLM to extract Source from user prompt
+        old_source = old_extract_config.source_metadata if old_extract_config else None
+        src = await BaseExtractConfigBuilder.extract_source_from_user_prompt(
+            user_prompt, old_source, feedback_items, overall_feedback
+        )
+        logger.debug(f"Extracted source from user prompt: {src}")
 
-        src.content_type = await cls.source_to_builder_map[src.source_type].get_src_content_type(
-            src
-        )
-        content_metadata = await cls.source_to_builder_map[src.source_type].get_content_metadata(
-            src
-        )
-        content_statistics = await cls.source_to_builder_map[
-            src.source_type
-        ].get_content_statistics(src)
+        # Now build the config from the source
+        builder = cls.source_to_builder_map.get(src.source_type)
+        if not builder:
+            # Fallback to base builder with mocked data
+            builder = BaseExtractConfigBuilder
+        logger.debug(f"Using builder {builder.__name__} for source type {src.source_type}")
+
+        content_metadata = await builder.get_content_metadata(src)
+        logger.debug(f"Content metadata: {content_metadata}")
+        content_statistics = await builder.get_content_statistics(src)
+        logger.debug(f"Content statistics: {content_statistics}")
+        schedule = await builder.get_schedule(src)
+        logger.debug(f"Schedule: {schedule}")
+        resources = await builder.get_resources(src)
+        logger.debug(f"Resources: {resources}")
+        incremental = await builder.get_incremental(src)
+        logger.debug(f"Incremental: {incremental}")
+        data_quality = await builder.get_data_quality(src)
+        logger.debug(f"Data quality: {data_quality}")
+        batch_size = await builder.get_batch_size(src)
+        logger.debug(f"Batch size: {batch_size}")
 
         return ExtractConfig(
             source_metadata=src,
             content_metadata=content_metadata,
             content_statistics=content_statistics,
+            schedule=schedule,
+            resources=resources,
+            incremental=incremental,
+            data_quality=data_quality,
+            batch_size=batch_size,
         )

@@ -1,30 +1,21 @@
-"""
-Main FastAPI application module.
+"""FastAPI application module for ETL generation, execution, and updates."""
 
-This module sets up the FastAPI application with lifespan management,
-logging, and API endpoints.
-"""
-
-import sys
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-
-# Add parent directory to sys.path for local imports
-sys.path.insert(0, "..")
 
 from core.logging import setup_logger
 from core.settings import settings
-from models.execute_etl import ExecuteETLRequest
-from models.generate_etl import GenerateETLRequest
-from models.update_etl import UpdateETLRequest
 
-from .execute import execute_etl_endpoint
-from .generate import generate_etl_endpoint
-from .update import update_etl_endpoint
+from .routers import create_dag_router, create_router, publish_router, update_router
+
+logger = logging.getLogger(__name__)
+
+# Configure standard logging level
+logging.basicConfig(level=getattr(logging, settings.app.logging.log_level.upper()))
 
 
 @asynccontextmanager
@@ -37,12 +28,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Setup logging
     app.state.logger = await setup_logger(__name__)
 
-    # Startup
-    await app.state.logger.info("Starting up application...")
+    # Finalize startup
     yield
 
-    # Shutdown
-    await app.state.logger.info("Application shutdown")
+    # Shutdown logging
     await app.state.logger.shutdown()
 
 
@@ -58,52 +47,8 @@ app.add_middleware(
     allow_headers=settings.app.cors.allow_headers,
 )
 
-# ================== ETL Generation ===================
-
-
-@app.post("/generate_etl")
-async def generate_etl(request: GenerateETLRequest) -> StreamingResponse:
-    """
-    Generate ETL pipeline and recommendations based on input data URI.
-
-    Args:
-        request (GenerateETLRequest): The request containing input data URI and metadata.
-
-    Returns:
-        StreamingResponse: A streaming response with generation status updates.
-    """
-    return generate_etl_endpoint(request)
-
-
-# ================== ETL Execution ===================
-
-
-@app.post("/execute_etl")
-async def execute_etl(request: ExecuteETLRequest) -> StreamingResponse:
-    """
-    Executes the ETL pipeline with provided metadata.
-
-    Args:
-        request (ExecuteETLRequest): The request containing metadata.
-
-    Returns:
-        StreamingResponse: A streaming response with execution status updates.
-    """
-    return execute_etl_endpoint(request)
-
-
-# ================== ETL Update based on Feedback or Error ===================
-
-
-@app.post("/update_etl")
-async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
-    """
-    Updates the ETL pipeline based on feedback or error messages.
-
-    Args:
-        request (UpdateETLRequest): The request containing feedback and metadata.
-
-    Returns:
-        StreamingResponse: A streaming response with update status.
-    """
-    return update_etl_endpoint(request)
+# Include routers
+app.include_router(create_router)
+app.include_router(create_dag_router)
+app.include_router(publish_router)
+app.include_router(update_router)

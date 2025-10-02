@@ -1,11 +1,9 @@
 """Data Definition Language models."""
 
-from __future__ import annotations
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DDL(BaseModel):
     """Represents DDL statements."""
 
-    pass
+    statements: str = Field(..., description="DDL statements as a string")

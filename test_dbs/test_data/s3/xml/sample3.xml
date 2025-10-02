@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<employees>
+    <employee>
+        <name>Charlie Brown</name>
+        <age>41</age>
+        <department>IT</department>
+    </employee>
+    <employee>
+        <name>Diana Prince</name>
+        <age>33</age>
+        <department>Legal</department>
+    </employee>
+</employees>

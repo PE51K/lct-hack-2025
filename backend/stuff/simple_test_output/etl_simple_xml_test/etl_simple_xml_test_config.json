@@ -1,0 +1,329 @@
+{
+  "pipeline_config": {
+    "metadata": {
+      "pipeline_id": "etl_simple_xml_test",
+      "pipeline_name": "Simple XML Test",
+      "description": "ETL pipeline for xml data processing",
+      "version": "1.0.0",
+      "owner": "test_user",
+      "team": "test_team",
+      "business_domain": "data_processing",
+      "criticality": "medium",
+      "documentation_url": null,
+      "source_code_url": null,
+      "tags": [
+        "xml",
+        "folder",
+        "etl",
+        "automated"
+      ]
+    },
+    "pipeline_type": "batch_etl",
+    "extract_config": {
+      "source_id": "Simple XML Test_source",
+      "source_name": "Source for Simple XML Test",
+      "source_type": "folder",
+      "content_type": "xml",
+      "connection_string": "file://d:/lct-hack-2025/backend/parsers/sample/XML/",
+      "source_metrics": {
+        "estimated_size_mb": 0.0053577423095703125,
+        "estimated_records": 20000,
+        "file_count": 2,
+        "avg_record_size_bytes": 1024.0,
+        "complexity_score": 4.0,
+        "nested_levels": 4,
+        "unique_attributes": 20,
+        "nullable_attributes": 20
+      },
+      "data_quality": {
+        "completeness_threshold": 0.95,
+        "accuracy_threshold": 0.98,
+        "consistency_checks": [
+          "date_format",
+          "data_types",
+          "referential_integrity"
+        ],
+        "freshness_hours": 24,
+        "volume_min_records": 1,
+        "volume_max_records": null,
+        "schema_validation": true,
+        "duplicate_detection": true,
+        "schema_drift_detection": true,
+        "duplicate_threshold": 0.05
+      },
+      "batch_size": 1000,
+      "incremental_config": {
+        "enabled": false,
+        "watermark_field": null,
+        "watermark_format": null,
+        "lookback_hours": 24,
+        "state_storage": "airflow_variables"
+      },
+      "schedule": {
+        "frequency": "@daily",
+        "start_date": "2025-09-30 02:00:00",
+        "end_date": null,
+        "depends_on_past": false,
+        "max_active_runs": 1,
+        "catchup": false,
+        "retry_count": 3,
+        "retry_delay_minutes": 5,
+        "execution_timeout_hours": 2
+      },
+      "resources": {
+        "cpu_cores": 1.0,
+        "memory_mb": 512,
+        "disk_space_mb": 1024,
+        "network_bandwidth_mbps": null,
+        "parallel_workers": 2,
+        "timeout_minutes": 60
+      },
+      "encryption_required": false,
+      "pii_fields": [],
+      "compliance_tags": [],
+      "schema_validation_rules": {},
+      "business_rules": []
+    },
+    "transform_config": {
+      "transform_id": "Simple XML Test_transform",
+      "transform_name": "Transform for Simple XML Test",
+      "description": "Data transformation for xml content",
+      "identity_keys": [
+        "record_id"
+      ],
+      "aggregate_keys": [],
+      "versioning_field": null,
+      "transformation_rules": [
+        {
+          "rule_id": "xml_flatten",
+          "rule_name": "Flatten XML Structure",
+          "transformation_type": "standardization",
+          "source_fields": [
+            "xml_content"
+          ],
+          "target_field": "flattened_data",
+          "expression": "flatten_xml_to_columns(xml_content)",
+          "conditions": null,
+          "priority": 1,
+          "error_handling": "skip"
+        },
+        {
+          "rule_id": "extract_coordinates",
+          "rule_name": "Extract Coordinates",
+          "transformation_type": "enrichment",
+          "source_fields": [
+            "spatial_elements"
+          ],
+          "target_field": "coordinate_array",
+          "expression": "extract_coordinates_from_spatial(spatial_elements)",
+          "conditions": null,
+          "priority": 2,
+          "error_handling": "skip"
+        }
+      ],
+      "data_type_mappings": [
+        {
+          "source_field": "number_pp",
+          "source_type": "string",
+          "target_field": "record_id",
+          "target_type": "varchar(50)",
+          "conversion_function": null,
+          "default_value": null
+        },
+        {
+          "source_field": "sk_id",
+          "source_type": "string",
+          "target_field": "coordinate_system",
+          "target_type": "varchar(20)",
+          "conversion_function": null,
+          "default_value": null
+        }
+      ],
+      "validation_rules": [
+        {
+          "rule_name": "Check Record ID",
+          "field_name": "record_id",
+          "validation_type": "not_null",
+          "parameters": {},
+          "error_message": "Record ID cannot be null",
+          "severity": "error"
+        }
+      ],
+      "processing_mode": "batch",
+      "window_size_minutes": null,
+      "late_arrival_threshold_minutes": 60,
+      "output_format": "table",
+      "partitioning_strategy": null,
+      "sorting_keys": [],
+      "resources": {
+        "cpu_cores": 2.0,
+        "memory_mb": 1024,
+        "temp_storage_mb": 5120,
+        "max_parallelism": 4,
+        "spill_to_disk": true
+      },
+      "checkpoint_interval_minutes": 10,
+      "quality_checks": [
+        {
+          "rule_name": "Check Record ID",
+          "field_name": "record_id",
+          "validation_type": "not_null",
+          "parameters": {},
+          "error_message": "Record ID cannot be null",
+          "severity": "error"
+        }
+      ],
+      "monitoring_metrics": [
+        "rows_processed",
+        "transformation_errors",
+        "processing_time"
+      ]
+    },
+    "load_config": {
+      "load_id": "Simple XML Test_load",
+      "load_name": "Load for Simple XML Test",
+      "description": "Data loading to postgres",
+      "target_storage_type": "postgres",
+      "connection_string": "postgresql://localhost:5432/dwh",
+      "database_name": "dwh",
+      "schema_name": "public",
+      "table_name": "Simple XML Test_data",
+      "load_strategy": "full_refresh",
+      "merge_keys": [],
+      "update_fields": [],
+      "target_schema": [],
+      "indexes": [
+        {
+          "index_name": "idx_record_id",
+          "index_type": "btree",
+          "columns": [
+            "record_id"
+          ],
+          "is_unique": true,
+          "is_primary": false,
+          "is_clustered": false,
+          "fill_factor": null
+        },
+        {
+          "index_name": "idx_created_date",
+          "index_type": "btree",
+          "columns": [
+            "created_date"
+          ],
+          "is_unique": false,
+          "is_primary": false,
+          "is_clustered": false,
+          "fill_factor": null
+        }
+      ],
+      "partitioning": null,
+      "compression": {
+        "enabled": true,
+        "algorithm": "gzip",
+        "level": 1,
+        "columns": null
+      },
+      "resources": {
+        "cpu_cores": 1.0,
+        "memory_mb": 1024,
+        "concurrent_connections": 5,
+        "batch_size": 5000,
+        "commit_frequency": 1000
+      },
+      "pre_load_sql": [],
+      "post_load_sql": [],
+      "retention_policy": {
+        "retention_days": 365,
+        "archive_after_days": 90,
+        "compression_enabled": true,
+        "backup_frequency": "daily"
+      },
+      "compression_type": null,
+      "quality_checks": {
+        "row_count_validation": true,
+        "null_checks": {
+          "record_id": false
+        },
+        "unique_constraints": [
+          "record_id"
+        ],
+        "foreign_key_checks": [],
+        "custom_sql_checks": []
+      },
+      "success_metrics": [
+        "rows_loaded",
+        "load_duration",
+        "data_quality_score"
+      ],
+      "failure_thresholds": {},
+      "notification_channels": [
+        "email",
+        "slack"
+      ]
+    },
+    "dependencies": [],
+    "notifications": {
+      "email_on_success": false,
+      "email_on_failure": true,
+      "email_on_retry": false,
+      "email_addresses": [
+        "test_user@company.com"
+      ],
+      "slack_webhook": null,
+      "custom_callbacks": []
+    },
+    "sla_minutes": null,
+    "environment": "development",
+    "total_cpu_cores": 1.0,
+    "total_memory_mb": 1824,
+    "estimated_runtime_minutes": 13,
+    "data_classification": "internal",
+    "gdpr_applicable": false,
+    "data_lineage_enabled": true
+  },
+  "ai_recommendations": [
+    {
+      "recommendation_id": "storage_transactional_01",
+      "recommendation_type": "storage_optimization",
+      "title": "PostgreSQL подходит для небольших объемов данных",
+      "description": "Для объемов данных менее 100K записей PostgreSQL обеспечит отличную производительность с меньшими затратами на инфраструктуру.",
+      "rationale": "Объем данных: 20000 записей, что позволяет использовать реляционную СУБД",
+      "confidence_score": 0.92,
+      "impact_level": "medium",
+      "implementation_effort": "low",
+      "estimated_improvement": {
+        "cost_reduction": 0.4,
+        "maintenance_simplicity": 0.8
+      },
+      "implementation_steps": [
+        "Создать оптимизированную PostgreSQL схему",
+        "Настроить индексы для часто используемых полей",
+        "Настроить автоматический VACUUM"
+      ],
+      "risks": [
+        "Возможны проблемы с масштабированием при росте данных"
+      ]
+    }
+  ],
+  "baseline_metrics": {
+    "throughput_records_per_minute": 333.3333333333333,
+    "latency_minutes": 2.0,
+    "resource_utilization_cpu": 0.6,
+    "resource_utilization_memory": 0.7,
+    "cost_per_execution_usd": 0.5,
+    "data_quality_score": 0.85,
+    "reliability_score": 0.9
+  },
+  "target_metrics": {
+    "throughput_records_per_minute": 333.3333333333333,
+    "latency_minutes": 2.0,
+    "resource_utilization_cpu": 0.72,
+    "resource_utilization_memory": 0.77,
+    "cost_per_execution_usd": 0.5,
+    "data_quality_score": 0.9,
+    "reliability_score": 0.93
+  },
+  "generated_at": "2025-09-30 22:02:19.314318",
+  "generator_version": "2.0.0",
+  "config_hash": "1b671212963f85a90ed8ad4b6e35f8b8"
+}
