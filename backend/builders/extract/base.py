@@ -155,3 +155,15 @@ class BaseExtractConfigBuilder:
             DataQualityProfile configuration.
         """
         return DataQualityProfile()
+
+    @classmethod
+    async def get_batch_size(cls, source: Source) -> int:
+        """Retrieve batch size configuration for the source.
+
+        Args:
+            source: The source configuration.
+
+        Returns:
+            Batch size for processing records.
+        """
+        return 1000  # Default batch size

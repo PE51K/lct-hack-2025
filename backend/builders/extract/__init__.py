@@ -79,6 +79,8 @@ class ExtractConfigBuilder:
         logger.debug(f"Incremental: {incremental}")
         data_quality = await builder.get_data_quality(src)
         logger.debug(f"Data quality: {data_quality}")
+        batch_size = await builder.get_batch_size(src)
+        logger.debug(f"Batch size: {batch_size}")
 
         return ExtractConfig(
             source_metadata=src,
@@ -88,4 +90,5 @@ class ExtractConfigBuilder:
             resources=resources,
             incremental=incremental,
             data_quality=data_quality,
+            batch_size=batch_size,
         )

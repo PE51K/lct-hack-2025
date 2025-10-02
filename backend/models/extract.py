@@ -238,3 +238,4 @@ class ExtractConfig(BaseModel):
     data_quality: DataQualityProfile = Field(
         default_factory=DataQualityProfile, description="Data quality profile and validation rules."
     )
+    batch_size: int = Field(1000, description="Batch size for processing records.")
