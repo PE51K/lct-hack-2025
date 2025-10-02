@@ -47,20 +47,14 @@ http://minio:miniosecret@localhost:9002/test-bucket
 
    This will automatically initialize PostgreSQL and ClickHouse with test data, and upload test files to MinIO.
 
-2. (Optional) Build and run the initialization script manually:
-   ```bash
-   # Build the Docker image
-   docker build -t test-dbs-init .
+2. (Optional) Manually initialize MinIO test data after containers are running:
+    ```bash
+    # Build the Docker image
+    docker build -t test-dbs-init .
 
-   # Run the initialization script
-   docker run --env-file .env --network host test-dbs-init
-   ```
-
-3. (Optional) If you need to manually initialize test data after containers are running:
-   ```bash
-   pip install -e .
-   python init_test_dbs.py
-   ```
+    # Run the initialization script
+    docker run --env-file .env --network host test-dbs-init
+    ```
 
 ## Configuration
 

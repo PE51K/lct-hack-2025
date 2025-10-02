@@ -66,10 +66,10 @@ cd frontend
 npm install
 ```
 
-3. Copy `.env.dev.example` to `.env` and update the environment variables as needed:
+3. Copy `.env.example` to `.env` and update the environment variables as needed:
 ```bash
-cp .env.dev.example .env
-# Edit .env to set your configurations
+cp .env.example .env
+# Edit .env to set the backend API URL
 ```
 
 4. Start the development server:
@@ -77,7 +77,7 @@ cp .env.dev.example .env
 npm run dev
 ```
 
-5. Open your browser and navigate to `http://localhost:5173` (or the port specified in the output).
+5. Open your browser and navigate to `http://localhost:5173` (default Vite dev server port).
 
 ## Linting and Formatting
 
