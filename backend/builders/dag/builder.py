@@ -1,7 +1,7 @@
 """DAG configuration builder."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from models.dag import DAG, DAGDefaultArgs, DAGTask
 from models.ddl import DDL
@@ -46,7 +46,9 @@ class DAGBuilder:
         # Estimate resource requirements
         estimated_runtime = self._estimate_runtime(extract_config, transform_config, load_config)
         cpu_cores = self._estimate_cpu_requirements(extract_config, transform_config, load_config)
-        memory_mb = self._estimate_memory_requirements(extract_config, transform_config, load_config)
+        memory_mb = self._estimate_memory_requirements(
+            extract_config, transform_config, load_config
+        )
 
         # Generate documentation
         doc_md = self._generate_documentation(extract_config, transform_config, load_config, ddl)
@@ -61,7 +63,12 @@ class DAGBuilder:
             max_active_runs=1,
             owner="data_team",
             team="data_engineering",
-            tags=["etl", "auto_generated", extract_config.source_metadata.source_type, load_config.target_storage_type.storage_type],
+            tags=[
+                "etl",
+                "auto_generated",
+                extract_config.source_metadata.source_type,
+                load_config.target_storage_type.storage_type,
+            ],
             default_args=default_args,
             concurrency=1,
             max_active_tasks=1,
@@ -155,7 +162,9 @@ class DAGBuilder:
             full_table_name = f"{load_config.database_name}.{load_config.table_name}"
         else:
             # PostgreSQL: database.schema.table
-            full_table_name = f"{load_config.database_name}.{load_config.schema_name}.{load_config.table_name}"
+            full_table_name = (
+                f"{load_config.database_name}.{load_config.schema_name}.{load_config.table_name}"
+            )
 
         # Load task
         load_task = DAGTask(
@@ -194,8 +203,8 @@ class DAGBuilder:
 
         # Extract time based on source complexity
         extract_time = 10  # Base extract time
-        if hasattr(extract_config, 'content_statistics') and extract_config.content_statistics:
-            size_mb = extract_config.content_statistics.get('total_size_mb', 50)
+        if hasattr(extract_config, "content_statistics") and extract_config.content_statistics:
+            size_mb = extract_config.content_statistics.get("total_size_mb", 50)
             extract_time = max(10, int(size_mb / 5))  # 1 minute per 5MB
 
         # Transform time based on rules complexity
@@ -219,7 +228,7 @@ class DAGBuilder:
         cpu_cores = 1.0  # Base
 
         # Extract CPU based on parallelism
-        if hasattr(extract_config, 'resources') and extract_config.resources:
+        if hasattr(extract_config, "resources") and extract_config.resources:
             cpu_cores += extract_config.resources.parallel_workers * 0.5
 
         # Transform CPU based on complexity
@@ -230,7 +239,7 @@ class DAGBuilder:
             cpu_cores += 2.0
 
         # Load CPU based on connection pool size
-        if hasattr(load_config, 'resources') and load_config.resources:
+        if hasattr(load_config, "resources") and load_config.resources:
             cpu_cores += load_config.resources.connection_pool_size * 0.1
 
         return min(cpu_cores, 4.0)  # Cap at 4 cores
@@ -245,8 +254,8 @@ class DAGBuilder:
         memory_mb = 1024  # Base 1GB
 
         # Extract memory based on batch size and data size
-        if hasattr(extract_config, 'content_statistics') and extract_config.content_statistics:
-            size_mb = extract_config.content_statistics.get('total_size_mb', 50)
+        if hasattr(extract_config, "content_statistics") and extract_config.content_statistics:
+            size_mb = extract_config.content_statistics.get("total_size_mb", 50)
             memory_mb += int(size_mb * 2)  # 2x data size for processing
 
         # Transform memory based on rules
@@ -254,7 +263,7 @@ class DAGBuilder:
         memory_mb += rules_count * 100  # 100MB per complex rule
 
         # Load memory based on batch processing
-        if hasattr(load_config, 'batch_config') and load_config.batch_config:
+        if hasattr(load_config, "batch_config") and load_config.batch_config:
             memory_mb += load_config.batch_config.batch_size * 10  # 10MB per 1000 records
 
         return min(memory_mb, 8192)  # Cap at 8GB
@@ -273,13 +282,18 @@ class DAGBuilder:
             full_table_name = f"{load_config.database_name}.{load_config.table_name}"
         else:
             # PostgreSQL: database.schema.table
-            full_table_name = f"{load_config.database_name}.{load_config.schema_name}.{load_config.table_name}"
+            full_table_name = (
+                f"{load_config.database_name}.{load_config.schema_name}.{load_config.table_name}"
+            )
 
         doc = f"""
-# ETL Pipeline: {extract_config.source_metadata.source_type} → {load_config.target_storage_type.storage_type}
+# ETL Pipeline: {extract_config.source_metadata.source_type} →
+# {load_config.target_storage_type.storage_type}
 
 ## Overview
-This DAG extracts data from {extract_config.source_metadata.source_type}, applies {len(transform_config.transformation_rules)} transformation rules, and loads to {load_config.target_storage_type.storage_type}.
+This DAG extracts data from {extract_config.source_metadata.source_type}, applies "
+f"{len(transform_config.transformation_rules)} transformation rules, and loads to "
+f"{load_config.target_storage_type.storage_type}.
 
 ## Tasks
 
@@ -290,7 +304,7 @@ This DAG extracts data from {extract_config.source_metadata.source_type}, applie
 
 ### Transform Data
 - **Rules**: {len(transform_config.transformation_rules)} transformation rules
-- **Identity Keys**: {', '.join(transform_config.identity_keys)}
+- **Identity Keys**: {", ".join(transform_config.identity_keys)}
 - **Processing Mode**: {transform_config.processing_mode}
 
 ### Load Data

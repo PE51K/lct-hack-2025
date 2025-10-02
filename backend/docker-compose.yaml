@@ -1,9 +1,16 @@
+include:
+  - path: "docker-compose.airflow.yaml"
+    env_file: ".env"
+
 services:
   backend:
     build:
       context: .
+    network_mode: host
     env_file:
       - .env
+    volumes:
+      - ${AIRFLOW_DAGS_VOLUME:-./dags}:/app/dags
     ports:
       - ${APP_PORT:-8000}:8000
     restart: unless-stopped

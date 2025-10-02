@@ -8,7 +8,6 @@ from builders.dag import AirflowFileGenerator, DAGBuilder
 from builders.ddl import DDLBuilder
 from models.app import CreateDAGRequest, CreateDAGResponse
 from models.app.create_dag import ClickHouseCredentials, HDFSCredentials, PostgresCredentials
-from models.ddl import DDL
 from models.extract import ExtractConfig
 from models.load import LoadConfig
 from models.transform import TransformConfig
@@ -33,21 +32,23 @@ async def create_dag(request: CreateDAGRequest) -> CreateDAGResponse:
         extract_config = ExtractConfig(**request.extract_config)
         transform_config = TransformConfig(**request.transform_config)
         load_config = LoadConfig(**request.load_config)
-        ddl = DDL(**request.ddl)
 
         logger.info(f"Processing target type: {load_config.target_storage_type.storage_type}")
 
         # 2. Update LoadConfig with real credentials
         updated_load_config = _update_connection_string(load_config, request.target_credentials)
 
-        logger.info(f"Updated connection string (masked): {_mask_credentials(updated_load_config.target_storage_connection_string)}")
-        
+        logger.info(
+            f"Updated connection string (masked): "
+            f"{_mask_credentials(updated_load_config.target_storage_connection_string)}"
+        )
+
         # 3. Always regenerate DDL to ensure table name matches load_config
         # This handles cases where the DDL was created with a different table name
         logger.info(f"Regenerating DDL for table: {updated_load_config.table_name}")
         ddl_builder = DDLBuilder()
         updated_ddl = await ddl_builder(extract_config, updated_load_config)
-        logger.info(f"DDL regenerated successfully")
+        logger.info("DDL regenerated successfully")
 
         # 4. Create DAG model
         dag_builder = DAGBuilder()
@@ -109,53 +110,56 @@ def _update_connection_string(
         if not isinstance(credentials, PostgresCredentials):
             raise ValueError(f"Expected PostgresCredentials for target type '{target_type}'")
 
-        # Transform localhost to Docker network service name for Airflow
-        host = credentials.host
-        if host == "localhost" or host == "127.0.0.1":
-            host = "test-postgres"
-            logger.info(f"Transformed localhost PostgreSQL host to Docker network: {host}")
-
         connection_string = (
             f"postgresql://{credentials.username}:{credentials.password}"
-            f"@{host}:{credentials.port}/{credentials.database}"
+            f"@{credentials.host}:{credentials.port}/{credentials.database}"
         )
         load_config.database_name = credentials.database
         load_config.schema_name = credentials.schema_name
 
         # Override table name if provided in credentials
         if credentials.table_name:
-            logger.info(f"Overriding table name from '{load_config.table_name}' to '{credentials.table_name}'")
+            logger.info(
+                f"Overriding table name from '{load_config.table_name}' "
+                f"to '{credentials.table_name}'"
+            )
             load_config.table_name = credentials.table_name
 
     elif target_type == "clickhouse":
         if not isinstance(credentials, ClickHouseCredentials):
             raise ValueError(f"Expected ClickHouseCredentials for target type '{target_type}'")
-        
+
         password_part = f":{credentials.password}" if credentials.password else ""
         connection_string = (
             f"clickhouse://{credentials.username}{password_part}"
             f"@{credentials.host}:{credentials.port}/{credentials.database}"
         )
         load_config.database_name = credentials.database
-        
+
         # Override table name if provided in credentials
         if credentials.table_name:
-            logger.info(f"Overriding table name from '{load_config.table_name}' to '{credentials.table_name}'")
+            logger.info(
+                f"Overriding table name from '{load_config.table_name}' "
+                f"to '{credentials.table_name}'"
+            )
             load_config.table_name = credentials.table_name
 
     elif target_type == "hdfs":
         if not isinstance(credentials, HDFSCredentials):
             raise ValueError(f"Expected HDFSCredentials for target type '{target_type}'")
-        
+
         connection_string = (
             f"hdfs://{credentials.namenode_host}:{credentials.namenode_port}{credentials.base_path}"
         )
         # HDFS doesn't have database/schema concept, but we use base_path
         load_config.database_name = credentials.base_path
-        
+
         # Override table name if provided in credentials
         if credentials.table_name:
-            logger.info(f"Overriding table name from '{load_config.table_name}' to '{credentials.table_name}'")
+            logger.info(
+                f"Overriding table name from '{load_config.table_name}' "
+                f"to '{credentials.table_name}'"
+            )
             load_config.table_name = credentials.table_name
 
     else:

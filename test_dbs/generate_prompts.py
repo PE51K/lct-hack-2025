@@ -31,15 +31,10 @@ def generate_minio_prompt(folder: str = "csv/") -> str:
 def main():
     """Print example prompts for all configured test databases."""
     print("Example Extraction Prompts:")
-    print("=" * 80)
-    print()
-    print("NOTE: When using from browser (frontend), use 'localhost' in URLs.")
-    print("      The backend automatically transforms localhost to Docker hostnames.")
-    print("=" * 80)
+    print("=" * 50)
 
     tables = ["employees", "products", "orders"]
 
-    print()
     print("PostgreSQL:")
     for table in tables:
         print(f"Table: {table}")
@@ -53,7 +48,6 @@ def main():
         print()
 
     print("MinIO (S3):")
-    print("Frontend users should use: endpoint=http://localhost:9000")
     folders = ["csv/", "json/", "xml/"]
     for folder in folders:
         print(f"Folder: {folder}")

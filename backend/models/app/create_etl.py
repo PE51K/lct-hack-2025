@@ -66,7 +66,7 @@ class CreateETLResponse(BaseModel):
     load_config: LoadConfig | None = Field(None, description="Created load phase configuration.")
     ddl: DDL | None = Field(None, description="Created DDL.")
     dag: DAG | None = Field(None, description="Created DAG.")
-    
+
     # NEW: Credentials form and next step
     credentials_required: CredentialsRequired | None = Field(
         None, description="Credentials form specification for target database."

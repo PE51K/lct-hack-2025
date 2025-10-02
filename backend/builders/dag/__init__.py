@@ -7,4 +7,4 @@ from .file_generator import AirflowFileGenerator
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["DAGBuilder", "AirflowFileGenerator"]
+__all__ = ["AirflowFileGenerator", "DAGBuilder"]

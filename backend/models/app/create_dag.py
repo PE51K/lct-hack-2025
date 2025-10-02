@@ -1,6 +1,6 @@
 """Models for create_dag endpoint."""
 
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -18,34 +18,54 @@ class PostgresCredentials(BaseModel):
     username: str = Field(..., description="PostgreSQL username", examples=["etl_user"])
     password: str = Field(..., description="PostgreSQL password", examples=["secure_password"])
     database: str = Field(..., description="PostgreSQL database name", examples=["analytics"])
-    schema_name: str = Field("public", description="PostgreSQL schema name", examples=["public", "staging"])
-    table_name: str | None = Field(None, description="Target table name (optional, overrides load_config)", examples=["employees", "sales_data"])
+    schema_name: str = Field(
+        "public", description="PostgreSQL schema name", examples=["public", "staging"]
+    )
+    table_name: str | None = Field(
+        None,
+        description="Target table name (optional, overrides load_config)",
+        examples=["employees", "sales_data"],
+    )
 
 
 class ClickHouseCredentials(BaseModel):
     """ClickHouse database credentials."""
 
-    host: str = Field(..., description="ClickHouse host address", examples=["clickhouse.example.com"])
+    host: str = Field(
+        ..., description="ClickHouse host address", examples=["clickhouse.example.com"]
+    )
     port: int = Field(8123, description="ClickHouse HTTP port", examples=[8123, 9000])
     username: str = Field(..., description="ClickHouse username", examples=["etl_user"])
     password: str = Field(..., description="ClickHouse password", examples=["secure_password"])
     database: str = Field(..., description="ClickHouse database name", examples=["analytics"])
-    table_name: str | None = Field(None, description="Target table name (optional, overrides load_config)", examples=["events", "metrics"])
+    table_name: str | None = Field(
+        None,
+        description="Target table name (optional, overrides load_config)",
+        examples=["events", "metrics"],
+    )
 
 
 class HDFSCredentials(BaseModel):
     """HDFS storage credentials."""
 
-    namenode_host: str = Field(..., description="HDFS NameNode host", examples=["namenode.example.com"])
+    namenode_host: str = Field(
+        ..., description="HDFS NameNode host", examples=["namenode.example.com"]
+    )
     namenode_port: int = Field(9870, description="HDFS NameNode port", examples=[9870])
     user: str = Field(..., description="HDFS user", examples=["hdfs", "etl_user"])
     base_path: str = Field(..., description="Base HDFS path", examples=["/data/etl", "/warehouse"])
-    authentication: str = Field("simple", description="Authentication method", examples=["simple", "kerberos"])
-    table_name: str | None = Field(None, description="Target file/directory name (optional)", examples=["output_data", "results"])
+    authentication: str = Field(
+        "simple", description="Authentication method", examples=["simple", "kerberos"]
+    )
+    table_name: str | None = Field(
+        None,
+        description="Target file/directory name (optional)",
+        examples=["output_data", "results"],
+    )
 
 
 TargetCredentials = Annotated[
-    Union[PostgresCredentials, ClickHouseCredentials, HDFSCredentials],
+    PostgresCredentials | ClickHouseCredentials | HDFSCredentials,
     Field(discriminator="__class__"),
 ]
 

@@ -28,62 +28,61 @@ This folder contains the backend code for the AI Data Assistant
 ```plaintext
 backend/
 ├── ai/                          # AI-related modules
-│   ├── agents/                  # AI agents for specific tasks
-│   │   ├── calculcator_agent.py # Calculator agent for computations
-│   │   └── __init__.py
 │   ├── __init__.py
 │   └── llm/                     # Large Language Model integrations
 │       └── __init__.py
-├── app/                         # Application entry point
-│   └── app.py                   # FastAPI application
-├── builders/                    # ETL builders for data extraction
+├── app/                         # FastAPI application
+│   ├── app.py                   # Main FastAPI application
+│   └── routers/                 # API route handlers
+│       ├── create_dag.py        # DAG creation endpoints
+│       ├── create_etl.py        # ETL creation endpoints
+│       ├── publish_etl.py       # ETL publishing endpoints
+│       ├── update_etl.py        # ETL update endpoints
+│       └── __init__.py
+├── builders/                    # ETL configuration builders
+│   ├── dag/                     # DAG file generation
+│   │   ├── builder.py
+│   │   ├── file_generator.py
+│   │   └── templates/           # Jinja2 templates for DAG generation
+│   ├── ddl/                     # DDL statement generation
+│   │   ├── builder.py
+│   │   └── __init__.py
 │   ├── extract/                 # ExtractConfig builders for various sources
+│   │   ├── base.py              # Base extract builder
 │   │   ├── clickhouse.py        # ClickHouse ExtractConfig builder
 │   │   ├── folder.py            # Folder ExtractConfig builder
-│   │   ├── hadoop.py            # Hadoop ExtractConfig builder
-│   │   ├── __init__.py
 │   │   ├── kafka.py             # Kafka ExtractConfig builder
 │   │   ├── postgres.py          # PostgreSQL ExtractConfig builder
 │   │   ├── s3.py                # S3 ExtractConfig builder
-│   │   └── sparkstreaming.py    # Spark Streaming ExtractConfig builder
+│   │   └── __init__.py
+│   ├── load/                    # LoadConfig builders
+│   │   ├── builder.py
+│   │   └── __init__.py
+│   ├── transform/               # TransformConfig builders
+│   │   ├── builder.py
+│   │   └── __init__.py
 │   └── __init__.py
 ├── core/                        # Core utilities and configurations
 │   ├── __init__.py
 │   ├── logging.py               # Logging configuration
 │   └── settings.py              # Application settings and configuration
+├── dags/                        # Generated Airflow DAGs directory
+│   └── .gitignore
 ├── docker-compose.airflow.yaml   # Docker Compose for Airflow
-├── docker-compose.test-dbs.yaml # Docker Compose for test databases
 ├── docker-compose.yaml          # Main Docker Compose configuration
 ├── dockerfile                   # Dockerfile for backend container
 ├── init-multiple-databases.sh   # Script to initialize databases
-├── models/                      # Data models and schemas
-│   ├── common.py                # Common data models
+├── models/                      # Pydantic data models and schemas
+│   ├── app/                     # Application-specific models
 │   ├── dag.py                   # DAG data models
 │   ├── ddl.py                   # DDL data models
 │   ├── extract.py               # Extract data models
-│   ├── generate_etl.py          # Generate ETL data models
-│   ├── __init__.py
 │   ├── load.py                  # Load data models
-│   ├── publish_etl.py           # Publish ETL data models
-│   ├── sources.py               # Sources data models
 │   ├── transform.py             # Transform data models
-│   └── update_etl.py            # Update ETL data models
+│   └── __init__.py
 ├── pyproject.toml               # Python project configuration
 ├── README.md                    # This file
-├── uv.lock                      # Dependency lock file
-└── volumes/                     # Docker volumes for persistent data
-    ├── airflow/                 # Airflow data
-    │   ├── dags
-    │   ├── logs
-    │   └── postgres
-    ├── clickhouse/              # ClickHouse data and logs
-    │   ├── data
-    │   └── logs
-    ├── minio/                   # MinIO data
-    │   └── langfuse
-    ├── postgres                 # PostgreSQL data
-    └── redis/                   # Redis data
-        └── dump.rdb
+└── uv.lock                      # Dependency lock file
 ```
 
 ## Development Setup
@@ -103,16 +102,16 @@ pip install uv
 uv sync
 ```
 
-4. Copy `.env.dev.example` to `.env` and update the environment variables as needed:
+4. Copy `.env.example` to `.env` and update the environment variables as needed:
 ```bash
-cp .env.dev.example .env
-# Edit .env to set your configurations
+cp .env.example .env
+# Edit .env to set your configurations (especially Yandex GPT credentials)
 ```
 
-6. **Start supporting services (Postgres) from the project root directory**:
+6. **Start supporting services from the project root directory**:
 ```bash
 # Run from the project root directory
-docker compose up -d postgres
+docker compose up -d test-postgres test-clickhouse test-minio
 ```
 
 7. Run local fastapi server:
@@ -158,19 +157,3 @@ uv add <package-name> --dev
 uv remove <package-name>
 ```
 
-# Project testing rules
-
-The project uses [pytest](https://docs.pytest.org/en/stable/) for testing. Tests are located in the [`tests`](tests) directory. To run the tests, use the following command:
-
-1. Start necessary test databases:
-```bash
-# Run from the backend directory
-docker compose -f docker-compose.test-dbs.yaml --env-file .env up
-```
-
-2. Fill test databases with your test data if needed.
-
-3. Run tests:
-```bash
-uv run pytest
-```

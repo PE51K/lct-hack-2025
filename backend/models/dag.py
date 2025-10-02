@@ -44,7 +44,10 @@ class DAG(BaseModel):
 
     # Scheduling configuration
     schedule: str = Field("@daily", description="DAG schedule interval")
-    start_date: datetime = Field(default_factory=lambda: datetime.now().replace(hour=2, minute=0, second=0, microsecond=0), description="DAG start date")
+    start_date: datetime = Field(
+        default_factory=lambda: datetime.now().replace(hour=2, minute=0, second=0, microsecond=0),
+        description="DAG start date",
+    )
     end_date: datetime | None = Field(None, description="DAG end date")
     catchup: bool = Field(False, description="Whether to catch up on missed runs")
     max_active_runs: int = Field(1, description="Maximum number of active DAG runs")
@@ -68,11 +71,14 @@ class DAG(BaseModel):
 
     # Airflow-specific settings
     dag_file_path: str | None = Field(None, description="Path to the generated DAG file")
-    is_paused_upon_creation: bool = Field(True, description="Whether DAG should be paused when created")
+    is_paused_upon_creation: bool = Field(
+        True, description="Whether DAG should be paused when created"
+    )
     doc_md: str | None = Field(None, description="DAG documentation in Markdown format")
-    
+
     # File generation support
     generated_files: dict[str, str] | None = Field(
         None,
-        description="Paths to generated Airflow files (dag_file, functions_file, config_file, init_file)"
+        description="Paths to generated Airflow files (dag_file, functions_file, config_file, "
+        "init_file)",
     )

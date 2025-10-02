@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader
 
 from models.dag import DAG
 from models.ddl import DDL
@@ -34,7 +34,7 @@ class AirflowFileGenerator:
             self.base_output_dir = backend_dir / base_output_dir
         else:
             self.base_output_dir = Path(base_output_dir)
-        
+
         self.base_output_dir.mkdir(parents=True, exist_ok=True)
 
         # Set up Jinja2 environment
@@ -43,6 +43,7 @@ class AirflowFileGenerator:
             loader=FileSystemLoader(str(template_dir)),
             trim_blocks=True,
             lstrip_blocks=True,
+            autoescape=False, # noqa: S701
         )
 
         logger.info(f"AirflowFileGenerator initialized with output dir: {self.base_output_dir}")
@@ -242,7 +243,7 @@ class AirflowFileGenerator:
             generated_files: Dictionary of generated file paths
         """
         logger.warning("Cleaning up partially generated files")
-        for file_type, file_path in generated_files.items():
+        for _file_type, file_path in generated_files.items():
             try:
                 path = Path(file_path)
                 if path.exists():
