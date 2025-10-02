@@ -1,5 +1,7 @@
 """Models for ETL creation requests and responses."""
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from ..dag import DAG
@@ -8,6 +10,24 @@ from ..extract import ExtractConfig
 from ..load import LoadConfig
 from ..transform import TransformConfig
 from .ids import ThreadUserIds
+
+
+class CredentialField(BaseModel):
+    """Field definition for credentials form."""
+
+    name: str = Field(..., description="Field name")
+    label: str = Field(..., description="Display label")
+    type: str = Field(..., description="Input type: text, password, number")
+    placeholder: str | None = Field(None, description="Placeholder text")
+    default: Any | None = Field(None, description="Default value")
+    required: bool = Field(True, description="Whether field is required")
+
+
+class CredentialsRequired(BaseModel):
+    """Credentials requirement specification."""
+
+    target_type: str = Field(..., description="Target database type")
+    fields: list[CredentialField] = Field(..., description="Required credential fields")
 
 
 class CreateETLRequest(BaseModel):
@@ -46,3 +66,9 @@ class CreateETLResponse(BaseModel):
     load_config: LoadConfig | None = Field(None, description="Created load phase configuration.")
     ddl: DDL | None = Field(None, description="Created DDL.")
     dag: DAG | None = Field(None, description="Created DAG.")
+
+    # NEW: Credentials form and next step
+    credentials_required: CredentialsRequired | None = Field(
+        None, description="Credentials form specification for target database."
+    )
+    next_step: str | None = Field(None, description="Next endpoint to call (e.g., 'create_dag').")

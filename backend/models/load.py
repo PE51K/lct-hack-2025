@@ -27,36 +27,38 @@ class TargetStorageTypeRecommendation(BaseModel):
     explanation: str
 
 
-class Field(BaseModel):
+class ColumnField(BaseModel):
     """Description for field in table."""
 
-    name: str
-    data_type: str | None = None
-    nullable: bool | None = None
-    indexing_order: str | None = None
+    name: str = Field(..., description="Name of the field.")
+    data_type: str | None = Field(
+        None, description="Data type of the field.", examples=["VARCHAR(255)", "INT", "DATE"]
+    )
+    nullable: bool | None = Field(None, description="Whether the field is nullable.")
+    indexing_order: str | None = Field(None, description="Indexing order for the field.")
 
 
 class Index(BaseModel):
     """Description for index for relational db table."""
 
-    name: str
-    is_clustered: bool
-    fields: list[Field]
+    name: str = Field(..., description="Name of the index.")
+    is_clustered: bool = Field(..., description="Whether the index is clustered.")
+    fields: list[ColumnField] = Field(..., description="Fields included in the index.")
 
 
 class FlatMetaModel(BaseModel):
     """Metamodel for relational or columnstore db structured data."""
 
-    fields: list[Field]
-    indexes: list[Index] | None = None
-    partitioning_key: str
+    fields: list[ColumnField] = Field(..., description="List of fields in the model.")
+    indexes: list[Index] | None = Field(None, description="List of indexes.")
+    partitioning_key: str = Field(..., description="Key for partitioning.")
 
 
 class NestingMetaModel(BaseModel):
     """Metamodel for nonstructured data."""
 
-    data_structure: dict
-    partitioning_key: str
+    data_structure: dict = Field(..., description="Data structure definition.")
+    partitioning_key: str = Field(..., description="Key for partitioning.")
 
 
 class LoadStrategy(str, Enum):
@@ -90,19 +92,21 @@ class CompressionAlgorithm(str, Enum):
 class BatchConfig(BaseModel):
     """Batch loading configuration."""
 
-    batch_size: int = 1000
-    parallel_loads: int = 1
-    commit_interval: int = 1000
-    error_threshold: float = 0.05
+    batch_size: int = Field(1000, description="Size of each batch.")
+    parallel_loads: int = Field(1, description="Number of parallel loads.")
+    commit_interval: int = Field(1000, description="Interval for commits.")
+    error_threshold: float = Field(0.05, description="Threshold for errors.")
 
 
 class PartitioningConfig(BaseModel):
     """Partitioning configuration."""
 
-    enabled: bool = False
-    partition_by: str | None = None
-    partition_type: PartitionType = PartitionType.DATE
-    partition_count: int | None = None
+    enabled: bool = Field(False, description="Whether partitioning is enabled.")
+    partition_by: str | None = Field(None, description="Field to partition by.")
+    partition_type: Annotated[str, PartitionType] = Field(
+        PartitionType.DATE, description="Type of partitioning."
+    )
+    partition_count: int | None = Field(None, description="Number of partitions.")
 
 
 class IndexingConfig(BaseModel):
@@ -117,19 +121,21 @@ class IndexingConfig(BaseModel):
 class CompressionConfig(BaseModel):
     """Compression configuration."""
 
-    enabled: bool = True
-    algorithm: CompressionAlgorithm = CompressionAlgorithm.GZIP
-    level: int = 6
+    enabled: bool = Field(True, description="Whether compression is enabled.")
+    algorithm: Annotated[str, CompressionAlgorithm] = Field(
+        CompressionAlgorithm.GZIP, description="Compression algorithm."
+    )
+    level: int = Field(6, description="Compression level.")
 
 
 class LoadResourceConfig(BaseModel):
     """Resource configuration for loading."""
 
-    cpu_request: float = 1.0
-    memory_request_mb: int = 512
-    disk_io_limit: str | None = None
-    connection_pool_size: int = 10
-    timeout_minutes: int = 30
+    cpu_request: float = Field(1.0, description="CPU request.")
+    memory_request_mb: int = Field(512, description="Memory request in MB.")
+    disk_io_limit: str | None = Field(None, description="Disk I/O limit.")
+    connection_pool_size: int = Field(10, description="Connection pool size.")
+    timeout_minutes: int = Field(30, description="Timeout in minutes.")
 
 
 class MonitoringConfig(BaseModel):
@@ -142,31 +148,37 @@ class MonitoringConfig(BaseModel):
 
 
 class LoadConfig(BaseModel):
-    """
-    Enhanced load step configuration.
+    """Enhanced load step configuration."""
 
-    Attributes:
-        target_storage_type: Target storage system type (e.g., 'postgres', 'clickhouse', 'hdfs')
-        target_storage_connection_string: target storage connection string
-        nesting_metamodel: metamodel for hdfs
-        flat_meta_model: metamodel for click and pg
-        load_strategy: Strategy for loading data
-        batch_config: Batch processing configuration
-        partitioning: Partitioning configuration
-        indexing: Indexing configuration
-        compression: Compression configuration
-        resources: Resource configuration
-        monitoring: Monitoring configuration
-    """
-
-    target_storage_type: TargetStorageTypeRecommendation
-    target_storage_connection_string: str
-    nesting_metamodel: NestingMetaModel
-    flat_meta_model: FlatMetaModel
-    load_strategy: LoadStrategy = LoadStrategy.APPEND
-    batch_config: BatchConfig = Field(default_factory=BatchConfig)
-    partitioning: PartitioningConfig = Field(default_factory=PartitioningConfig)
-    indexing: IndexingConfig = Field(default_factory=IndexingConfig)
-    compression: CompressionConfig = Field(default_factory=CompressionConfig)
-    resources: LoadResourceConfig = Field(default_factory=LoadResourceConfig)
-    monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
+    target_storage_type: TargetStorageTypeRecommendation = Field(
+        ..., description="Target storage system type."
+    )
+    target_storage_connection_string: str = Field(
+        ..., description="Target storage connection string."
+    )
+    database_name: str = Field(..., description="Target database name.")
+    schema_name: str = Field("public", description="Target schema name.")
+    table_name: str = Field(..., description="Target table name.")
+    nesting_metamodel: NestingMetaModel = Field(..., description="Metamodel for hdfs.")
+    flat_meta_model: FlatMetaModel = Field(..., description="Metamodel for click and pg.")
+    load_strategy: Annotated[str, LoadStrategy] = Field(
+        LoadStrategy.APPEND, description="Strategy for loading data."
+    )
+    batch_config: BatchConfig = Field(
+        default_factory=BatchConfig, description="Batch processing configuration."
+    )
+    partitioning: PartitioningConfig = Field(
+        default_factory=PartitioningConfig, description="Partitioning configuration."
+    )
+    indexing: IndexingConfig = Field(
+        default_factory=IndexingConfig, description="Indexing configuration."
+    )
+    compression: CompressionConfig = Field(
+        default_factory=CompressionConfig, description="Compression configuration."
+    )
+    resources: LoadResourceConfig = Field(
+        default_factory=LoadResourceConfig, description="Resource configuration."
+    )
+    monitoring: MonitoringConfig = Field(
+        default_factory=MonitoringConfig, description="Monitoring configuration."
+    )

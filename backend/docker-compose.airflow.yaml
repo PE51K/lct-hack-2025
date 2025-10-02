@@ -1,0 +1,53 @@
+services:
+  airflow-postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AIRFLOW_POSTGRES_USER:-airflow}
+      POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD:-airflow}
+      POSTGRES_DB: ${AIRFLOW_POSTGRES_DB:-airflow}
+    ports:
+      - "${AIRFLOW_POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - ${AIRFLOW_POSTGRES_VOLUME}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_POSTGRES_USER}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  airflow:
+    image: apache/airflow:2.8.0
+    user: root
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER}:${AIRFLOW_POSTGRES_PASSWORD}@localhost:${AIRFLOW_POSTGRES_PORT:-5434}/${AIRFLOW_POSTGRES_DB}
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBSERVER__RBAC: 'true'
+      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 5
+    volumes:
+      - ${AIRFLOW_DAGS_VOLUME:-./dags}:/opt/airflow/dags
+      - ${AIRFLOW_LOGS_VOLUME:-./logs}:/opt/airflow/logs
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com ||
+      echo 'User already exists' &&
+      airflow scheduler &
+      airflow webserver
+      "
+    ports:
+      - "${AIRFLOW_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s

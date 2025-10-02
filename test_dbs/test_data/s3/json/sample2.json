@@ -1,0 +1,1 @@
+[{"order": {"id": 1003, "details": {"amount": 200.00, "status": "shipped"}}}, {"order": {"id": 1004, "details": {"amount": 50.25, "status": "pending", "priority": "high"}}}]

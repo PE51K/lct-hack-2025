@@ -14,18 +14,23 @@ from aiologger import Logger
 from aiologger.formatters.base import Formatter
 from aiologger.handlers.streams import AsyncStreamHandler
 
+from .settings import settings
 
-async def setup_logger(name: str = "app_logger", level: str = "INFO") -> Logger:
+
+async def setup_logger(name: str = "app_logger", level: str | None = None) -> Logger:
     """
     Set up the logging configuration for the application asynchronously.
 
     Args:
         name (str): The name of the logger. Defaults to "app_logger".
-        level (str): The logging level to set. Defaults to "INFO".
+        level (str): The logging level to set. Defaults to value from settings.
 
     Returns:
         Logger: The configured aiologger instance with custom formatting.
     """
+    if level is None:
+        level = settings.app.logging.log_level
+
     # Create aiologger instance
     logger = Logger(name=name)
 

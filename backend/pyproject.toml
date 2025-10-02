@@ -5,17 +5,19 @@ description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
     "aiologger>=0.7.0",
+    "defusedxml>=0.7.1",
     "fastapi>=0.116.2",
     "kafka-python>=2.2.15",
     "langchain>=0.3.27",
     "langchain-openai>=0.3.33",
-    "langfuse>=3.4.0",
     "pydantic-settings>=2.10.1",
     "python-multipart>=0.0.20",
     "uvicorn>=0.35.0",
     "sqlalchemy",
     "psycopg2-binary",
-    "pandas"
+    "pandas",
+    "boto3>=1.40.43",
+    "jinja2>=3.1.6",
 ]
 
 [dependency-groups]
@@ -28,6 +30,7 @@ dev = [
 [tool.ruff]
 target-version = "py312" # Target Python version
 line-length = 100 # Max line length
+exclude = [".venv", "stuff"]
 
 [tool.ruff.format]
 quote-style = "double" # Use double quotes for strings

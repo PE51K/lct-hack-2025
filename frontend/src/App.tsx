@@ -2,12 +2,13 @@ import { useState } from 'react';
 import InputForm from './components/InputForm';
 import ProgressBar from './components/ProgressBar';
 import CreationReport from './components/CreationReport';
+import CredentialsForm from './components/CredentialsForm';
 import FeedbackForm from './components/FeedbackForm';
 import DeploymentProgress from './components/DeploymentProgress';
 import DeploymentReport from './components/DeploymentReport';
-import { createETL, updateETL, publishETL, type CreateETLRequest, type Feedback, type ThreadUserIds, type ETLResponse } from './services/api';
+import { createETL, createDAG, updateETL, publishETL, type CreateETLRequest, type Feedback, type ThreadUserIds, type ETLResponse } from './services/api';
 
-type Step = 'input' | 'generating' | 'report' | 'feedback' | 'updating' | 'publishing' | 'published';
+type Step = 'input' | 'generating' | 'credentials' | 'creating_dag' | 'report' | 'feedback' | 'updating' | 'publishing' | 'published';
 
 function App() {
   const [step, setStep] = useState<Step>('input');
@@ -29,7 +30,13 @@ function App() {
         if (response.processing_done) {
           if (response.success) {
             setLatestResponse(response);
-            setStep('report');
+            // Check if credentials are required (new 2-step workflow)
+            if (response.credentials_required && response.next_step === 'create_dag') {
+              setStep('credentials');
+            } else {
+              // Old workflow - DAG already created
+              setStep('report');
+            }
           } else {
             setProgressMessages(prev => [...prev, `Error: ${response.error_message || 'Unknown error'}`]);
             // Stay in generating state to show error
@@ -40,6 +47,50 @@ function App() {
       console.error('Creation failed:', error);
       setProgressMessages(prev => [...prev, 'Creation failed']);
     }
+  };
+
+  const handleCredentialsSubmit = async (credentials: Record<string, unknown>) => {
+    if (!ids || !latestResponse) return;
+    
+    setStep('creating_dag');
+    setProgressMessages(['Creating DAG with provided credentials...']);
+
+    try {
+      const response = await createDAG({
+        ids,
+        target_credentials: credentials,
+        extract_config: latestResponse.extract_config!,
+        transform_config: latestResponse.transform_config!,
+        load_config: latestResponse.load_config!,
+        ddl: latestResponse.ddl!,
+      });
+
+      setProgressMessages(prev => [...prev, response.processing_message]);
+      
+      if (response.success) {
+        // Update latestResponse with DAG
+        setLatestResponse(prev => ({
+          ...prev!,
+          dag: response.dag,
+          load_config: response.updated_load_config || prev!.load_config,
+        }));
+        setStep('report');
+      } else {
+        setProgressMessages(prev => [...prev, `Error: ${response.error_message || 'Unknown error'}`]);
+        // Go back to credentials form to retry
+        setStep('credentials');
+      }
+    } catch (error) {
+      console.error('DAG creation failed:', error);
+      setProgressMessages(prev => [...prev, 'DAG creation failed']);
+      setStep('credentials');
+    }
+  };
+
+  const handleCredentialsCancel = () => {
+    setStep('input');
+    setLatestResponse(null);
+    setProgressMessages([]);
   };
 
   const handleSatisfied = async () => {
@@ -102,7 +153,16 @@ function App() {
         return <InputForm onSubmit={handleCreate} />;
       case 'generating':
       case 'updating':
+      case 'creating_dag':
         return <ProgressBar messages={progressMessages} isComplete={false} />;
+      case 'credentials':
+        return latestResponse?.credentials_required ? (
+          <CredentialsForm
+            credentialsRequired={latestResponse.credentials_required}
+            onSubmit={handleCredentialsSubmit}
+            onCancel={handleCredentialsCancel}
+          />
+        ) : null;
       case 'report':
         return (
           <CreationReport

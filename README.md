@@ -14,9 +14,10 @@ A comprehensive AI-powered assistant for automating data engineering processes, 
 ## 📁 Project Structure
 
 ```
-AITHachathon/
-├── backend/                   # Python backend application
-├── frontend/                  # Frontend application
+lct-hack-2025/
+├── backend/                   # Python backend application (FastAPI)
+├── frontend/                  # React frontend application
+├── test_dbs/                  # Test databases setup (PostgreSQL, ClickHouse, MinIO)
 ├── docker-compose.yaml        # Main orchestration file
 └── README.md                  # This file
 ```
@@ -102,34 +103,36 @@ For a detailed representation, refer to the [Miro board](https://miro.com/app/bo
 ### Where All This Stuff Is Implemented or Proposed to Be Implemented
 
 #### UI
-[`frontend/`](frontend/) - UI for all our mad stuff. Stakeholders: Daniil.
+[`frontend/`](frontend/) - React-based web interface for ETL pipeline creation and management. Stakeholders: Daniil.
 
-#### FastAPI app
-[`backend/app/app.py`](backend/app/app.py) - would handle ETL generation/update/publish requests. Stakeholders: Gregory.
+#### FastAPI Backend
+[`backend/app/app.py`](backend/app/app.py) - Main FastAPI application handling ETL generation, update, and publish requests via streaming endpoints.
 
-#### AI pipelines
-[`backend/ai/`](backend/ai/) - would contain the AI-related logic and processing. **Attention**: committed usage of simple LangChain pipelines without memory for now with Dima - we may need to exclude checkpointer setup in [`backend/app/app.py`](backend/app/app.py) for now. Stakeholders: Gregory and Dima.
+#### API Endpoints
+- [`backend/app/routers/create_etl.py`](backend/app/routers/create_etl.py) - `/create_etl` - Generates ETL configurations from user prompts
+- [`backend/app/routers/create_dag.py`](backend/app/routers/create_dag.py) - `/create_dag` - Creates Airflow DAG files after credentials are provided
+- [`backend/app/routers/publish_etl.py`](backend/app/routers/publish_etl.py) - `/publish_etl` - Publishes DAGs to Airflow for execution
+- [`backend/app/routers/update_etl.py`](backend/app/routers/update_etl.py) - `/update_etl` - Updates ETL configurations based on user feedback
 
-#### ExtractConfig model
-[`backend/models/extract.py`](backend/models/extract.py) - describes source data storage, metamodels for objects in the storage, and some additional metadata. Stakeholders: Anton.
+#### AI Components
+[`backend/ai/`](backend/ai/) - Contains AI-related logic using LangChain and YandexGPT for ETL generation and optimization.
 
-#### TransformConfig model
-[`backend/models/transform.py`](backend/models/transform.py) - describes transformation instructions, aggregation rules, load periodicity, and some additional metadata. Stakeholders: Nikita.
+#### Data Models
+- [`backend/models/extract.py`](backend/models/extract.py) - ExtractConfig model for source data specifications
+- [`backend/models/transform.py`](backend/models/transform.py) - TransformConfig model for data transformation rules
+- [`backend/models/load.py`](backend/models/load.py) - LoadConfig model for target storage specifications
+- [`backend/models/ddl.py`](backend/models/ddl.py) - DDL model for database schema definitions
+- [`backend/models/dag.py`](backend/models/dag.py) - DAG model for Airflow pipeline definitions
 
-#### LoadConfig model
-[`backend/models/load.py`](backend/models/load.py) - describes target data storage, data structure in the storage, indexes, and some additional metadata. Stakeholders: Anton and Nikita.
+#### Builders
+- [`backend/builders/extract/`](backend/builders/extract/) - ExtractConfig builders for various data sources (PostgreSQL, ClickHouse, S3, Kafka, folder)
+- [`backend/builders/load/`](backend/builders/load/) - LoadConfig builders with AI recommendations for target storage
+- [`backend/builders/transform/`](backend/builders/transform/) - TransformConfig builders with AI-generated transformation logic
+- [`backend/builders/ddl/`](backend/builders/ddl/) - DDL generators for target schema creation
+- [`backend/builders/dag/`](backend/builders/dag/) - Airflow DAG file generators with templates
 
-#### ExtractConfig builders
-[`backend/builders/extract/`](backend/builders/extract/) - would contain builders for various data sources to build ExtractConfig. Each builder is inherited from [`BaseExtractConfigBuilder`](backend/builders/extract/__init__.py) and should implement 3 methods for getting data shard type, metamodel for each data shard, and optional method for getting any additional useful metadata. Stakeholders: Anton, Gregory, Nikita, Daniil, Julia.
-
-#### DDL generation
-[`backend/builders/ddl.py`](backend/builders/ddl.py) - would generate DDL based on ExtractConfig and LoadConfig. Stakeholders: Anton.
-
-#### DAG generation
-[`backend/builders/dag.py`](backend/builders/dag.py) - would generate Airflow DAG based on ExtractConfig, TransformConfig, LoadConfig, and DDL. Stakeholders: Nikita.
-
-#### DAG execution
-[`backend/executors/dag.py`](backend/executors/dag.py) - would handle the execution of the generated DAGs. **Attention**: probably, would include `DAG generation` part as well. Stakeholders: Nikita.
+#### Test Infrastructure
+[`test_dbs/`](test_dbs/) - Test database setup with PostgreSQL, ClickHouse, and MinIO for development and testing.
 
 ## 🚀 Deployment
 
@@ -149,16 +152,20 @@ cd lct-hack-2025
 
 2. **Set up environment variables:**
 ```bash
-# Backend configuration (use .env.prod.example for production)
-cp backend/.env.prod.example backend/.env
-# Edit backend/.env with your settings
+# Backend configuration
+cp backend/.env.example backend/.env
+# Edit backend/.env with your Yandex Cloud credentials and other settings
 
-# Frontend configuration (use .env.prod.example for production)
-cp frontend/.env.prod.example frontend/.env
-# Edit frontend/.env with your settings
+# Frontend configuration
+cp frontend/.env.example frontend/.env
+# Edit frontend/.env to set the backend API URL
+
+# Test databases configuration
+cp test_dbs/.env.example test_dbs/.env
+# Edit test_dbs/.env if you need to change default database settings
 ```
 
-- Refer to the [`backend/.env.dev.example`](backend/.env.dev.example) and [`frontend/.env.dev.example`](frontend/.env.dev.example) files for variable descriptions.
+- Refer to the `.env.example` files in each directory for variable descriptions.
 
 3. **Start all services:**
 ```bash
@@ -166,20 +173,55 @@ docker compose up --build -d
 ```
 
 4. **Access the services:**
-- Frontend: `http://localhost:{port_from_frontend_env}`
-- Backend API: `http://localhost:{port_from_backend_env}/docs`
+- Frontend: `http://localhost:7777`
+- Backend API: `http://localhost:8000/docs`
+- Airflow UI: `http://localhost:8081` (admin/admin)
 
 ## 🛠️ Development Setup
 
-Refer to [Backend Documentation](backend/README.md) and [Frontend Documentation](frontend/README.md) for detailed development instructions.
+### Prerequisites
+
+- **Python 3.12+** - For backend development
+- **Node.js 18+** - For frontend development
+- **Docker & Docker Compose** - For running databases and services
+- **Yandex Cloud Account** - For AI services (optional for basic development)
+
+### Quick Start
+
+1. **Start test databases:**
+```bash
+docker compose up -d test-postgres test-clickhouse test-minio
+```
+
+2. **Backend development:**
+```bash
+cd backend
+cp .env.example .env
+# Edit .env with your settings (Yandex GPT credentials optional for basic testing)
+uv sync
+uv run uvicorn app.app:app --reload --host 0.0.0.0 --port 8000
+```
+
+3. **Frontend development:**
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+For detailed development instructions, refer to [Backend Documentation](backend/README.md) and [Frontend Documentation](frontend/README.md).
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
 3. Make your changes
-4. Format backend code: `cd backend && uv run ruff format && uv run ruff check --fix`
-5. Format frontend code: `cd frontend && npm run lint`
+4. Format and lint code:
+   - Backend: `cd backend && uv run ruff format && uv run ruff check --fix`
+   - Frontend: `cd frontend && npm run lint`
+5. Build and verify:
+   - Frontend: `cd frontend && npm run build`
 6. Commit your changes: `git commit -am 'Add new feature'`
 7. Push to the branch: `git push origin feature/your-feature`
 8. Submit a pull request

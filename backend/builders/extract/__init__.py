@@ -1,94 +1,94 @@
 """Extract configuration builders for various data sources."""
 
+import logging
 import sys
 from typing import ClassVar
 
 sys.path.insert(0, ".")
 
-from models.extract import ExtractConfig, Source, SourceType
+from models.app.update_etl import FeedbackItem
+from models.extract import ExtractConfig, SourceType
 
 from .base import BaseExtractConfigBuilder
 from .clickhouse import ClickHouseExtractConfigBuilder
 from .folder import FolderExtractConfigBuilder
-
-# from .kafka import KafkaExtractConfigBuilder  # Commented out due to kafka package issues
+from .kafka import KafkaExtractConfigBuilder
 from .postgres import PostgresExtractConfigBuilder
 from .s3 import S3ExtractConfigBuilder
 
+logger = logging.getLogger(__name__)
+
 
 class ExtractConfigBuilder:
-    """Builder class for creating ExtractConfig instances from URIs.
+    """Builder class for creating ExtractConfig instances from user prompts.
 
-    This class recognizes source types from URI prefixes and delegates
-    metadata extraction to specific builder classes.
+    This class uses LLM to extract Source from user prompt, then recognizes source types
+    and delegates metadata extraction to specific builder classes.
     """
 
     source_to_builder_map: ClassVar[dict[SourceType, type[BaseExtractConfigBuilder]]] = {
         SourceType.folder: FolderExtractConfigBuilder,
-        # SourceType.kafka: KafkaExtractConfigBuilder,  # Commented out due to kafka package issues
+        SourceType.kafka: KafkaExtractConfigBuilder,
         SourceType.PostgreSQL: PostgresExtractConfigBuilder,
         SourceType.ClickHouse: ClickHouseExtractConfigBuilder,
         SourceType.s3: S3ExtractConfigBuilder,
     }
 
     @classmethod
-    async def from_source(cls, src: Source) -> ExtractConfig:
-        """Build an ExtractConfig from a URI.
-
-        For now, returns a mock ExtractConfig.
+    async def from_user_prompt(
+        cls,
+        user_prompt: str,
+        old_extract_config: ExtractConfig | None = None,
+        feedback_items: list[FeedbackItem] | None = None,
+        overall_feedback: str | None = None,
+    ) -> ExtractConfig:
+        """Build an ExtractConfig from a user prompt using LLM.
 
         Args:
-            src: The source object.
+            user_prompt: The user's description of the data source.
+            old_extract_config: Existing config to refine (optional).
+            feedback_items: Specific feedback items for extract (optional).
+            overall_feedback: General feedback (optional).
 
         Returns:
-            A mock ExtractConfig object.
+            An ExtractConfig object with all fields populated.
         """
-        # src.content_type = await cls.source_to_builder_map[src.source_type].get_src_content_type(
-        #     src
-        # )
-        # content_metadata = await cls.source_to_builder_map[src.source_type].get_content_metadata(
-        #     src
-        # )
-        # content_statistics = await cls.source_to_builder_map[
-        #     src.source_type
-        # ].get_content_statistics(src)
+        # Use LLM to extract Source from user prompt
+        old_source = old_extract_config.source_metadata if old_extract_config else None
+        src = await BaseExtractConfigBuilder.extract_source_from_user_prompt(
+            user_prompt, old_source, feedback_items, overall_feedback
+        )
+        logger.debug(f"Extracted source from user prompt: {src}")
 
-        # return ExtractConfig(
-        #     source_metadata=src,
-        #     content_metadata=content_metadata,
-        #     content_statistics=content_statistics,
-        # )
+        # Now build the config from the source
+        builder = cls.source_to_builder_map.get(src.source_type)
+        if not builder:
+            # Fallback to base builder with mocked data
+            builder = BaseExtractConfigBuilder
+        logger.debug(f"Using builder {builder.__name__} for source type {src.source_type}")
 
-        # Mock implementation
-        import asyncio
+        content_metadata = await builder.get_content_metadata(src)
+        logger.debug(f"Content metadata: {content_metadata}")
+        content_statistics = await builder.get_content_statistics(src)
+        logger.debug(f"Content statistics: {content_statistics}")
+        schedule = await builder.get_schedule(src)
+        logger.debug(f"Schedule: {schedule}")
+        resources = await builder.get_resources(src)
+        logger.debug(f"Resources: {resources}")
+        incremental = await builder.get_incremental(src)
+        logger.debug(f"Incremental: {incremental}")
+        data_quality = await builder.get_data_quality(src)
+        logger.debug(f"Data quality: {data_quality}")
+        batch_size = await builder.get_batch_size(src)
+        logger.debug(f"Batch size: {batch_size}")
 
-        from models.extract import Attribute, Content
-
-        await asyncio.sleep(1)
         return ExtractConfig(
             source_metadata=src,
-            content_metadata=Content(
-                message_name="mock_data",
-                metamodel=[
-                    Attribute(
-                        order_no=1,
-                        column_name="id",
-                        data_type="integer",
-                        is_nullable=False,
-                        character_maximum_length=0,
-                        numeric_precision=10,
-                        numeric_scale=0,
-                    ),
-                    Attribute(
-                        order_no=2,
-                        column_name="name",
-                        data_type="character varying",
-                        is_nullable=False,
-                        character_maximum_length=255,
-                        numeric_precision=0,
-                        numeric_scale=0,
-                    ),
-                ],
-            ),
-            content_statistics={"total_files": 1, "total_size": 1024},
+            content_metadata=content_metadata,
+            content_statistics=content_statistics,
+            schedule=schedule,
+            resources=resources,
+            incremental=incremental,
+            data_quality=data_quality,
+            batch_size=batch_size,
         )

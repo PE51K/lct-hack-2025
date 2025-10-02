@@ -1,18 +1,20 @@
 """Router for ETL update endpoints."""
 
 import asyncio
+import logging
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from ai.workflows.build_load_config import build_load_config_from_extract_config_and_prompt
-from ai.workflows.build_transform_config import build_transform_config_from_configs_and_prompt
-from ai.workflows.extract_source import extract_source_from_user_prompt
-from builders.dag import generate_dag_from_configs
-from builders.ddl import generate_ddl_from_configs
+from builders.dag import DAGBuilder
+from builders.ddl import DDLBuilder
 from builders.extract import ExtractConfigBuilder
+from builders.load import LoadConfigBuilder
+from builders.transform import TransformConfigBuilder
 from models.app.update_etl import UpdateETLRequest, UpdateETLResponse
+
+logger = logging.getLogger(__name__)
 
 update_router = APIRouter()
 
@@ -45,8 +47,7 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
             )
             await asyncio.sleep(1)
 
-            # For update, we start with existing configs and modify based on feedback
-            # For simplicity, we'll regenerate from scratch with feedback incorporated into prompt
+            # For update, we refine existing configs based on feedback
             feedback_text = " ".join(
                 [f"{item.area}: {item.message}" for item in request.feedback.items]
             )
@@ -65,9 +66,10 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            # Re-extract source with feedback
-            source = await extract_source_from_user_prompt(feedback_text)
-            extract_config = await ExtractConfigBuilder.from_source(source)
+            extract_feedback = [item for item in request.feedback.items if item.area == "extract"]
+            extract_config = await ExtractConfigBuilder.from_user_prompt(
+                feedback_text, request.extract_config, extract_feedback, request.feedback.overall
+            )
 
             # Step 3: Updating load config (50%)
             yield (
@@ -81,8 +83,14 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            load_config = await build_load_config_from_extract_config_and_prompt(
-                extract_config, feedback_text
+            load_builder = LoadConfigBuilder()
+            load_feedback = [item for item in request.feedback.items if item.area == "load"]
+            load_config = await load_builder(
+                extract_config,
+                feedback_text,
+                request.load_config,
+                load_feedback,
+                request.feedback.overall,
             )
 
             # Step 4: Updating DDL (70%)
@@ -97,7 +105,8 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            ddl = await generate_ddl_from_configs(extract_config, load_config)
+            ddl_builder = DDLBuilder()
+            ddl = await ddl_builder(extract_config, load_config)
 
             # Step 5: Updating transform config (90%)
             yield (
@@ -111,8 +120,18 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            transform_config = await build_transform_config_from_configs_and_prompt(
-                ddl, extract_config, load_config, feedback_text
+            transform_builder = TransformConfigBuilder()
+            transform_feedback = [
+                item for item in request.feedback.items if item.area == "transform"
+            ]
+            transform_config = await transform_builder(
+                ddl,
+                extract_config,
+                load_config,
+                feedback_text,
+                request.transform_config,
+                transform_feedback,
+                request.feedback.overall,
             )
 
             # Step 6: Updating DAG (100%)
@@ -127,9 +146,8 @@ async def update_etl(request: UpdateETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            dag = await generate_dag_from_configs(
-                extract_config, transform_config, load_config, ddl
-            )
+            dag_builder = DAGBuilder()
+            dag = await dag_builder(extract_config, transform_config, load_config, ddl)
 
             # Final: Complete
             yield (
