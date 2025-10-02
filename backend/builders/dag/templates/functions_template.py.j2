@@ -1,0 +1,214 @@
+"""
+Task Functions Module for {{ dag_id }}
+
+Содержит все функции для выполнения ETL задач.
+Генерировано автоматически: {{ created_at }}
+"""
+
+import os
+import sys
+import json
+import logging
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Any
+
+# Импорт конфигурации
+from {{ dag_id }}_config import *
+
+# Настройка логирования
+logger = logging.getLogger(__name__)
+
+# ============================================================================
+# EXTRACT TASK
+# ============================================================================
+
+def extract_data(**context):
+    """
+    Извлечение данных из источника.
+    
+    Source: {{ extract_config.source_metadata.source_type }}
+    Connection: {{ extract_config.source_metadata.connection_string }}
+    Batch Size: {{ extract_config.batch_size }}
+    """
+    logger.info("📥 Начало извлечения данных")
+    logger.info(f"Источник: {SOURCE_TYPE}")
+    logger.info(f"Путь: {SOURCE_PATH}")
+    
+    # TODO: Implement extraction logic based on source type
+    # This is a placeholder implementation
+    
+    total_records = 0
+    extracted_data = []
+    
+    try:
+        # Simulate data extraction
+        logger.info(f"Извлечение данных с batch_size={BATCH_SIZE}")
+        
+        # Example: Read from source
+        # For file-based sources
+        if SOURCE_TYPE == "folder":
+            source_path = Path(SOURCE_PATH)
+            if source_path.exists():
+                files = list(source_path.glob(f"*.{CONTENT_TYPE}"))
+                total_records = len(files)
+                logger.info(f"Найдено файлов: {total_records}")
+            else:
+                raise FileNotFoundError(f"Source path not found: {SOURCE_PATH}")
+        
+        # Store extracted data reference in XCom
+        result = {
+            "total_records": total_records,
+            "source_type": SOURCE_TYPE,
+            "content_type": CONTENT_TYPE,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"✅ Извлечение завершено: {total_records} записей")
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка извлечения данных: {e}", exc_info=True)
+        raise
+
+# ============================================================================
+# TRANSFORM TASK
+# ============================================================================
+
+def transform_data(**context):
+    """
+    Трансформация извлеченных данных.
+    
+    Identity Keys: {{ transform_config.identity_keys | join(', ') }}
+    Processing Mode: {{ transform_config.processing_mode }}
+    Rules: {{ transform_config.transformation_rules | length }}
+    """
+    logger.info("🔄 Начало трансформации данных")
+    
+    # Получение данных от предыдущей задачи
+    ti = context['ti']
+    extract_result = ti.xcom_pull(task_ids='extract_data')
+    
+    if not extract_result:
+        raise ValueError("No data received from extract task")
+    
+    logger.info(f"Получено записей для обработки: {extract_result['total_records']}")
+    
+    try:
+        # TODO: Implement transformation logic
+        # This is a placeholder implementation
+        
+        transformed_records = []
+        
+        # Apply transformation rules
+        {% if transform_config.transformation_rules %}
+        logger.info(f"Применение {len(TRANSFORMATION_RULES)} правил трансформации")
+        {% for rule in transform_config.transformation_rules %}
+        # Rule: {{ rule.rule_name }}
+        # Type: {{ rule.transformation_type }}
+        # Expression: {{ rule.expression }}
+        {% endfor %}
+        {% endif %}
+        
+        # Simulated transformation
+        total_transformed = extract_result['total_records']
+        
+        result = {
+            "transformed_records": total_transformed,
+            "identity_keys": IDENTITY_KEYS,
+            "processing_mode": PROCESSING_MODE,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"✅ Трансформация завершена: {total_transformed} записей")
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка трансформации данных: {e}", exc_info=True)
+        raise
+
+# ============================================================================
+# LOAD TASK
+# ============================================================================
+
+def load_data(**context):
+    """
+    Загрузка данных в целевое хранилище.
+    
+    Target: {{ load_config.target_storage_type.storage_type }}
+    Database: {{ load_config.target_storage_type.database_name }}
+    Table: {{ load_config.target_storage_type.table_name }}
+    Strategy: {{ load_config.load_strategy }}
+    """
+    logger.info("📤 Начало загрузки данных")
+    
+    # Получение данных от предыдущей задачи
+    ti = context['ti']
+    transform_result = ti.xcom_pull(task_ids='transform_data')
+    
+    if not transform_result:
+        raise ValueError("No data received from transform task")
+    
+    logger.info(f"Получено записей для загрузки: {transform_result['transformed_records']}")
+    logger.info(f"Целевое хранилище: {TARGET_STORAGE_TYPE}")
+    logger.info(f"База данных: {TARGET_DATABASE}")
+    logger.info(f"Таблица: {TARGET_SCHEMA}.{TARGET_TABLE}")
+    logger.info(f"Стратегия загрузки: {LOAD_STRATEGY}")
+    
+    try:
+        # TODO: Implement loading logic based on target storage type
+        # This is a placeholder implementation
+        
+        loaded_records = 0
+        
+        # Connection string
+        logger.info(f"Подключение: {TARGET_CONNECTION}")
+        
+        # Simulate loading
+        loaded_records = transform_result['transformed_records']
+        
+        # Execute DDL if needed
+        {% if ddl.statements %}
+        logger.info("Выполнение DDL statements")
+        ddl_statements = """{{ ddl.statements }}"""
+        logger.debug(f"DDL: {ddl_statements}")
+        {% endif %}
+        
+        result = {
+            "loaded_records": loaded_records,
+            "target_table": f"{TARGET_SCHEMA}.{TARGET_TABLE}",
+            "load_strategy": LOAD_STRATEGY,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"✅ Загрузка завершена: {loaded_records} записей")
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка загрузки данных: {e}", exc_info=True)
+        raise
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+def validate_data(data: Dict[str, Any]) -> bool:
+    """Validate data quality."""
+    if not data:
+        return False
+    
+    # Add custom validation logic here
+    return True
+
+def cleanup_resources(**context):
+    """Cleanup temporary resources after pipeline execution."""
+    logger.info("🧹 Очистка ресурсов")
+    
+    try:
+        # Clean up temp files, connections, etc.
+        logger.info("✅ Очистка завершена")
+        return {"cleanup_status": "success"}
+        
+    except Exception as e:
+        logger.warning(f"⚠️ Ошибка очистки: {e}")
+        return {"cleanup_status": "failed", "error": str(e)}

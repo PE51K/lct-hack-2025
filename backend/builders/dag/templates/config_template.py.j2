@@ -1,0 +1,88 @@
+"""
+Configuration file for {{ dag_id }}
+
+Содержит все константы и настройки для DAG.
+Генерировано автоматически: {{ created_at }}
+"""
+
+# ============================================================================
+# DAG CONFIGURATION
+# ============================================================================
+
+DAG_ID = "{{ dag_id }}"
+DAG_NAME = "{{ dag_id }}"
+DAG_OWNER = "{{ owner }}"
+
+# ============================================================================
+# SOURCE CONFIGURATION
+# ============================================================================
+
+SOURCE_TYPE = "{{ extract_config.source_metadata.source_type }}"
+SOURCE_PATH = "{{ extract_config.source_metadata.connection_string }}"
+CONTENT_TYPE = "{{ extract_config.content_type if extract_config.content_type else 'unknown' }}"
+
+# ============================================================================
+# PROCESSING CONFIGURATION
+# ============================================================================
+
+BATCH_SIZE = {{ extract_config.batch_size }}
+MAX_WORKERS = 4  # Default parallel workers
+
+# ============================================================================
+# TRANSFORM CONFIGURATION
+# ============================================================================
+
+IDENTITY_KEYS = {{ transform_config.identity_keys }}
+PROCESSING_MODE = "{{ transform_config.processing_mode }}"
+
+# Transformation rules
+TRANSFORMATION_RULES = [
+    {% for rule in transform_config.transformation_rules %}
+    {
+        "rule_name": "{{ rule.rule_name }}",
+        "transformation_type": "{{ rule.transformation_type }}",
+        "source_fields": {{ rule.source_fields }},
+        "target_field": "{{ rule.target_field }}",
+        "expression": "{{ rule.expression }}",
+    },
+    {% endfor %}
+]
+
+# ============================================================================
+# TARGET CONFIGURATION
+# ============================================================================
+
+TARGET_STORAGE_TYPE = "{{ load_config.target_storage_type.storage_type }}"
+TARGET_CONNECTION = "{{ load_config.target_storage_type.connection_string }}"
+TARGET_DATABASE = "{{ load_config.target_storage_type.database_name }}"
+TARGET_SCHEMA = "{{ load_config.target_storage_type.schema_name }}"
+TARGET_TABLE = "{{ load_config.target_storage_type.table_name }}"
+
+# ============================================================================
+# LOAD CONFIGURATION
+# ============================================================================
+
+LOAD_STRATEGY = "{{ load_config.load_strategy }}"
+LOAD_BATCH_SIZE = {{ load_config.batch_config.batch_size if load_config.batch_config else 1000 }}
+
+# ============================================================================
+# RESOURCE LIMITS
+# ============================================================================
+
+CPU_CORES = {{ total_cpu_cores }}
+MEMORY_MB = {{ total_memory_mb }}
+EXECUTION_TIMEOUT_MINUTES = {{ execution_timeout_minutes }}
+
+# ============================================================================
+# USER & THREAD INFORMATION
+# ============================================================================
+
+USER_ID = "{{ user_id }}"
+THREAD_ID = "{{ thread_id }}"
+
+# ============================================================================
+# PATHS
+# ============================================================================
+
+TEMP_DIR = f"/tmp/etl_processing/{DAG_ID}"
+LOG_DIR = f"/var/log/airflow/dags/{DAG_ID}"

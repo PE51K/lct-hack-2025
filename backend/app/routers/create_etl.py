@@ -6,7 +6,7 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from builders.dag import DAGBuilder
+from builders.dag import AirflowFileGenerator, DAGBuilder
 from builders.ddl import DDLBuilder
 from builders.extract import ExtractConfigBuilder
 from builders.load import LoadConfigBuilder
@@ -93,13 +93,13 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
             )
             logger.info(f"TransformConfig received: {transform_config}")
 
-            # Step 6. Generate DAG from all configs (100%)
+            # Step 6. Generate DAG model from all configs (90%)
             yield (
                 CreateETLResponse(
                     ids=request.ids,
                     processing_done=False,
-                    processing_percentage_done=100.0,
-                    processing_message="Generating DAG...",
+                    processing_percentage_done=90.0,
+                    processing_message="Generating DAG configuration...",
                     success=True,
                 ).model_dump_json()
                 + "\n"
@@ -107,7 +107,38 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
 
             dag_builder = DAGBuilder()
             dag = await dag_builder(extract_config, transform_config, load_config, ddl)
-            logger.info(f"DAG received: {dag}")
+            logger.info(f"DAG model created: {dag.dag_id}")
+
+            # Step 7. Generate Airflow DAG files (95%)
+            yield (
+                CreateETLResponse(
+                    ids=request.ids,
+                    processing_done=False,
+                    processing_percentage_done=95.0,
+                    processing_message="Generating Airflow DAG files...",
+                    success=True,
+                ).model_dump_json()
+                + "\n"
+            )
+
+            # Generate executable Airflow files
+            file_generator = AirflowFileGenerator()
+            generated_files = await file_generator.generate_dag_files(
+                dag=dag,
+                extract_config=extract_config,
+                transform_config=transform_config,
+                load_config=load_config,
+                ddl=ddl,
+                user_id=request.ids.user_id,
+                thread_id=request.ids.thread_id,
+            )
+
+            # Update DAG with generated file paths
+            dag.generated_files = generated_files
+            dag.dag_file_path = generated_files.get("dag_file")
+            
+            logger.info(f"Generated {len(generated_files)} Airflow files")
+            logger.info(f"DAG file: {dag.dag_file_path}")
 
             # Final response with all artefacts
             yield (
@@ -115,7 +146,7 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
                     ids=request.ids,
                     processing_done=True,
                     processing_percentage_done=100.0,
-                    processing_message="ETL creation completed successfully!",
+                    processing_message="ETL creation completed successfully! Airflow DAG files generated.",
                     success=True,
                     extract_config=extract_config,
                     transform_config=transform_config,

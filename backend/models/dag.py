@@ -70,3 +70,9 @@ class DAG(BaseModel):
     dag_file_path: str | None = Field(None, description="Path to the generated DAG file")
     is_paused_upon_creation: bool = Field(True, description="Whether DAG should be paused when created")
     doc_md: str | None = Field(None, description="DAG documentation in Markdown format")
+    
+    # File generation support
+    generated_files: dict[str, str] | None = Field(
+        None,
+        description="Paths to generated Airflow files (dag_file, functions_file, config_file, init_file)"
+    )

@@ -34,8 +34,8 @@ services:
     ports:
       - "${AIRFLOW_PORT:-8081}:8080"
     volumes:
-      - ${AIRFLOW_DAGS_VOLUME}:/opt/airflow/dags
-      - ${AIRFLOW_LOGS_VOLUME}:/opt/airflow/logs
+      - ${AIRFLOW_DAGS_VOLUME:-./dags}:/opt/airflow/dags
+      - ${AIRFLOW_LOGS_VOLUME:-./logs}:/opt/airflow/logs
     command: >
       bash -c "
       airflow db migrate &&

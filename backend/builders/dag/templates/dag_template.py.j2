@@ -1,0 +1,115 @@
+"""
+{{ description }}
+
+Автоматически сгенерированный Airflow DAG
+Pipeline ID: {{ dag_id }}
+User ID: {{ user_id }}
+Thread ID: {{ thread_id }}
+Создан: {{ created_at }}
+
+Ожидаемое время выполнения: {{ estimated_runtime_minutes }} минут
+Требования CPU: {{ total_cpu_cores }} ядер
+Требования RAM: {{ total_memory_mb }} МБ
+"""
+
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.operators.dummy import DummyOperator
+import logging
+
+# Импорт конфигурации и функций
+from {{ dag_id }}_config import *
+from {{ dag_id }}_functions import *
+
+# Настройка логирования
+logger = logging.getLogger(__name__)
+
+# Default arguments для DAG
+default_args = {
+    "owner": "{{ owner }}",
+    "depends_on_past": False,
+    "start_date": datetime({{ start_date.year }}, {{ start_date.month }}, {{ start_date.day }}),
+    "email_on_failure": {{ email_on_failure }},
+    "email_on_retry": {{ email_on_retry }},
+    "retries": {{ retries }},
+    "retry_delay": timedelta(minutes={{ retry_delay_minutes }}),
+    "execution_timeout": timedelta(minutes={{ execution_timeout_minutes }}),
+}
+
+# Определение DAG
+dag = DAG(
+    DAG_ID,
+    default_args=default_args,
+    description="{{ description }}",
+    schedule_interval="{{ schedule }}",
+    start_date=datetime({{ start_date.year }}, {{ start_date.month }}, {{ start_date.day }}),
+    catchup={{ catchup }},
+    max_active_runs={{ max_active_runs }},
+    tags={{ tags }},
+    doc_md="""
+# ETL Pipeline: {{ dag_id }}
+
+## Overview
+{{ description }}
+
+## Tasks
+{% for task in tasks %}
+### {{ task.task_id }}
+- **Type**: {{ task.task_type }}
+- **Description**: {{ task.description }}
+- **Dependencies**: {{ task.dependencies | join(', ') if task.dependencies else 'None' }}
+{% endfor %}
+
+## Resource Requirements
+- **CPU**: {{ total_cpu_cores }} cores
+- **Memory**: {{ total_memory_mb }} MB
+- **Estimated Runtime**: {{ estimated_runtime_minutes }} minutes
+
+## Monitoring
+Check task logs and Airflow UI for execution status.
+    """
+)
+
+# ============================================================================
+# TASK DEFINITIONS
+# ============================================================================
+
+# Start task
+start_task = DummyOperator(
+    task_id="start_pipeline",
+    dag=dag
+)
+
+{% for task in tasks %}
+# {{ task.description }}
+{{ task.task_id }}_task = PythonOperator(
+    task_id="{{ task.task_id }}",
+    python_callable={{ task.task_id }},
+    provide_context=True,
+    {% if task.pool_slots > 1 %}pool_slots={{ task.pool_slots }},{% endif %}
+    dag=dag
+)
+{% endfor %}
+
+# End task
+end_task = DummyOperator(
+    task_id="end_pipeline",
+    trigger_rule="none_failed_min_one_success",
+    dag=dag
+)
+
+# ============================================================================
+# TASK DEPENDENCIES
+# ============================================================================
+
+# Start
+start_task >> {{ tasks[0].task_id }}_task
+
+# Main flow
+{% for i in range(tasks|length - 1) %}
+{{ tasks[i].task_id }}_task >> {{ tasks[i+1].task_id }}_task
+{% endfor %}
+
+# End
+{{ tasks[-1].task_id }}_task >> end_task
