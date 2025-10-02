@@ -119,187 +119,122 @@ class ContentType(str, Enum):
 
 
 class Source(BaseModel):
-    """
-    MetaData describe technological source itself.
+    """Metadata describing the technological source itself."""
 
-    Attributes:
-        source_type - tech type of source folder, kafka etc.
-        connection_string - connection string to connect to source to get metadata.
-        content_type - type of content in source csv json etc.
-        table_name - name of table in db (optional, just for postgresql)
-    """
-
-    source_type: Annotated[str, SourceType] = SourceType.na
-    connection_string: str | None = None
-    content_type: Annotated[str, ContentType] | None = None
-    table_name: str | None = None
+    source_type: Annotated[str, SourceType] = Field(
+        SourceType.na, description="Tech type of source folder, kafka etc."
+    )
+    connection_string: str | None = Field(
+        None, description="Connection string to connect to source to get metadata."
+    )
+    table_name: str | None = Field(
+        None, description="Name of table in db (optional, just for postgresql)."
+    )
+    bucket_name: str | None = Field(
+        None, description="Bucket name for S3 sources (optional, just for S3)."
+    )
+    access_key: str | None = Field(
+        None, description="Access key for S3 sources (optional, just for S3)."
+    )
+    secret_key: str | None = Field(
+        None, description="Secret key for S3 sources (optional, just for S3)."
+    )
 
 
 class Attribute(BaseModel):
-    """
-    Description for single attribute.
+    """Description for single attribute."""
 
-    Attributes:
-        order_no: order of attribute in metamodel
-        column_name: name of column in source
-        data_type: type of column in source
-        is_nullable: is column nullable
-        character_maximum_length: max length of string column
-        numeric_precision: max precision of numeric column
-        numeric_scale: scale of numeric column
-
-    Example of metamodel:
-
-    json:
-    {
-        "number":1,
-        "order_name":"order",
-        "item":{
-            "item_no":1,
-            "item_name":"item",
-            "item_details":"details"
-        }
-    }
-
-    metamodel for this json
-    [
-        {
-            "order_no": 1,
-            "column_name": "number",
-            "data_type": "integer",
-            "is_nullable": false,
-            "character_maximum_length": null,
-            "numeric_precision": 10,
-            "numeric_scale": 0
-        },
-        {
-            "order_no": 2,
-            "column_name": "order_name",
-            "data_type": "character varying",
-            "is_nullable": false,
-            "character_maximum_length": 255,
-            "numeric_precision": null,
-            "numeric_scale": null
-        },
-        {
-            "order_no": 3,
-            "column_name": "item.item_no",
-            "data_type": "integer",
-            "is_nullable": false,
-            "character_maximum_length": null,
-            "numeric_precision": 10,
-            "numeric_scale": 0
-        },
-        {
-            "order_no": 4,
-            "column_name": "item.item_name",
-            "data_type": "character varying",
-            "is_nullable": false,
-            "character_maximum_length": 255,
-            "numeric_precision": null,
-            "numeric_scale": null
-        },
-        {
-            "order_no": 5,
-            "column_name": "item.item_details",
-            "data_type": "character varying",
-            "is_nullable": true,
-            "character_maximum_length": 255,
-            "numeric_precision": null,
-            "numeric_scale": null
-        }
-    ]
-    """
-
-    order_no: int
-    column_name: str
-    data_type: Annotated[str, PostgreSqlDataType] | None = None
-    is_nullable: bool
-    character_maximum_length: int
-    numeric_precision: int
-    numeric_scale: int
+    order_no: int = Field(..., description="Order of attribute in metamodel.")
+    column_name: str = Field(..., description="Name of column in source.")
+    data_type: str | None = Field(None, description="Type of column in source.")
+    is_nullable: bool = Field(..., description="Is column nullable.")
+    character_maximum_length: int | None = Field(None, description="Max length of string column.")
+    numeric_precision: int | None = Field(None, description="Max precision of numeric column.")
+    numeric_scale: int | None = Field(None, description="Scale of numeric column.")
 
 
 class Content(BaseModel):
-    """
-    Metadata for single piece of source data. Flat for flat source, nested for nested source.
+    """Metadata for single piece of source data."""
 
-    Attributes:
-        message_name: file name, topic from kafka, table name from db etc
-        is_complex_nesting_present: is complex nesting present in message
-            (we store messages with complex nesting in hdfs)
-        metamodel: metamodel of message (see Attribute model and example above)
-    """
-
-    message_name: str
-    is_complex_nesting_present: bool = False
-    metamodel: list[Attribute] | None = None
+    message_name: str = Field(
+        ..., description="File name, topic from kafka, table name from db etc."
+    )
+    is_complex_nesting_present: bool = Field(
+        False, description="Is complex nesting present in message."
+    )
+    content_type: Annotated[str, ContentType] | None = Field(
+        None, description="Type of content in source."
+    )
+    metamodel: list[Attribute] | None = Field(None, description="Metamodel of message.")
 
 
 class ExtractSchedule(BaseModel):
     """Scheduling configuration for data extraction."""
 
-    interval: str = "@daily"  # Cron expression
-    start_date: str = "2025-01-01"
-    end_date: str | None = None
-    catchup: bool = False
-    max_active_runs: int = 1
-    depends_on_past: bool = False
+    interval: str = Field("@daily", description="Cron expression.")
+    start_date: str = Field("2025-01-01", description="Start date for scheduling.")
+    end_date: str | None = Field(None, description="End date for scheduling.")
+    catchup: bool = Field(False, description="Whether to catch up on missed runs.")
+    max_active_runs: int = Field(1, description="Maximum number of active runs.")
+    depends_on_past: bool = Field(False, description="Whether task depends on past runs.")
 
 
 class ExtractResourceConfig(BaseModel):
     """Resource requirements for extraction."""
 
-    cpu_request: float = 1.0
-    memory_request_mb: int = 512
-    disk_space_gb: int = 10
-    timeout_minutes: int = 60
-    retry_count: int = 3
-    parallel_workers: int = 1
+    cpu_request: float = Field(1.0, description="CPU request for the task.")
+    memory_request_mb: int = Field(512, description="Memory request in MB.")
+    disk_space_gb: int = Field(10, description="Disk space in GB.")
+    timeout_minutes: int = Field(60, description="Timeout in minutes.")
+    retry_count: int = Field(3, description="Number of retries.")
+    parallel_workers: int = Field(1, description="Number of parallel workers.")
 
 
 class IncrementalConfig(BaseModel):
     """Configuration for incremental data loading."""
 
-    enabled: bool = False
-    key_field: str | None = None
-    lookback_days: int = 1
-    checkpoint_enabled: bool = True
+    enabled: bool = Field(False, description="Whether incremental loading is enabled.")
+    key_field: str | None = Field(None, description="Field used as key for incremental loading.")
+    lookback_days: int = Field(1, description="Number of days to look back.")
+    checkpoint_enabled: bool = Field(True, description="Whether checkpointing is enabled.")
 
 
 class DataQualityProfile(BaseModel):
     """Data quality metrics and thresholds."""
 
-    completeness_threshold: float = 0.95
-    accuracy_threshold: float = 0.98
-    consistency_checks: list[str] = ["date_format", "data_types"]
-    freshness_hours: int = 24
-    volume_min_records: int = 1
-    volume_max_records: int | None = None
-    schema_validation: bool = True
-    duplicate_detection: bool = True
-    schema_drift_detection: bool = True
-    duplicate_threshold: float = 0.05
+    completeness_threshold: float = Field(0.95, description="Threshold for data completeness.")
+    accuracy_threshold: float = Field(0.98, description="Threshold for data accuracy.")
+    consistency_checks: list[str] = Field(
+        ["date_format", "data_types"], description="List of consistency checks."
+    )
+    freshness_hours: int = Field(24, description="Freshness requirement in hours.")
+    volume_min_records: int = Field(1, description="Minimum number of records.")
+    volume_max_records: int | None = Field(None, description="Maximum number of records.")
+    schema_validation: bool = Field(True, description="Whether schema validation is enabled.")
+    duplicate_detection: bool = Field(True, description="Whether duplicate detection is enabled.")
+    schema_drift_detection: bool = Field(
+        True, description="Whether schema drift detection is enabled."
+    )
+    duplicate_threshold: float = Field(0.05, description="Threshold for duplicate detection.")
 
 
 class ExtractConfig(BaseModel):
-    """
-    Enhanced extract configuration model.
+    """Enhanced extract configuration model."""
 
-    Attributes:
-        source_metadata - section with tech source metadata
-        content_metadata - content metadat aggregated from all samples
-        content_statistics - content statistic section (any additional statistics about content)
-        schedule - scheduling configuration for extraction
-        resources - resource requirements for extraction
-        incremental - incremental loading configuration
-        data_quality - data quality profile and validation rules
-    """
-
-    source_metadata: Source | None = None
-    content_metadata: Content | None = None
-    content_statistics: dict | None = None
-    schedule: ExtractSchedule = Field(default_factory=ExtractSchedule)
-    resources: ExtractResourceConfig = Field(default_factory=ExtractResourceConfig)
-    incremental: IncrementalConfig = Field(default_factory=IncrementalConfig)
-    data_quality: DataQualityProfile = Field(default_factory=DataQualityProfile)
+    source_metadata: Source | None = Field(None, description="Section with tech source metadata.")
+    content_metadata: list[Content] | None = Field(
+        None, description="Content metadata aggregated from all samples."
+    )
+    content_statistics: dict | None = Field(None, description="Content statistic section.")
+    schedule: ExtractSchedule = Field(
+        default_factory=ExtractSchedule, description="Scheduling configuration for extraction."
+    )
+    resources: ExtractResourceConfig = Field(
+        default_factory=ExtractResourceConfig, description="Resource requirements for extraction."
+    )
+    incremental: IncrementalConfig = Field(
+        default_factory=IncrementalConfig, description="Incremental loading configuration."
+    )
+    data_quality: DataQualityProfile = Field(
+        default_factory=DataQualityProfile, description="Data quality profile and validation rules."
+    )

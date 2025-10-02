@@ -16,7 +16,7 @@ async def test_extract_config_builder_from_uri_xml():
 
     assert isinstance(config, ExtractConfig)
     assert config.source_metadata.source_type == SourceType.folder
-    assert config.source_metadata.content_type == ContentType.xml
+    assert config.content_type == ContentType.xml
     assert len(config.content_metadata) == 2
     assert isinstance(config.content_statistics, dict)
 
@@ -29,7 +29,7 @@ async def test_extract_config_builder_from_uri_csv():
 
     assert isinstance(config, ExtractConfig)
     assert config.source_metadata.source_type == SourceType.folder
-    assert config.source_metadata.content_type == ContentType.csv
+    assert config.content_type == ContentType.csv
     assert len(config.content_metadata) == 2
     assert isinstance(config.content_statistics, dict)
 
@@ -42,6 +42,6 @@ async def test_extract_config_builder_from_uri_json():
 
     assert isinstance(config, ExtractConfig)
     assert config.source_metadata.source_type == SourceType.folder
-    assert config.source_metadata.content_type == ContentType.json
+    assert config.content_type == ContentType.json
     assert len(config.content_metadata) == 2
     assert isinstance(config.content_statistics, dict)

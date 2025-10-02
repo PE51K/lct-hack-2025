@@ -1,38 +1,42 @@
 """
-Интегрированный DAG Generator для основного приложения.
+Integrated DAG Generator for the main application.
 
-Этот модуль предоставляет простой интерфейс для создания ETL DAG
-из основного приложения LCT-hack-2025.
+This module provides a simple interface for creating ETL DAG
+from the main LCT-hack-2025 application.
 """
 
 import asyncio
+import logging
 import sys
 from pathlib import Path
 from typing import Any
 
-# Добавляем путь к dag_generation модулю
+# Add path to dag_generation module
 sys.path.append(str(Path(__file__).parent.parent))
 
 from dag_generation import ETLDAGGenerationSystem
+
 from models.extract import ExtractConfig
 from models.load import LoadConfig
 from models.transform import TransformConfig
 
+logger = logging.getLogger(__name__)
+
 
 class IntegratedDAGGenerator:
     """
-    Интегрированный генератор DAG для основного приложения.
+    Integrated DAG generator for the main application.
 
-    Предоставляет простой интерфейс для создания ETL пайплайнов
-    используя существующие builders и модели проекта.
+    Provides a simple interface for creating ETL pipelines
+    using existing builders and project models.
     """
 
     def __init__(self, output_dir: str = "generated_dags"):
         """
-        Инициализация генератора.
+        Generator initialization.
 
         Args:
-            output_dir: Директория для сохранения сгенерированных DAG
+            output_dir: Directory for saving generated DAGs
         """
         self.dag_system = ETLDAGGenerationSystem(output_base_dir=output_dir)
         self.output_dir = Path(output_dir)
@@ -46,23 +50,24 @@ class IntegratedDAGGenerator:
         description: str = "Generated ETL pipeline",
     ) -> dict[str, Any]:
         """
-        Создание DAG из URL источника данных.
+        Creating DAG from data source URL.
 
         Args:
-            source_url: URL или путь к источнику данных
-            pipeline_name: Название пайплайна
-            owner: Владелец пайплайна
-            team: Команда
-            description: Описание пайплайна
+            source_url: URL or path to data source
+            pipeline_name: Pipeline name
+            owner: Pipeline owner
+            team: Team
+            description: Pipeline description
 
         Returns:
-            Результат создания DAG с метаданными
+            Result of DAG creation with metadata
         """
         try:
-            print(f"🚀 Создание DAG: {pipeline_name}")
-            print(f"📂 Источник: {source_url}")
+            logger.info(f"Creating DAG: {pipeline_name} from source: {source_url}")
+            print(f"🚀 Creating DAG: {pipeline_name}")
+            print(f"📂 Source: {source_url}")
 
-            # Создаем полный пайплайн
+            # Create complete pipeline
             result = await self.dag_system.create_complete_etl_pipeline(
                 source_url=source_url,
                 pipeline_name=pipeline_name,
@@ -72,8 +77,8 @@ class IntegratedDAGGenerator:
             )
 
             if result["success"]:
-                print("✅ DAG успешно создан!")
-                print(f"📁 Файлы сохранены в: {result['output_directory']}")
+                print("✅ DAG created successfully!")
+                print(f"📁 Files saved in: {result['output_directory']}")
                 return {
                     "success": True,
                     "pipeline_id": result["pipeline_id"],
@@ -82,21 +87,21 @@ class IntegratedDAGGenerator:
                     "config_file": result["files"]["config_file"],
                     "ai_recommendations_count": len(result.get("ai_recommendations", [])),
                     "estimated_runtime_minutes": result.get("estimated_runtime_minutes", 0),
-                    "message": f"DAG '{pipeline_name}' успешно создан",
+                    "message": f"DAG '{pipeline_name}' created successfully",
                 }
             else:
                 return {
                     "success": False,
-                    "error": result.get("error", "Неизвестная ошибка"),
-                    "message": "Ошибка создания DAG",
+                    "error": result.get("error", "Unknown error"),
+                    "message": "DAG creation error",
                 }
 
         except Exception as e:
-            print(f"❌ Ошибка создания DAG: {e}")
+            print(f"❌ Error creating DAG: {e}")
             return {
                 "success": False,
                 "error": str(e),
-                "message": "Критическая ошибка при создании DAG",
+                "message": "Critical error when creating DAG",
             }
 
     async def create_dag_from_configs(
@@ -108,49 +113,52 @@ class IntegratedDAGGenerator:
         owner: str = "data_team",
     ) -> dict[str, Any]:
         """
-        Создание DAG из готовых конфигов Extract/Transform/Load.
+        Creating DAG from ready Extract/Transform/Load configs.
 
         Args:
-            extract_config: Конфигурация извлечения данных
-            transform_config: Конфигурация трансформации (опционально)
-            load_config: Конфигурация загрузки (опционально)
-            pipeline_name: Название пайплайна
-            owner: Владелец пайплайна
+            extract_config: Data extraction configuration
+            transform_config: Transformation configuration (optional)
+            load_config: Loading configuration (optional)
+            pipeline_name: Pipeline name
+            owner: Pipeline owner
 
         Returns:
-            Результат создания DAG
+            Result of DAG creation
         """
         try:
-            print(f"🔧 Создание DAG из готовых конфигов: {pipeline_name}")
+            print(f"🔧 Creating DAG from ready configs: {pipeline_name}")
 
-            # Для этого метода нужно будет расширить DAG систему
-            # Пока используем URL из extract_config
+            # For this method, we will need to extend the DAG system
+            # For now, use URL from extract_config
             if extract_config.source_metadata and extract_config.source_metadata.connection_string:
-                source_url = f"{extract_config.source_metadata.source_type}:{extract_config.source_metadata.connection_string}"
+                source_url = (
+                    f"{extract_config.source_metadata.source_type}:"
+                    f"{extract_config.source_metadata.connection_string}"
+                )
                 return await self.create_dag_from_url(
                     source_url=source_url, pipeline_name=pipeline_name, owner=owner
                 )
             else:
                 return {
                     "success": False,
-                    "error": "Не удается определить источник данных из ExtractConfig",
-                    "message": "Некорректная конфигурация извлечения",
+                    "error": "Unable to determine data source from ExtractConfig",
+                    "message": "Incorrect extraction configuration",
                 }
 
         except Exception as e:
-            print(f"❌ Ошибка создания DAG из конфигов: {e}")
+            print(f"❌ Error creating DAG from configs: {e}")
             return {
                 "success": False,
                 "error": str(e),
-                "message": "Ошибка при создании DAG из конфигураций",
+                "message": "Error creating DAG from configurations",
             }
 
     async def list_generated_dags(self) -> dict[str, Any]:
         """
-        Получение списка всех сгенерированных DAG.
+        Getting list of all generated DAGs.
 
         Returns:
-            Список сгенерированных пайплайнов
+            List of generated pipelines
         """
         try:
             status = await self.dag_system.get_system_status()
@@ -175,17 +183,17 @@ class IntegratedDAGGenerator:
 
     def get_supported_sources(self) -> dict[str, Any]:
         """
-        Получение списка поддерживаемых типов источников данных.
+        Getting list of supported data source types.
 
         Returns:
-            Информация о поддерживаемых источниках
+            Information about supported sources
         """
         return {
             "source_types": [
                 {
                     "type": "folder",
-                    "name": "Локальные папки",
-                    "description": "XML, JSON, CSV файлы в папках",
+                    "name": "Local folders",
+                    "description": "XML, JSON, CSV files in folders",
                     "example_url": "file://d:/data/xml_files/",
                     "supported_formats": ["xml", "json", "csv"],
                     "ready": True,
@@ -193,7 +201,7 @@ class IntegratedDAGGenerator:
                 {
                     "type": "postgres",
                     "name": "PostgreSQL",
-                    "description": "PostgreSQL базы данных",
+                    "description": "PostgreSQL databases",
                     "example_url": "postgres://user:pass@localhost:5432/mydb",
                     "supported_formats": ["table"],
                     "ready": True,
@@ -201,7 +209,7 @@ class IntegratedDAGGenerator:
                 {
                     "type": "clickhouse",
                     "name": "ClickHouse",
-                    "description": "ClickHouse аналитические БД",
+                    "description": "ClickHouse analytical DBs",
                     "example_url": "clickhouse://user:pass@localhost:8123/analytics",
                     "supported_formats": ["table"],
                     "ready": False,
@@ -209,7 +217,7 @@ class IntegratedDAGGenerator:
                 {
                     "type": "kafka",
                     "name": "Apache Kafka",
-                    "description": "Потоковые данные из Kafka",
+                    "description": "Streaming data from Kafka",
                     "example_url": "kafka://broker:9092/topic",
                     "supported_formats": ["json"],
                     "ready": False,
@@ -217,7 +225,7 @@ class IntegratedDAGGenerator:
                 {
                     "type": "s3",
                     "name": "Amazon S3",
-                    "description": "Объектное хранилище S3",
+                    "description": "Object storage S3",
                     "example_url": "s3://bucket/path/",
                     "supported_formats": ["xml", "json", "csv", "parquet"],
                     "ready": False,
@@ -225,7 +233,7 @@ class IntegratedDAGGenerator:
                 {
                     "type": "api",
                     "name": "REST API",
-                    "description": "HTTP API эндпоинты",
+                    "description": "HTTP API endpoints",
                     "example_url": "https://api.example.com/data",
                     "supported_formats": ["json"],
                     "ready": False,
@@ -236,21 +244,24 @@ class IntegratedDAGGenerator:
         }
 
 
-# Синхронные обертки для удобства использования
+# Synchronous wrappers for convenience
 class DAGGeneratorSync:
-    """Синхронная обертка для IntegratedDAGGenerator."""
+    """Synchronous wrapper for IntegratedDAGGenerator."""
 
     def __init__(self, output_dir: str = "generated_dags"):
+        """Initialize synchronous generator."""
         self.generator = IntegratedDAGGenerator(output_dir)
 
-    def create_dag(self, source_url: str, pipeline_name: str, **kwargs) -> dict[str, Any]:
-        """Синхронное создание DAG."""
+    def create_dag(
+        self, source_url: str, pipeline_name: str, **kwargs: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Synchronous DAG creation."""
         return asyncio.run(self.generator.create_dag_from_url(source_url, pipeline_name, **kwargs))
 
     def list_dags(self) -> dict[str, Any]:
-        """Синхронное получение списка DAG."""
+        """Synchronous list of DAGs."""
         return asyncio.run(self.generator.list_generated_dags())
 
 
-# Экспорт для использования в приложении
+# Export for use in application
 __all__ = ["DAGGeneratorSync", "IntegratedDAGGenerator"]

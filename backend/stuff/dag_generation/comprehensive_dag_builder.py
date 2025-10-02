@@ -202,7 +202,7 @@ class ETLPipelineAnalyzer:
         """Анализ на основе готового ExtractConfig."""
         # Преобразуем типы в формат DAG генерации
         source_type = self._convert_source_type(extract_config.source_metadata.source_type)
-        content_type = self._convert_content_type(extract_config.source_metadata.content_type)
+        content_type = self._convert_content_type(extract_config.content_type)
 
         # Создаем метрики на основе ExtractConfig
         source_metrics = {

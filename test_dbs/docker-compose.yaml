@@ -1,0 +1,66 @@
+services:
+  test-clickhouse:
+    image: clickhouse/clickhouse-server
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: ${TEST_CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${TEST_CLICKHOUSE_PASSWORD}
+    volumes:
+      - ${TEST_CLICKHOUSE_DATA_VOLUME}:/var/lib/clickhouse
+      - ${TEST_CLICKHOUSE_LOGS_VOLUME}:/var/log/clickhouse-server
+      - ./test_data/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "${TEST_CLICKHOUSE_HTTP_PORT}:8123"
+      - "${TEST_CLICKHOUSE_NATIVE_PORT}:9000"
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+
+  test-postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${TEST_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${TEST_POSTGRES_DB}
+    ports:
+      - "${TEST_POSTGRES_PORT}:5432"
+    volumes:
+      - ${TEST_POSTGRES_VOLUME}:/var/lib/postgresql/data
+      - ./test_data/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_POSTGRES_USER}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  test-minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: ["minio", "server", "--address", ":9000", "--console-address", ":9001", "/data"]
+    environment:
+      MINIO_ROOT_USER: ${TEST_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${TEST_MINIO_ROOT_PASSWORD}
+    ports:
+      - "${TEST_MINIO_PORT}:9000"
+      - "${TEST_MINIO_CONSOLE_PORT}:9001"
+    volumes:
+      - ${TEST_MINIO_VOLUME}:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+
+  test-minio-init:
+    build:
+      context: .
+    env_file:
+      - .env
+    network_mode: host
+    restart: "no"

@@ -4,10 +4,26 @@ Application settings for the Calculator API application.
 Uses Pydantic's BaseSettings to manage configuration and environment variables.
 """
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # ============ FastAPI backend app ============
+
+
+class AppLoggingSettings(BaseSettings):
+    """
+    Settings for application logging.
+
+    Attributes:
+        level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="APP_",
+        extra="ignore",
+    )
+
+    log_level: str = "INFO"
 
 
 class AppCORSSettings(BaseSettings):
@@ -38,9 +54,11 @@ class AppSettings(BaseSettings):
     Settings for FastAPI application.
 
     Attributes:
+        logging (AppLoggingSettings): Logging configuration settings.
         cors (AppCORSSettings): CORS configuration settings.
     """
 
+    logging: AppLoggingSettings = AppLoggingSettings()
     cors: AppCORSSettings = AppCORSSettings()
 
 
@@ -83,69 +101,6 @@ class YandexGPTSettings(BaseSettings):
         return f"gpt://{self.folder_id}/{self.model}"
 
 
-class LangfuseSettings(BaseSettings):
-    """
-    Settings for LangFuse AI-tracing integration.
-
-    Attributes:
-        public_key (str): Public key for LangFuse.
-        secret_key (str): Secret
-        host (str): Host for LangFuse.
-        port (int): Port for LangFuse.
-        enabled (bool): Whether LangFuse integration is enabled.
-        base_url (str): Constructed base URL for LangFuse API.
-    """
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        extra="ignore",
-        env_prefix="LANGFUSE_",
-    )
-
-    public_key: str
-    secret_key: str
-    host: str
-    port: int
-    enabled: bool
-
-    @property
-    def base_url(self) -> str:
-        """Get the base URL for LangFuse API."""
-        return f"http://{self.host}:{self.port}"
-
-
-class LanggraphCheckpointerPostgresSettings(BaseSettings):
-    """
-    Settings for Langgraph Checkpointer PostgreSQL connection.
-
-    Attributes:
-        db (str): Database name.
-        user (str): Database user.
-        password (str): Database password.
-        host (str): Database host.
-        port (int): Database port.
-        connection_string (str): Constructed PostgreSQL connection string.
-    """
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        extra="ignore",
-        env_prefix="LANGGRAPH_CHECKPOINTER_POSTGRES_",
-        validate_by_alias=True,
-    )
-
-    db: str
-    user: str = Field(..., alias="POSTGRES_USER")
-    password: str = Field(..., alias="POSTGRES_PASSWORD")
-    host: str = Field(..., alias="POSTGRES_HOST")
-    port: int = Field(..., alias="POSTGRES_PORT")
-
-    @property
-    def connection_string(self) -> str:
-        """Constructs a PostgreSQL connection string from the settings."""
-        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
-
-
 class AISettings(BaseSettings):
     """
     Settings for AI-related configurations.
@@ -154,14 +109,9 @@ class AISettings(BaseSettings):
         yandex_gpt (YandexGPTSettings): Settings for Yandex GPT integration.
         langgraph_checkpointer (LanggraphCheckpointerPostgresSettings):
             Settings for Langgraph Checkpointer PostgreSQL connection.
-        langfuse (LangfuseSettings): Settings for LangFuse integration.
     """
 
     yandex_gpt: YandexGPTSettings = YandexGPTSettings()
-    langgraph_checkpointer: LanggraphCheckpointerPostgresSettings = (
-        LanggraphCheckpointerPostgresSettings()
-    )
-    langfuse: LangfuseSettings = LangfuseSettings()
 
 
 # ============ Main Settings Aggregator ============
