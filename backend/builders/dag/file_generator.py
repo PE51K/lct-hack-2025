@@ -43,7 +43,7 @@ class AirflowFileGenerator:
             loader=FileSystemLoader(str(template_dir)),
             trim_blocks=True,
             lstrip_blocks=True,
-            autoescape=False,
+            autoescape=False, # noqa: S701
         )
 
         logger.info(f"AirflowFileGenerator initialized with output dir: {self.base_output_dir}")
