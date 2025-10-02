@@ -149,12 +149,13 @@ class DAGBuilder:
         )
         tasks.append(transform_task)
 
-        # Determine table name from flat meta model
-        table_name = (
-            load_config.flat_meta_model.fields[0].name
-            if load_config.flat_meta_model.fields
-            else "target_table"
-        )
+        # Generate full table name based on target type
+        if load_config.target_storage_type.storage_type == "clickhouse":
+            # ClickHouse: database.table (schema rarely used)
+            full_table_name = f"{load_config.database_name}.{load_config.table_name}"
+        else:
+            # PostgreSQL: database.schema.table
+            full_table_name = f"{load_config.database_name}.{load_config.schema_name}.{load_config.table_name}"
 
         # Load task
         load_task = DAGTask(
@@ -164,7 +165,10 @@ class DAGBuilder:
             dependencies=["transform_data"],
             config={
                 "target_type": load_config.target_storage_type.storage_type,
-                "table_name": table_name,
+                "database_name": load_config.database_name,
+                "schema_name": load_config.schema_name,
+                "table_name": load_config.table_name,
+                "full_table_name": full_table_name,
                 "load_strategy": load_config.load_strategy,
                 "batch_size": load_config.batch_config.batch_size,
             },
@@ -263,12 +267,13 @@ class DAGBuilder:
         ddl: DDL,
     ) -> str:
         """Generate Markdown documentation for the DAG."""
-        # Determine table name from flat meta model
-        table_name = (
-            load_config.flat_meta_model.fields[0].name
-            if load_config.flat_meta_model.fields
-            else "target_table"
-        )
+        # Generate full table name based on target type
+        if load_config.target_storage_type.storage_type == "clickhouse":
+            # ClickHouse: database.table
+            full_table_name = f"{load_config.database_name}.{load_config.table_name}"
+        else:
+            # PostgreSQL: database.schema.table
+            full_table_name = f"{load_config.database_name}.{load_config.schema_name}.{load_config.table_name}"
 
         doc = f"""
 # ETL Pipeline: {extract_config.source_metadata.source_type} → {load_config.target_storage_type.storage_type}
@@ -290,7 +295,10 @@ This DAG extracts data from {extract_config.source_metadata.source_type}, applie
 
 ### Load Data
 - **Target**: {load_config.target_storage_type.storage_type}
-- **Table**: {table_name}
+- **Database**: {load_config.database_name}
+- **Schema**: {load_config.schema_name}
+- **Table**: {load_config.table_name}
+- **Full Name**: {full_table_name}
 - **Strategy**: {load_config.load_strategy}
 
 ## Schema

@@ -6,16 +6,173 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from builders.dag import AirflowFileGenerator, DAGBuilder
 from builders.ddl import DDLBuilder
 from builders.extract import ExtractConfigBuilder
 from builders.load import LoadConfigBuilder
 from builders.transform import TransformConfigBuilder
-from models.app import CreateETLRequest, CreateETLResponse
+from models.app import CreateETLRequest, CreateETLResponse, CredentialField, CredentialsRequired
 
 logger = logging.getLogger(__name__)
 
 create_router = APIRouter()
+
+
+def _generate_credentials_form(target_type: str) -> CredentialsRequired:
+    """Generate credentials form based on target DB type."""
+    if target_type == "postgres":
+        return CredentialsRequired(
+            target_type="postgres",
+            fields=[
+                CredentialField(
+                    name="host",
+                    label="PostgreSQL Host",
+                    type="text",
+                    placeholder="localhost",
+                    required=True,
+                ),
+                CredentialField(
+                    name="port",
+                    label="Port",
+                    type="number",
+                    placeholder="5432",
+                    default=5432,
+                    required=True,
+                ),
+                CredentialField(
+                    name="username", label="Username", type="text", placeholder="postgres", required=True
+                ),
+                CredentialField(
+                    name="password", label="Password", type="password", required=True
+                ),
+                CredentialField(
+                    name="database",
+                    label="Database Name",
+                    type="text",
+                    placeholder="analytics",
+                    required=True,
+                ),
+                CredentialField(
+                    name="schema_name",
+                    label="Schema Name",
+                    type="text",
+                    placeholder="public",
+                    default="public",
+                    required=False,
+                ),
+                CredentialField(
+                    name="table_name",
+                    label="Table Name (Optional Override)",
+                    type="text",
+                    placeholder="Leave empty to use AI-generated table name",
+                    required=False,
+                ),
+            ],
+        )
+    elif target_type == "clickhouse":
+        return CredentialsRequired(
+            target_type="clickhouse",
+            fields=[
+                CredentialField(
+                    name="host",
+                    label="ClickHouse Host",
+                    type="text",
+                    placeholder="localhost",
+                    required=True,
+                ),
+                CredentialField(
+                    name="port",
+                    label="HTTP Port",
+                    type="number",
+                    placeholder="8123",
+                    default=8123,
+                    required=True,
+                ),
+                CredentialField(
+                    name="username", label="Username", type="text", placeholder="default", required=True
+                ),
+                CredentialField(
+                    name="password", label="Password", type="password", required=False
+                ),
+                CredentialField(
+                    name="database",
+                    label="Database Name",
+                    type="text",
+                    placeholder="default",
+                    required=True,
+                ),
+                CredentialField(
+                    name="table_name",
+                    label="Table Name (Optional Override)",
+                    type="text",
+                    placeholder="Leave empty to use AI-generated table name",
+                    required=False,
+                ),
+            ],
+        )
+    elif target_type == "hdfs":
+        return CredentialsRequired(
+            target_type="hdfs",
+            fields=[
+                CredentialField(
+                    name="namenode_host",
+                    label="HDFS NameNode Host",
+                    type="text",
+                    placeholder="namenode.example.com",
+                    required=True,
+                ),
+                CredentialField(
+                    name="namenode_port",
+                    label="NameNode Port",
+                    type="number",
+                    placeholder="9870",
+                    default=9870,
+                    required=True,
+                ),
+                CredentialField(
+                    name="user",
+                    label="HDFS User",
+                    type="text",
+                    placeholder="hdfs",
+                    required=True,
+                ),
+                CredentialField(
+                    name="base_path",
+                    label="Base HDFS Path",
+                    type="text",
+                    placeholder="/data/etl",
+                    required=True,
+                ),
+                CredentialField(
+                    name="authentication",
+                    label="Authentication Method",
+                    type="text",
+                    placeholder="simple",
+                    default="simple",
+                    required=False,
+                ),
+                CredentialField(
+                    name="table_name",
+                    label="Target File/Directory Name (Optional Override)",
+                    type="text",
+                    placeholder="Leave empty to use AI-generated name",
+                    required=False,
+                ),
+            ],
+        )
+    else:
+        # For unknown types, provide generic fields
+        return CredentialsRequired(
+            target_type=target_type,
+            fields=[
+                CredentialField(
+                    name="connection_string",
+                    label="Connection String",
+                    type="text",
+                    placeholder=f"{target_type}://host:port",
+                    required=True,
+                )
+            ],
+        )
 
 
 @create_router.post("/create_etl")
@@ -93,66 +250,44 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
             )
             logger.info(f"TransformConfig received: {transform_config}")
 
-            # Step 6. Generate DAG model from all configs (90%)
+            # STOP HERE - Don't create DAG yet
+            # Step 6. Generate credentials form (85%)
             yield (
                 CreateETLResponse(
                     ids=request.ids,
                     processing_done=False,
-                    processing_percentage_done=90.0,
-                    processing_message="Generating DAG configuration...",
+                    processing_percentage_done=85.0,
+                    processing_message="Preparing credentials form...",
                     success=True,
                 ).model_dump_json()
                 + "\n"
             )
 
-            dag_builder = DAGBuilder()
-            dag = await dag_builder(extract_config, transform_config, load_config, ddl)
-            logger.info(f"DAG model created: {dag.dag_id}")
-
-            # Step 7. Generate Airflow DAG files (95%)
-            yield (
-                CreateETLResponse(
-                    ids=request.ids,
-                    processing_done=False,
-                    processing_percentage_done=95.0,
-                    processing_message="Generating Airflow DAG files...",
-                    success=True,
-                ).model_dump_json()
-                + "\n"
+            # Generate credentials form based on AI recommendation
+            credentials_required = _generate_credentials_form(
+                load_config.target_storage_type.storage_type
             )
 
-            # Generate executable Airflow files
-            file_generator = AirflowFileGenerator()
-            generated_files = await file_generator.generate_dag_files(
-                dag=dag,
-                extract_config=extract_config,
-                transform_config=transform_config,
-                load_config=load_config,
-                ddl=ddl,
-                user_id=request.ids.user_id,
-                thread_id=request.ids.thread_id,
+            logger.info(
+                f"AI recommended target: {load_config.target_storage_type.storage_type} - {load_config.target_storage_type.explanation}"
             )
 
-            # Update DAG with generated file paths
-            dag.generated_files = generated_files
-            dag.dag_file_path = generated_files.get("dag_file")
-            
-            logger.info(f"Generated {len(generated_files)} Airflow files")
-            logger.info(f"DAG file: {dag.dag_file_path}")
-
-            # Final response with all artefacts
+            # Final response with configs and credentials form (NO DAG yet)
+            # Frontend will store configs and send them back with credentials
             yield (
                 CreateETLResponse(
                     ids=request.ids,
                     processing_done=True,
-                    processing_percentage_done=100.0,
-                    processing_message="ETL creation completed successfully! Airflow DAG files generated.",
+                    processing_percentage_done=80.0,  # Not 100% - stopped before DAG
+                    processing_message="Configuration complete. Please provide target database credentials.",
                     success=True,
                     extract_config=extract_config,
                     transform_config=transform_config,
                     load_config=load_config,
                     ddl=ddl,
-                    dag=dag,
+                    dag=None,  # No DAG yet!
+                    credentials_required=credentials_required,  # NEW: Credentials form
+                    next_step="create_dag",  # NEW: Tell frontend what's next
                 ).model_dump_json()
                 + "\n"
             )

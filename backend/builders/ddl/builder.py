@@ -30,16 +30,15 @@ class DDLBuilder:
 
     def _generate_ddl_statements(self, load_config: LoadConfig) -> str:
         """Generate DDL statements from load configuration."""
-        # This is a simplified implementation - in real scenario would generate proper DDL
         target_type = load_config.target_storage_type.storage_type
-        table_name = (
-            load_config.flat_meta_model.fields[0].name
-            if load_config.flat_meta_model.fields
-            else "target_table"
-        )
+        database_name = load_config.database_name
+        schema_name = load_config.schema_name
+        table_name = load_config.table_name
 
         if target_type == "postgres":
-            query = f"""CREATE TABLE public.{table_name} ("""
+            # PostgreSQL: database.schema.table
+            full_table_name = f"{schema_name}.{table_name}"
+            query = f"""CREATE TABLE {full_table_name} ("""
 
             for field in load_config.flat_meta_model.fields:
                 query += f"""
@@ -50,5 +49,27 @@ class DDLBuilder:
             );"""
 
             return query
+        
+        elif target_type == "clickhouse":
+            # ClickHouse: database.table with ENGINE
+            full_table_name = f"{database_name}.{table_name}"
+            query = f"""CREATE TABLE {full_table_name} ("""
+
+            for field in load_config.flat_meta_model.fields:
+                nullable = "Nullable(" if field.nullable else ""
+                closing = ")" if field.nullable else ""
+                query += f"""
+                    {field.name} {nullable}{field.data_type}{closing},"""
+
+            # Remove trailing comma
+            query = query.rstrip(',')
+            
+            query += f"""
+            ) ENGINE = MergeTree()
+            ORDER BY ({load_config.flat_meta_model.partitioning_key});"""
+
+            return query
+        
         else:
-            return f"-- DDL for {target_type} table {table_name}"
+            # HDFS or other
+            return f"-- DDL for {target_type} table {database_name}.{schema_name}.{table_name}"

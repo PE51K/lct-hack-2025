@@ -156,6 +156,9 @@ class LoadConfig(BaseModel):
     target_storage_connection_string: str = Field(
         ..., description="Target storage connection string."
     )
+    database_name: str = Field(..., description="Target database name.")
+    schema_name: str = Field("public", description="Target schema name.")
+    table_name: str = Field(..., description="Target table name.")
     nesting_metamodel: NestingMetaModel = Field(..., description="Metamodel for hdfs.")
     flat_meta_model: FlatMetaModel = Field(..., description="Metamodel for click and pg.")
     load_strategy: Annotated[str, LoadStrategy] = Field(

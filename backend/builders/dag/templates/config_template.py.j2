@@ -19,14 +19,118 @@ DAG_OWNER = "{{ owner }}"
 
 SOURCE_TYPE = "{{ extract_config.source_metadata.source_type }}"
 SOURCE_PATH = "{{ extract_config.source_metadata.connection_string }}"
-CONTENT_TYPE = "{{ extract_config.content_type if extract_config.content_type else 'unknown' }}"
+{% if extract_config.content_metadata and extract_config.content_metadata|length > 0 %}
+CONTENT_TYPE = "{{ extract_config.content_metadata[0].content_type }}"
+{% else %}
+CONTENT_TYPE = "unknown"
+{% endif %}
+
+# Source-specific credentials
+{% if extract_config.source_metadata.source_type == "s3" %}
+S3_BUCKET = "{{ extract_config.source_metadata.bucket_name }}"
+S3_ACCESS_KEY = "{{ extract_config.source_metadata.access_key }}"
+S3_SECRET_KEY = "{{ extract_config.source_metadata.secret_key }}"
+{% else %}
+S3_BUCKET = None
+S3_ACCESS_KEY = None
+S3_SECRET_KEY = None
+{% endif %}
+
+{% if extract_config.source_metadata.source_type in ["PostgreSQL", "postgres"] %}
+SOURCE_TABLE = "{{ extract_config.source_metadata.table_name }}"
+{% else %}
+SOURCE_TABLE = None
+{% endif %}
+
+# Content metadata
+{% if extract_config.content_metadata and extract_config.content_metadata|length > 0 %}
+CONTENT_MESSAGES = [
+    {%- for content in extract_config.content_metadata %}
+    "{{ content.message_name }}",
+    {%- endfor %}
+]
+IS_COMPLEX_NESTING = {{ extract_config.content_metadata[0].is_complex_nesting_present }}
+CONTENT_TYPES_MAP = {
+    {%- for content in extract_config.content_metadata %}
+    "{{ content.message_name }}": "{{ content.content_type }}",
+    {%- endfor %}
+}
+{% else %}
+CONTENT_MESSAGES = []
+IS_COMPLEX_NESTING = False
+CONTENT_TYPES_MAP = {}
+{% endif %}
+
+# Content statistics
+{% if extract_config.content_statistics %}
+CONTENT_STATISTICS = {{ extract_config.content_statistics }}
+{% else %}
+CONTENT_STATISTICS = {}
+{% endif %}
 
 # ============================================================================
 # PROCESSING CONFIGURATION
 # ============================================================================
 
 BATCH_SIZE = {{ extract_config.batch_size }}
-MAX_WORKERS = 4  # Default parallel workers
+MAX_WORKERS = {{ extract_config.resources.parallel_workers }}
+
+# ============================================================================
+# EXTRACT RESOURCE CONFIGURATION
+# ============================================================================
+
+EXTRACT_CPU_REQUEST = {{ extract_config.resources.cpu_request }}
+EXTRACT_MEMORY_MB = {{ extract_config.resources.memory_request_mb }}
+EXTRACT_DISK_GB = {{ extract_config.resources.disk_space_gb }}
+EXTRACT_TIMEOUT_MINUTES = {{ extract_config.resources.timeout_minutes }}
+EXTRACT_RETRY_COUNT = {{ extract_config.resources.retry_count }}
+
+# ============================================================================
+# SCHEDULE CONFIGURATION
+# ============================================================================
+
+SCHEDULE_INTERVAL = "{{ extract_config.schedule.interval }}"
+SCHEDULE_START_DATE = "{{ extract_config.schedule.start_date }}"
+{% if extract_config.schedule.end_date %}
+SCHEDULE_END_DATE = "{{ extract_config.schedule.end_date }}"
+{% else %}
+SCHEDULE_END_DATE = None
+{% endif %}
+SCHEDULE_CATCHUP = {{ extract_config.schedule.catchup }}
+SCHEDULE_MAX_ACTIVE_RUNS = {{ extract_config.schedule.max_active_runs }}
+SCHEDULE_DEPENDS_ON_PAST = {{ extract_config.schedule.depends_on_past }}
+
+# ============================================================================
+# INCREMENTAL CONFIGURATION
+# ============================================================================
+
+INCREMENTAL_ENABLED = {{ extract_config.incremental.enabled }}
+{% if extract_config.incremental.key_field %}
+INCREMENTAL_KEY_FIELD = "{{ extract_config.incremental.key_field }}"
+{% else %}
+INCREMENTAL_KEY_FIELD = None
+{% endif %}
+INCREMENTAL_LOOKBACK_DAYS = {{ extract_config.incremental.lookback_days }}
+INCREMENTAL_CHECKPOINT_ENABLED = {{ extract_config.incremental.checkpoint_enabled }}
+
+# ============================================================================
+# DATA QUALITY CONFIGURATION
+# ============================================================================
+
+DQ_COMPLETENESS_THRESHOLD = {{ extract_config.data_quality.completeness_threshold }}
+DQ_ACCURACY_THRESHOLD = {{ extract_config.data_quality.accuracy_threshold }}
+DQ_CONSISTENCY_CHECKS = {{ extract_config.data_quality.consistency_checks }}
+DQ_FRESHNESS_HOURS = {{ extract_config.data_quality.freshness_hours }}
+DQ_VOLUME_MIN_RECORDS = {{ extract_config.data_quality.volume_min_records }}
+{% if extract_config.data_quality.volume_max_records %}
+DQ_VOLUME_MAX_RECORDS = {{ extract_config.data_quality.volume_max_records }}
+{% else %}
+DQ_VOLUME_MAX_RECORDS = None
+{% endif %}
+DQ_SCHEMA_VALIDATION = {{ extract_config.data_quality.schema_validation }}
+DQ_DUPLICATE_DETECTION = {{ extract_config.data_quality.duplicate_detection }}
+DQ_SCHEMA_DRIFT_DETECTION = {{ extract_config.data_quality.schema_drift_detection }}
+DQ_DUPLICATE_THRESHOLD = {{ extract_config.data_quality.duplicate_threshold }}
 
 # ============================================================================
 # TRANSFORM CONFIGURATION
@@ -39,39 +143,224 @@ PROCESSING_MODE = "{{ transform_config.processing_mode }}"
 TRANSFORMATION_RULES = [
     {% for rule in transform_config.transformation_rules %}
     {
+        "rule_id": "{{ rule.rule_id }}",
         "rule_name": "{{ rule.rule_name }}",
+        "description": "{{ rule.description }}",
         "transformation_type": "{{ rule.transformation_type }}",
         "source_fields": {{ rule.source_fields }},
         "target_field": "{{ rule.target_field }}",
-        "expression": "{{ rule.expression }}",
+        "expression": {% if rule.expression %}"{{ rule.expression }}"{% else %}None{% endif %},
+        "sql_query": {% if rule.sql_query %}"{{ rule.sql_query }}"{% else %}None{% endif %},
+        "python_function": {% if rule.python_function %}"{{ rule.python_function }}"{% else %}None{% endif %},
+        "parameters": {{ rule.parameters }},
+        "conditions": {% if rule.conditions %}"{{ rule.conditions }}"{% else %}None{% endif %},
+        "priority": {{ rule.priority }},
+        "enabled": {{ rule.enabled }},
+        "error_handling": "{{ rule.error_handling }}",
     },
     {% endfor %}
 ]
+
+# Additional transform fields
+AGGREGATE_KEYS = {{ transform_config.aggregate_keys }}
+{% if transform_config.versioning_field %}
+VERSIONING_FIELD = "{{ transform_config.versioning_field }}"
+{% else %}
+VERSIONING_FIELD = None
+{% endif %}
+
+# Validation rules
+VALIDATION_RULES = [
+    {% for rule in transform_config.validation_rules %}
+    {
+        "field_name": "{{ rule.field_name }}",
+        "rule_type": "{{ rule.rule_type }}",
+        "parameters": {{ rule.parameters }},
+        "error_action": "{{ rule.error_action }}",
+        "error_message": {% if rule.error_message %}"{{ rule.error_message }}"{% else %}None{% endif %},
+        "enabled": {{ rule.enabled }},
+    },
+    {% endfor %}
+]
+
+# Business rules
+BUSINESS_RULES = [
+    {% for rule in transform_config.business_rules %}
+    {
+        "rule_name": "{{ rule.rule_name }}",
+        "description": "{{ rule.description }}",
+        "condition": "{{ rule.condition }}",
+        "action": "{{ rule.action }}",
+        "priority": {{ rule.priority }},
+        "enabled": {{ rule.enabled }},
+    },
+    {% endfor %}
+]
+
+# Data type mappings
+DATA_TYPE_MAPPINGS = [
+    {% for mapping in transform_config.data_type_mappings %}
+    {
+        "source_field": "{{ mapping.source_field }}",
+        "source_type": "{{ mapping.source_type }}",
+        "target_field": "{{ mapping.target_field }}",
+        "target_type": "{{ mapping.target_type }}",
+        "conversion_function": {% if mapping.conversion_function %}"{{ mapping.conversion_function }}"{% else %}None{% endif %},
+        "default_value": {{ mapping.default_value if mapping.default_value is not none else None }},
+    },
+    {% endfor %}
+]
+
+# Transform processing config
+{% if transform_config.window_size_minutes %}
+WINDOW_SIZE_MINUTES = {{ transform_config.window_size_minutes }}
+{% else %}
+WINDOW_SIZE_MINUTES = None
+{% endif %}
+LATE_ARRIVAL_THRESHOLD_MINUTES = {{ transform_config.late_arrival_threshold_minutes }}
+OUTPUT_FORMAT = "{{ transform_config.output_format }}"
+{% if transform_config.partitioning_strategy %}
+PARTITIONING_STRATEGY = "{{ transform_config.partitioning_strategy }}"
+{% else %}
+PARTITIONING_STRATEGY = None
+{% endif %}
+SORTING_KEYS = {{ transform_config.sorting_keys }}
+
+# Transform resources
+TRANSFORM_CPU_REQUEST = {{ transform_config.resources.cpu_request }}
+TRANSFORM_MEMORY_MB = {{ transform_config.resources.memory_request_mb }}
+TRANSFORM_TIMEOUT_HOURS = {{ transform_config.resources.execution_timeout_hours }}
+TRANSFORM_PARALLEL_WORKERS = {{ transform_config.resources.parallel_workers }}
+TRANSFORM_SPILL_TO_DISK = {{ transform_config.resources.spill_to_disk }}
 
 # ============================================================================
 # TARGET CONFIGURATION
 # ============================================================================
 
 TARGET_STORAGE_TYPE = "{{ load_config.target_storage_type.storage_type }}"
-TARGET_CONNECTION = "{{ load_config.target_storage_type.connection_string }}"
-TARGET_DATABASE = "{{ load_config.target_storage_type.database_name }}"
-TARGET_SCHEMA = "{{ load_config.target_storage_type.schema_name }}"
-TARGET_TABLE = "{{ load_config.target_storage_type.table_name }}"
+TARGET_CONNECTION = "{{ load_config.target_storage_connection_string }}"
+TARGET_DATABASE = "{{ load_config.database_name }}"
+TARGET_SCHEMA = "{{ load_config.schema_name }}"
+TARGET_TABLE = "{{ load_config.table_name }}"
+
+# Full table reference
+{% if load_config.target_storage_type.storage_type == "clickhouse" %}
+FULL_TABLE_NAME = f"{TARGET_DATABASE}.{TARGET_TABLE}"
+{% else %}
+FULL_TABLE_NAME = f"{TARGET_DATABASE}.{TARGET_SCHEMA}.{TARGET_TABLE}"
+{% endif %}
 
 # ============================================================================
 # LOAD CONFIGURATION
 # ============================================================================
 
 LOAD_STRATEGY = "{{ load_config.load_strategy }}"
+# Batch configuration
+{% if load_config.batch_config %}
+LOAD_PARALLEL_LOADS = {{ load_config.batch_config.parallel_loads }}
+LOAD_COMMIT_INTERVAL = {{ load_config.batch_config.commit_interval }}
+LOAD_ERROR_THRESHOLD = {{ load_config.batch_config.error_threshold }}
+{% else %}
+LOAD_PARALLEL_LOADS = 1
+LOAD_COMMIT_INTERVAL = 1000
+LOAD_ERROR_THRESHOLD = 0.05
+{% endif %}
+
+# Partitioning configuration
+{% if load_config.partitioning %}
+PARTITIONING_ENABLED = {{ load_config.partitioning.enabled }}
+{% if load_config.partitioning.partition_by %}
+PARTITION_BY = "{{ load_config.partitioning.partition_by }}"
+{% else %}
+PARTITION_BY = None
+{% endif %}
+PARTITION_TYPE = "{{ load_config.partitioning.partition_type }}"
+{% if load_config.partitioning.partition_count %}
+PARTITION_COUNT = {{ load_config.partitioning.partition_count }}
+{% else %}
+PARTITION_COUNT = None
+{% endif %}
+{% else %}
+PARTITIONING_ENABLED = False
+PARTITION_BY = None
+PARTITION_TYPE = "date"
+PARTITION_COUNT = None
+{% endif %}
+
+# Indexing configuration
+{% if load_config.indexing %}
+AUTO_INDEX = {{ load_config.indexing.auto_index }}
+CUSTOM_INDEXES = {{ load_config.indexing.custom_indexes }}
+UNIQUE_CONSTRAINTS = {{ load_config.indexing.unique_constraints }}
+{% else %}
+AUTO_INDEX = True
+CUSTOM_INDEXES = []
+UNIQUE_CONSTRAINTS = []
+{% endif %}
+
+# Compression configuration
+{% if load_config.compression %}
+COMPRESSION_ENABLED = {{ load_config.compression.enabled }}
+COMPRESSION_ALGORITHM = "{{ load_config.compression.algorithm }}"
+COMPRESSION_LEVEL = {{ load_config.compression.level }}
+{% else %}
+COMPRESSION_ENABLED = True
+COMPRESSION_ALGORITHM = "gzip"
+COMPRESSION_LEVEL = 6
+{% endif %}
+
+# Load resources
+{% if load_config.resources %}
+LOAD_CPU_REQUEST = {{ load_config.resources.cpu_request }}
+LOAD_MEMORY_MB = {{ load_config.resources.memory_request_mb }}
+{% if load_config.resources.disk_io_limit %}
+LOAD_DISK_IO_LIMIT = "{{ load_config.resources.disk_io_limit }}"
+{% else %}
+LOAD_DISK_IO_LIMIT = None
+{% endif %}
+LOAD_CONNECTION_POOL_SIZE = {{ load_config.resources.connection_pool_size }}
+LOAD_TIMEOUT_MINUTES = {{ load_config.resources.timeout_minutes }}
+{% else %}
+LOAD_CPU_REQUEST = 1.0
+LOAD_MEMORY_MB = 512
+LOAD_DISK_IO_LIMIT = None
+LOAD_CONNECTION_POOL_SIZE = 10
+LOAD_TIMEOUT_MINUTES = 30
+{% endif %}
+
+# Monitoring configuration
+{% if load_config.monitoring %}
+TRACK_ROW_COUNTS = {{ load_config.monitoring.track_row_counts }}
+TRACK_EXECUTION_TIME = {{ load_config.monitoring.track_execution_time }}
+ALERT_ON_FAILURE = {{ load_config.monitoring.alert_on_failure }}
+CUSTOM_METRICS = {{ load_config.monitoring.custom_metrics }}
+{% else %}
+TRACK_ROW_COUNTS = True
+TRACK_EXECUTION_TIME = True
+ALERT_ON_FAILURE = True
+CUSTOM_METRICS = []
+{% endif %}
+
 LOAD_BATCH_SIZE = {{ load_config.batch_config.batch_size if load_config.batch_config else 1000 }}
+
+# Primary key columns for UPSERT strategy
+PRIMARY_KEY_COLUMNS = {{ load_config.indexing.primary_key if load_config.indexing and load_config.indexing.primary_key else [] }}
+
+# Target table columns (from flat_meta_model)
+TARGET_TABLE_COLUMNS = [
+    {%- for field in load_config.flat_meta_model.fields %}
+    "{{ field.name }}",
+    {%- endfor %}
+]
 
 # ============================================================================
 # RESOURCE LIMITS
 # ============================================================================
 
-CPU_CORES = {{ total_cpu_cores }}
-MEMORY_MB = {{ total_memory_mb }}
-EXECUTION_TIMEOUT_MINUTES = {{ execution_timeout_minutes }}
+# Total resources (sum of all tasks)
+TOTAL_CPU_CORES = {{ total_cpu_cores }}
+TOTAL_MEMORY_MB = {{ total_memory_mb }}
+TOTAL_EXECUTION_TIMEOUT_MINUTES = {{ execution_timeout_minutes }}
 
 # ============================================================================
 # USER & THREAD INFORMATION

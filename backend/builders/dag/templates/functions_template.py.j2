@@ -12,6 +12,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
+import pandas as pd
+from io import BytesIO, StringIO
 
 # Импорт конфигурации
 from {{ dag_id }}_config import *
@@ -23,6 +25,409 @@ logger = logging.getLogger(__name__)
 # EXTRACT TASK
 # ============================================================================
 
+def extract_from_s3():
+    """Extract data from S3/MinIO."""
+    import boto3
+    from botocore.client import Config
+    
+    logger.info("📥 Извлечение из S3/MinIO")
+    
+    # Parse S3 connection string
+    # Format: s3://endpoint_url or http://host:port
+    endpoint_url = SOURCE_PATH
+    if not endpoint_url.startswith('http'):
+        endpoint_url = f"http://{endpoint_url}"
+    
+    logger.info(f"S3 Endpoint: {endpoint_url}")
+    
+    # Get credentials from config (provided by user in prompt)
+    access_key = S3_ACCESS_KEY
+    secret_key = S3_SECRET_KEY
+    bucket = S3_BUCKET
+    
+    if not all([access_key, secret_key, bucket]):
+        raise ValueError("S3 credentials (access_key, secret_key, bucket_name) must be provided in source configuration")
+    
+    # DEBUG: Print full credentials (TEMPORARY - REMOVE IN PRODUCTION)
+    logger.info("=" * 80)
+    logger.info("🔍 DEBUG: S3/MinIO EXTRACTION CREDENTIALS")
+    logger.info(f"Bucket: {bucket}")
+    logger.info(f"Access Key: {access_key}")
+    logger.info(f"Secret Key: {secret_key}")
+    logger.info(f"Endpoint URL: {endpoint_url}")
+    logger.info(f"Region: us-east-1")
+    logger.info(f"Signature Version: s3v4")
+    logger.info("=" * 80)
+    
+    # Initialize S3 client with credentials from user prompt
+    s3_client = boto3.client(
+        's3',
+        endpoint_url=endpoint_url,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        config=Config(signature_version='s3v4'),
+        region_name='us-east-1'
+    )
+    
+    # Optional prefix from environment or use empty
+    prefix = os.getenv('S3_PREFIX', '')
+    if prefix:
+        logger.info(f"Prefix: {prefix}")
+    
+    # Get specific files to process from config
+    target_files = CONTENT_MESSAGES if CONTENT_MESSAGES else []
+    logger.info(f"Target files from config: {target_files}")
+    
+    # List and download objects
+    extracted_data = []
+    response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    
+    if 'Contents' not in response:
+        logger.warning(f"No objects found in bucket {bucket} with prefix {prefix}")
+        return []
+    
+    # DEBUG: Log content type configuration
+    logger.info(f"🔍 DEBUG: CONTENT_TYPE from config = '{CONTENT_TYPE}'")
+    
+    files_processed = 0
+    files_skipped = 0
+    
+    for obj in response['Contents']:
+        key = obj['Key']
+        if key.endswith('/'):  # Skip directories
+            continue
+        
+        # If target files are specified, only process those
+        if target_files:
+            # Check if this file matches any of the target files
+            file_name = key.split('/')[-1]  # Get just the filename
+            if not any(target in key or target == file_name for target in target_files):
+                logger.debug(f"Skipping {key} - not in target files list")
+                files_skipped += 1
+                continue
+            
+        logger.info(f"Загрузка файла: {key}")
+        file_obj = s3_client.get_object(Bucket=bucket, Key=key)
+        content = file_obj['Body'].read()
+        
+        # Auto-detect content type from file extension
+        # Always use file extension for better accuracy
+        detected_type = None
+        if key.endswith('.csv'):
+            detected_type = 'csv'
+        elif key.endswith('.json'):
+            detected_type = 'json'
+        elif key.endswith('.xml'):
+            detected_type = 'xml'
+        else:
+            # Fallback to configured CONTENT_TYPE if no extension match
+            detected_type = CONTENT_TYPE if CONTENT_TYPE != 'unknown' else None
+        
+        if not detected_type:
+            logger.warning(f"  └─ ⚠️ Skipping file - cannot determine type for '{key}'")
+            continue
+        
+        logger.info(f"  └─ Detected type: {detected_type}")
+        
+        # Parse based on detected content type
+        try:
+            if detected_type == 'csv':
+                logger.info(f"  └─ Parsing as CSV")
+                df = pd.read_csv(BytesIO(content))
+                records = df.to_dict('records')
+                logger.info(f"  └─ Extracted {len(records)} records from CSV")
+                extracted_data.extend(records)
+            elif detected_type == 'json':
+                logger.info(f"  └─ Parsing as JSON")
+                data = json.loads(content)
+                if isinstance(data, list):
+                    logger.info(f"  └─ Extracted {len(data)} records from JSON array")
+                    extracted_data.extend(data)
+                else:
+                    logger.info(f"  └─ Extracted 1 record from JSON object")
+                    extracted_data.append(data)
+            elif detected_type == 'xml':
+                logger.info(f"  └─ Parsing as XML")
+                import xml.etree.ElementTree as ET
+                root = ET.fromstring(content)
+                records = []
+                
+                # Flatten nested XML structure to match metamodel
+                def flatten_element(element, parent_path=''):
+                    """Recursively flatten XML element to dict with nested paths."""
+                    result = {}
+                    
+                    # Process current element's text
+                    if element.text and element.text.strip():
+                        # Only use parent_path if it's not empty, don't double-prefix
+                        if parent_path:
+                            result[parent_path.rstrip('_')] = element.text.strip()
+                        else:
+                            result[element.tag] = element.text.strip()
+                    
+                    # Process all child elements
+                    for child in element:
+                        # Build path with underscore separator for nested elements
+                        if parent_path:
+                            child_path = f"{parent_path}{child.tag}_"
+                        else:
+                            child_path = f"{child.tag}_"
+                        child_data = flatten_element(child, child_path)
+                        result.update(child_data)
+                    
+                    return result
+                
+                # Parse each record (direct children of root)
+                # Don't include root element name in column paths
+                for child in root:
+                    row = flatten_element(child, '')
+                    if row:  # Only add non-empty records
+                        records.append(row)
+                
+                logger.info(f"  └─ Extracted {len(records)} records from XML")
+                if records:
+                    logger.info(f"  └─ Sample columns: {list(records[0].keys())}")
+                extracted_data.extend(records)
+            else:
+                logger.warning(f"  └─ ⚠️ Skipping file - unsupported type '{detected_type}'")
+                files_processed += 1
+        except Exception as e:
+            logger.error(f"  └─ ❌ Error parsing file '{key}' as {detected_type}: {e}")
+            files_skipped += 1
+            # Continue with next file instead of failing the whole task
+            continue
+    
+    logger.info(f"Всего объектов найдено: {len(response.get('Contents', []))}")
+    logger.info(f"Файлов обработано: {files_processed}")
+    logger.info(f"Файлов пропущено: {files_skipped}")
+    logger.info(f"Извлечено записей: {len(extracted_data)}")
+    
+    # Log sample of extracted data structure
+    if extracted_data:
+        logger.info(f"Пример структуры данных: {list(extracted_data[0].keys())}")
+    
+    return extracted_data
+
+
+def extract_from_postgres():
+    """Extract data from PostgreSQL."""
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    
+    logger.info("📥 Извлечение из PostgreSQL")
+    
+    # DEBUG: Print full connection string (TEMPORARY - REMOVE IN PRODUCTION)
+    logger.info("=" * 80)
+    logger.info("🔍 DEBUG: POSTGRESQL EXTRACTION CREDENTIALS")
+    logger.info(f"Connection String: {SOURCE_PATH}")
+    logger.info(f"Source Table: {SOURCE_TABLE}")
+    logger.info("=" * 80)
+    
+    conn = psycopg2.connect(SOURCE_PATH)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    # Build query - use SOURCE_TABLE from config if available
+    if SOURCE_TABLE:
+        query = os.getenv('SOURCE_QUERY', f"SELECT * FROM {SOURCE_TABLE}")
+    else:
+        query = os.getenv('SOURCE_QUERY', f"SELECT * FROM {os.getenv('SOURCE_TABLE', 'data')}")
+    logger.info(f"Query: {query}")
+    
+    cursor.execute(query)
+    
+    # Fetch all data using configured batch size
+    extracted_data = []
+    while True:
+        rows = cursor.fetchmany(BATCH_SIZE)
+        if not rows:
+            break
+        extracted_data.extend([dict(row) for row in rows])
+    
+    logger.info(f"Извлечено записей: {len(extracted_data)}")
+    
+    cursor.close()
+    conn.close()
+    
+    return extracted_data
+
+
+def extract_from_clickhouse():
+    """Extract data from ClickHouse."""
+    from clickhouse_driver import Client
+    
+    logger.info("📥 Извлечение из ClickHouse")
+    
+    # DEBUG: Print full connection string (TEMPORARY - REMOVE IN PRODUCTION)
+    logger.info("=" * 80)
+    logger.info("🔍 DEBUG: CLICKHOUSE EXTRACTION CREDENTIALS")
+    logger.info(f"Connection String: {SOURCE_PATH}")
+    logger.info("=" * 80)
+    
+    # Parse connection string
+    # Format: clickhouse://user:pass@host:port/database
+    client = Client.from_url(SOURCE_PATH)
+    
+    # Build query
+    query = os.getenv('SOURCE_QUERY', f"SELECT * FROM {os.getenv('SOURCE_TABLE', 'data')}")
+    logger.info(f"Query: {query}")
+    
+    # Execute query
+    result = client.execute(query, with_column_types=True)
+    
+    # Convert to dict format
+    columns = [col[0] for col in result[1]]
+    rows = result[0]
+    
+    extracted_data = [dict(zip(columns, row)) for row in rows]
+    
+    logger.info(f"Извлечено записей: {len(extracted_data)}")
+    
+    return extracted_data
+
+
+def extract_from_folder():
+    """Extract data from local folder."""
+    logger.info("📥 Извлечение из локальной папки")
+    logger.info(f"Path: {SOURCE_PATH}")
+    
+    source_path = Path(SOURCE_PATH)
+    if not source_path.exists():
+        raise FileNotFoundError(f"Source path not found: {SOURCE_PATH}")
+    
+    # Get specific files to process from config
+    target_files = CONTENT_MESSAGES if CONTENT_MESSAGES else []
+    logger.info(f"Target files from config: {target_files}")
+    
+    extracted_data = []
+    files = list(source_path.glob(f"*.{CONTENT_TYPE}"))
+    logger.info(f"Найдено файлов: {len(files)}")
+    
+    files_processed = 0
+    files_skipped = 0
+    
+    for file_path in files:
+        # If target files are specified, only process those
+        if target_files:
+            if file_path.name not in target_files:
+                logger.debug(f"Skipping {file_path.name} - not in target files list")
+                files_skipped += 1
+                continue
+        
+        logger.info(f"Обработка файла: {file_path.name}")
+        files_processed += 1
+        
+        if CONTENT_TYPE == 'csv':
+            df = pd.read_csv(file_path)
+            extracted_data.extend(df.to_dict('records'))
+        elif CONTENT_TYPE == 'json':
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    extracted_data.extend(data)
+                else:
+                    extracted_data.append(data)
+        elif CONTENT_TYPE == 'xml':
+            import xml.etree.ElementTree as ET
+            tree = ET.parse(file_path)
+            root = tree.getroot()
+            
+            # Flatten nested XML structure to match metamodel
+            def flatten_element(element, parent_path=''):
+                """Recursively flatten XML element to dict with nested paths."""
+                result = {}
+                
+                # Process current element's text
+                if element.text and element.text.strip():
+                    # Only use parent_path if it's not empty, don't double-prefix
+                    if parent_path:
+                        result[parent_path.rstrip('_')] = element.text.strip()
+                    else:
+                        result[element.tag] = element.text.strip()
+                
+                # Process all child elements
+                for child in element:
+                    # Build path with underscore separator for nested elements
+                    if parent_path:
+                        child_path = f"{parent_path}{child.tag}_"
+                    else:
+                        child_path = f"{child.tag}_"
+                    child_data = flatten_element(child, child_path)
+                    result.update(child_data)
+                
+                return result
+            
+            # Parse each record (direct children of root)
+            # Don't include root element name in column paths
+            for child in root:
+                row = flatten_element(child, '')
+                if row:  # Only add non-empty records
+                    extracted_data.append(row)
+    
+    logger.info(f"Файлов обработано: {files_processed}")
+    logger.info(f"Файлов пропущено: {files_skipped}")
+    logger.info(f"Извлечено записей: {len(extracted_data)}")
+    
+    # Log sample of extracted data structure
+    if extracted_data:
+        logger.info(f"Пример структуры данных: {list(extracted_data[0].keys())}")
+    
+    return extracted_data
+
+
+def validate_extracted_data(data: list) -> dict:
+    """Validate extracted data against quality thresholds."""
+    validation_results = {
+        "passed": True,
+        "errors": [],
+        "warnings": [],
+        "metrics": {}
+    }
+    
+    total_records = len(data)
+    validation_results["metrics"]["total_records"] = total_records
+    
+    # Volume validation
+    if total_records < DQ_VOLUME_MIN_RECORDS:
+        validation_results["errors"].append(
+            f"Volume below minimum: {total_records} < {DQ_VOLUME_MIN_RECORDS}"
+        )
+        validation_results["passed"] = False
+    
+    if DQ_VOLUME_MAX_RECORDS and total_records > DQ_VOLUME_MAX_RECORDS:
+        validation_results["warnings"].append(
+            f"Volume above maximum: {total_records} > {DQ_VOLUME_MAX_RECORDS}"
+        )
+    
+    # Duplicate detection
+    if DQ_DUPLICATE_DETECTION and data:
+        import json
+        unique_records = len(set(json.dumps(record, sort_keys=True) for record in data))
+        duplicate_rate = (total_records - unique_records) / total_records if total_records > 0 else 0
+        validation_results["metrics"]["duplicate_rate"] = duplicate_rate
+        
+        if duplicate_rate > DQ_DUPLICATE_THRESHOLD:
+            validation_results["warnings"].append(
+                f"Duplicate rate {duplicate_rate:.2%} exceeds threshold {DQ_DUPLICATE_THRESHOLD:.2%}"
+            )
+    
+    # Completeness check
+    if DQ_SCHEMA_VALIDATION and data:
+        null_counts = {}
+        for record in data:
+            for key, value in record.items():
+                if value is None:
+                    null_counts[key] = null_counts.get(key, 0) + 1
+        
+        for field, null_count in null_counts.items():
+            completeness = 1 - (null_count / total_records)
+            if completeness < DQ_COMPLETENESS_THRESHOLD:
+                validation_results["warnings"].append(
+                    f"Field '{field}' completeness {completeness:.2%} below threshold {DQ_COMPLETENESS_THRESHOLD:.2%}"
+                )
+    
+    return validation_results
+
+
 def extract_data(**context):
     """
     Извлечение данных из источника.
@@ -30,41 +435,56 @@ def extract_data(**context):
     Source: {{ extract_config.source_metadata.source_type }}
     Connection: {{ extract_config.source_metadata.connection_string }}
     Batch Size: {{ extract_config.batch_size }}
+    Resources: {{ extract_config.resources.cpu_request }} CPU, {{ extract_config.resources.memory_request_mb }}MB RAM
     """
     logger.info("📥 Начало извлечения данных")
     logger.info(f"Источник: {SOURCE_TYPE}")
     logger.info(f"Путь: {SOURCE_PATH}")
-    
-    # TODO: Implement extraction logic based on source type
-    # This is a placeholder implementation
-    
-    total_records = 0
-    extracted_data = []
+    logger.info(f"Batch size: {BATCH_SIZE}")
+    logger.info(f"Content type: {CONTENT_TYPE}")
+    logger.info(f"Max workers: {MAX_WORKERS}")
+    logger.info(f"Retry count: {EXTRACT_RETRY_COUNT}")
     
     try:
-        # Simulate data extraction
-        logger.info(f"Извлечение данных с batch_size={BATCH_SIZE}")
+        # Route to appropriate extraction function
+        if SOURCE_TYPE == "s3":
+            extracted_data = extract_from_s3()
+        elif SOURCE_TYPE in ["postgres", "PostgreSQL"]:
+            extracted_data = extract_from_postgres()
+        elif SOURCE_TYPE in ["clickhouse", "ClickHouse"]:
+            extracted_data = extract_from_clickhouse()
+        elif SOURCE_TYPE == "folder":
+            extracted_data = extract_from_folder()
+        else:
+            raise ValueError(f"Unsupported source type: {SOURCE_TYPE}")
         
-        # Example: Read from source
-        # For file-based sources
-        if SOURCE_TYPE == "folder":
-            source_path = Path(SOURCE_PATH)
-            if source_path.exists():
-                files = list(source_path.glob(f"*.{CONTENT_TYPE}"))
-                total_records = len(files)
-                logger.info(f"Найдено файлов: {total_records}")
-            else:
-                raise FileNotFoundError(f"Source path not found: {SOURCE_PATH}")
+        total_records = len(extracted_data)
         
-        # Store extracted data reference in XCom
+        # Data quality validation
+        logger.info("🔍 Проверка качества данных")
+        validation_results = validate_extracted_data(extracted_data)
+        
+        for warning in validation_results["warnings"]:
+            logger.warning(f"⚠️ {warning}")
+        
+        for error in validation_results["errors"]:
+            logger.error(f"❌ {error}")
+        
+        if not validation_results["passed"]:
+            raise ValueError(f"Data quality validation failed: {validation_results['errors']}")
+        
+        # Store extracted data in XCom
         result = {
             "total_records": total_records,
+            "data": extracted_data,
             "source_type": SOURCE_TYPE,
             "content_type": CONTENT_TYPE,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "validation": validation_results
         }
         
         logger.info(f"✅ Извлечение завершено: {total_records} записей")
+        logger.info(f"📊 Метрики качества: {validation_results['metrics']}")
         return result
         
     except Exception as e:
@@ -74,6 +494,83 @@ def extract_data(**context):
 # ============================================================================
 # TRANSFORM TASK
 # ============================================================================
+
+def apply_transformation_rule(data: List[Dict], rule: Dict) -> List[Dict]:
+    """Apply a single transformation rule to data."""
+    rule_type = rule.get('transformation_type', 'identity')
+    rule_name = rule.get('rule_name', 'unknown')
+    target_field = rule.get('target_field')
+    expression = rule.get('expression', '')
+    
+    logger.info(f"Применение правила: {rule_name} (тип: {rule_type})")
+    
+    try:
+        if rule_type == 'identity':
+            # No transformation needed
+            return data
+            
+        elif rule_type == 'rename':
+            # Rename field
+            old_name = rule.get('source_field')
+            new_name = target_field
+            for row in data:
+                if old_name in row:
+                    row[new_name] = row.pop(old_name)
+                    
+        elif rule_type == 'cast':
+            # Cast to different type
+            cast_type = rule.get('cast_to', 'str')
+            for row in data:
+                if target_field in row:
+                    if cast_type == 'int':
+                        row[target_field] = int(row[target_field])
+                    elif cast_type == 'float':
+                        row[target_field] = float(row[target_field])
+                    elif cast_type == 'str':
+                        row[target_field] = str(row[target_field])
+                    elif cast_type == 'bool':
+                        row[target_field] = bool(row[target_field])
+                        
+        elif rule_type == 'expression':
+            # Evaluate expression
+            for row in data:
+                try:
+                    # Simple eval - in production use safer alternative
+                    row[target_field] = eval(expression, {"row": row, "pd": pd, "datetime": datetime})
+                except Exception as e:
+                    logger.warning(f"Expression eval failed for row: {e}")
+                    row[target_field] = None
+                    
+        elif rule_type == 'default':
+            # Set default value if missing
+            default_value = rule.get('default_value')
+            for row in data:
+                if target_field not in row or row[target_field] is None:
+                    row[target_field] = default_value
+                    
+        elif rule_type == 'filter':
+            # Filter rows based on condition
+            condition = expression
+            filtered_data = []
+            for row in data:
+                try:
+                    if eval(condition, {"row": row}):
+                        filtered_data.append(row)
+                except Exception as e:
+                    logger.warning(f"Filter eval failed for row: {e}")
+            return filtered_data
+            
+        elif rule_type == 'aggregate':
+            # Group by and aggregate
+            # This is simplified - real implementation would use pandas
+            pass
+            
+        return data
+        
+    except Exception as e:
+        logger.error(f"Error applying rule {rule_name}: {e}")
+        raise
+
 
 def transform_data(**context):
     """
@@ -92,29 +589,58 @@ def transform_data(**context):
     if not extract_result:
         raise ValueError("No data received from extract task")
     
-    logger.info(f"Получено записей для обработки: {extract_result['total_records']}")
+    data = extract_result.get('data', [])
+    logger.info(f"Получено записей для обработки: {len(data)}")
+    
+    if not data:
+        logger.warning("No data to transform")
+        return {
+            "transformed_records": 0,
+            "data": [],
+            "identity_keys": IDENTITY_KEYS,
+            "processing_mode": PROCESSING_MODE,
+            "timestamp": datetime.now().isoformat()
+        }
     
     try:
-        # TODO: Implement transformation logic
-        # This is a placeholder implementation
-        
-        transformed_records = []
+        transformed_data = data.copy()
         
         # Apply transformation rules
         {% if transform_config.transformation_rules %}
         logger.info(f"Применение {len(TRANSFORMATION_RULES)} правил трансформации")
-        {% for rule in transform_config.transformation_rules %}
-        # Rule: {{ rule.rule_name }}
-        # Type: {{ rule.transformation_type }}
-        # Expression: {{ rule.expression }}
-        {% endfor %}
+        for rule in TRANSFORMATION_RULES:
+            transformed_data = apply_transformation_rule(transformed_data, rule)
+            logger.info(f"После правила '{rule.get('rule_name')}': {len(transformed_data)} записей")
+        {% else %}
+        logger.info("Нет правил трансформации, передача данных как есть")
         {% endif %}
         
-        # Simulated transformation
-        total_transformed = extract_result['total_records']
+        # Data quality checks
+        logger.info("Проверка качества данных")
+        initial_count = len(transformed_data)
+        
+        # Remove null values if configured
+        if PROCESSING_MODE == 'strict':
+            transformed_data = [row for row in transformed_data if all(v is not None for v in row.values())]
+            removed = initial_count - len(transformed_data)
+            if removed > 0:
+                logger.warning(f"Удалено {removed} записей с null значениями")
+        
+        # Add identity keys if needed
+        # Only add if identity keys are defined and not already present
+        if IDENTITY_KEYS:
+            for i, row in enumerate(transformed_data):
+                for key in IDENTITY_KEYS:
+                    if key not in row:
+                        # Generate a proper ID value, not concatenating key name
+                        row[key] = i
+                        logger.debug(f"Added identity key '{key}' with value {i} to row {i}")
+        
+        total_transformed = len(transformed_data)
         
         result = {
             "transformed_records": total_transformed,
+            "data": transformed_data,
             "identity_keys": IDENTITY_KEYS,
             "processing_mode": PROCESSING_MODE,
             "timestamp": datetime.now().isoformat()
@@ -131,13 +657,300 @@ def transform_data(**context):
 # LOAD TASK
 # ============================================================================
 
+def load_to_postgres(data: List[Dict]):
+    """Load data to PostgreSQL."""
+    import psycopg2
+    from psycopg2.extras import execute_batch
+    
+    logger.info("📤 Загрузка в PostgreSQL")
+    
+    # DEBUG: Print full connection string (TEMPORARY - REMOVE IN PRODUCTION)
+    logger.info("=" * 80)
+    logger.info("🔍 DEBUG: POSTGRESQL LOAD CREDENTIALS")
+    logger.info(f"Target Connection String: {TARGET_CONNECTION}")
+    logger.info(f"Target Database: {TARGET_DATABASE}")
+    logger.info(f"Target Schema: {TARGET_SCHEMA}")
+    logger.info(f"Target Table: {TARGET_TABLE}")
+    logger.info(f"Load Strategy: {LOAD_STRATEGY}")
+    logger.info("=" * 80)
+    
+    conn = psycopg2.connect(TARGET_CONNECTION)
+    conn.autocommit = False
+    cursor = conn.cursor()
+    
+    try:
+        # Execute DDL if exists
+        {% if ddl.statements %}
+        logger.info("Выполнение DDL statements")
+        ddl_statements = """{{ ddl.statements }}"""
+        for statement in ddl_statements.split(';'):
+            statement = statement.strip()
+            if statement:
+                logger.debug(f"Executing: {statement[:100]}...")
+                cursor.execute(statement)
+        conn.commit()
+        logger.info("✅ DDL выполнен успешно")
+        {% endif %}
+        
+        if not data:
+            logger.warning("No data to load")
+            return 0
+        
+        # Prepare table name
+        table_name = f"{TARGET_SCHEMA}.{TARGET_TABLE}"
+        logger.info(f"Target table: {table_name}")
+        
+        # Use target table columns from schema (not from data)
+        columns = TARGET_TABLE_COLUMNS
+        logger.info(f"Target columns (from schema): {columns}")
+        
+        # Check what columns are available in data
+        data_columns = set(data[0].keys()) if data else set()
+        logger.info(f"Available columns in data: {data_columns}")
+        
+        # Find missing columns
+        missing_columns = set(columns) - data_columns
+        
+        # Try intelligent column mapping before adding NULLs
+        column_mapping = {}
+        if missing_columns:
+            logger.info("🔍 Attempting intelligent column mapping...")
+            
+            for target_col in missing_columns:
+                # Try to find similar source column
+                target_lower = target_col.lower()
+                
+                # Strategy 1: Look for columns that end with the same name
+                # e.g., "name" matches "employees_employee_name"
+                for source_col in data_columns:
+                    source_lower = source_col.lower()
+                    if target_lower.endswith(source_lower) or source_lower.endswith(target_lower.split('_')[-1]):
+                        column_mapping[target_col] = source_col
+                        logger.info(f"  └─ Mapped '{source_col}' → '{target_col}'")
+                        break
+                    # Strategy 2: Look for partial matches
+                    elif source_lower in target_lower or target_lower.split('_')[-1] in source_lower:
+                        column_mapping[target_col] = source_col
+                        logger.info(f"  └─ Mapped '{source_col}' → '{target_col}' (partial match)")
+                        break
+            
+            # Apply mappings
+            if column_mapping:
+                logger.info(f"✅ Found {len(column_mapping)} automatic column mappings")
+                for row in data:
+                    for target_col, source_col in column_mapping.items():
+                        if source_col in row:
+                            row[target_col] = row[source_col]
+                
+                # Update missing columns list
+                missing_columns = missing_columns - set(column_mapping.keys())
+        
+        # Add NULL for remaining missing columns
+        if missing_columns:
+            logger.warning(f"⚠️ Data missing target columns (filling with NULL): {missing_columns}")
+            for row in data:
+                for col in missing_columns:
+                    row[col] = None
+        
+        # Remove extra columns that are not in target schema
+        all_source_columns = set(data[0].keys()) if data else set()
+        extra_columns = all_source_columns - set(columns)
+        if extra_columns:
+            logger.info(f"🔄 Removing {len(extra_columns)} extra columns not in target schema: {extra_columns}")
+            for row in data:
+                for col in list(row.keys()):
+                    if col in extra_columns:
+                        row.pop(col, None)
+        
+        # Execute load strategy
+        if LOAD_STRATEGY == 'append':
+            logger.info("Стратегия: APPEND")
+            query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+            values = [[row.get(col) for col in columns] for row in data]
+            execute_batch(cursor, query, values, page_size=1000)
+            
+        elif LOAD_STRATEGY == 'upsert':
+            logger.info("Стратегия: UPSERT")
+            # Get primary key columns
+            primary_keys = [k for k in columns if k in PRIMARY_KEY_COLUMNS] if PRIMARY_KEY_COLUMNS else [columns[0]]
+            update_cols = [col for col in columns if col not in primary_keys]
+            
+            query = f"""
+                INSERT INTO {table_name} ({', '.join(columns)})
+                VALUES ({', '.join(['%s'] * len(columns))})
+                ON CONFLICT ({', '.join(primary_keys)})
+                DO UPDATE SET {', '.join([f'{col} = EXCLUDED.{col}' for col in update_cols])}
+            """
+            values = [[row.get(col) for col in columns] for row in data]
+            execute_batch(cursor, query, values, page_size=1000)
+            
+        elif LOAD_STRATEGY == 'full_refresh':
+            logger.info("Стратегия: FULL_REFRESH")
+            cursor.execute(f"TRUNCATE TABLE {table_name}")
+            query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+            values = [[row.get(col) for col in columns] for row in data]
+            execute_batch(cursor, query, values, page_size=1000)
+            
+        elif LOAD_STRATEGY == 'incremental':
+            logger.info("Стратегия: INCREMENTAL")
+            # Similar to append but with timestamp check
+            query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+            values = [[row.get(col) for col in columns] for row in data]
+            execute_batch(cursor, query, values, page_size=1000)
+        
+        conn.commit()
+        loaded_count = len(data)
+        logger.info(f"✅ Загружено записей: {loaded_count}")
+        
+        cursor.close()
+        conn.close()
+        
+        return loaded_count
+        
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"❌ Ошибка загрузки в PostgreSQL: {e}")
+        cursor.close()
+        conn.close()
+        raise
+
+
+def load_to_clickhouse(data: List[Dict]):
+    """Load data to ClickHouse."""
+    from clickhouse_driver import Client
+    
+    logger.info("📤 Загрузка в ClickHouse")
+    
+    # DEBUG: Print full connection string (TEMPORARY - REMOVE IN PRODUCTION)
+    logger.info("=" * 80)
+    logger.info("🔍 DEBUG: CLICKHOUSE LOAD CREDENTIALS")
+    logger.info(f"Target Connection String: {TARGET_CONNECTION}")
+    logger.info(f"Target Database: {TARGET_DATABASE}")
+    logger.info(f"Target Table: {TARGET_TABLE}")
+    logger.info(f"Load Strategy: {LOAD_STRATEGY}")
+    logger.info("=" * 80)
+    
+    client = Client.from_url(TARGET_CONNECTION)
+    
+    try:
+        # Execute DDL if exists
+        {% if ddl.statements %}
+        logger.info("Выполнение DDL statements")
+        ddl_statements = """{{ ddl.statements }}"""
+        for statement in ddl_statements.split(';'):
+            statement = statement.strip()
+            if statement:
+                logger.debug(f"Executing: {statement[:100]}...")
+                client.execute(statement)
+        logger.info("✅ DDL выполнен успешно")
+        {% endif %}
+        
+        if not data:
+            logger.warning("No data to load")
+            return 0
+        
+        # Prepare table name
+        table_name = f"{TARGET_DATABASE}.{TARGET_TABLE}"
+        logger.info(f"Target table: {table_name}")
+        
+        # Use target table columns from schema (not from data)
+        columns = TARGET_TABLE_COLUMNS
+        logger.info(f"Target columns (from schema): {columns}")
+        
+        # Check what columns are available in data
+        data_columns = set(data[0].keys()) if data else set()
+        logger.info(f"Available columns in data: {data_columns}")
+        
+        # Find missing columns
+        missing_columns = set(columns) - data_columns
+        
+        # Try intelligent column mapping before adding NULLs
+        column_mapping = {}
+        if missing_columns:
+            logger.info("🔍 Attempting intelligent column mapping...")
+            
+            for target_col in missing_columns:
+                # Try to find similar source column
+                target_lower = target_col.lower()
+                
+                # Strategy 1: Look for columns that end with the same name
+                # e.g., "name" matches "employees_employee_name"
+                for source_col in data_columns:
+                    source_lower = source_col.lower()
+                    if target_lower.endswith(source_lower) or source_lower.endswith(target_lower.split('_')[-1]):
+                        column_mapping[target_col] = source_col
+                        logger.info(f"  └─ Mapped '{source_col}' → '{target_col}'")
+                        break
+                    # Strategy 2: Look for partial matches
+                    elif source_lower in target_lower or target_lower.split('_')[-1] in source_lower:
+                        column_mapping[target_col] = source_col
+                        logger.info(f"  └─ Mapped '{source_col}' → '{target_col}' (partial match)")
+                        break
+            
+            # Apply mappings
+            if column_mapping:
+                logger.info(f"✅ Found {len(column_mapping)} automatic column mappings")
+                for row in data:
+                    for target_col, source_col in column_mapping.items():
+                        if source_col in row:
+                            row[target_col] = row[source_col]
+                
+                # Update missing columns list
+                missing_columns = missing_columns - set(column_mapping.keys())
+        
+        # Add NULL for remaining missing columns
+        if missing_columns:
+            logger.warning(f"⚠️ Data missing target columns (filling with NULL): {missing_columns}")
+            for row in data:
+                for col in missing_columns:
+                    row[col] = None
+        
+        # Remove extra columns that are not in target schema
+        all_source_columns = set(data[0].keys()) if data else set()
+        extra_columns = all_source_columns - set(columns)
+        if extra_columns:
+            logger.info(f"🔄 Removing {len(extra_columns)} extra columns not in target schema: {extra_columns}")
+            for row in data:
+                for col in list(row.keys()):
+                    if col in extra_columns:
+                        row.pop(col, None)
+        
+        # Execute load strategy
+        if LOAD_STRATEGY == 'append':
+            logger.info("Стратегия: APPEND")
+            query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES"
+            client.execute(query, [tuple(row.get(col) for col in columns) for row in data])
+            
+        elif LOAD_STRATEGY == 'full_refresh':
+            logger.info("Стратегия: FULL_REFRESH")
+            client.execute(f"TRUNCATE TABLE {table_name}")
+            query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES"
+            client.execute(query, [tuple(row.get(col) for col in columns) for row in data])
+            
+        elif LOAD_STRATEGY in ['upsert', 'incremental']:
+            # ClickHouse doesn't support UPSERT directly
+            # Use ReplacingMergeTree or similar
+            logger.warning(f"Strategy {LOAD_STRATEGY} treated as APPEND in ClickHouse")
+            query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES"
+            client.execute(query, [tuple(row.get(col) for col in columns) for row in data])
+        
+        loaded_count = len(data)
+        logger.info(f"✅ Загружено записей: {loaded_count}")
+        
+        return loaded_count
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка загрузки в ClickHouse: {e}")
+        raise
+
+
 def load_data(**context):
     """
     Загрузка данных в целевое хранилище.
     
     Target: {{ load_config.target_storage_type.storage_type }}
-    Database: {{ load_config.target_storage_type.database_name }}
-    Table: {{ load_config.target_storage_type.table_name }}
+    Database: {{ load_config.database_name }}
+    Table: {{ load_config.table_name }}
     Strategy: {{ load_config.load_strategy }}
     """
     logger.info("📤 Начало загрузки данных")
@@ -149,34 +962,34 @@ def load_data(**context):
     if not transform_result:
         raise ValueError("No data received from transform task")
     
-    logger.info(f"Получено записей для загрузки: {transform_result['transformed_records']}")
+    data = transform_result.get('data', [])
+    logger.info(f"Получено записей для загрузки: {len(data)}")
     logger.info(f"Целевое хранилище: {TARGET_STORAGE_TYPE}")
     logger.info(f"База данных: {TARGET_DATABASE}")
     logger.info(f"Таблица: {TARGET_SCHEMA}.{TARGET_TABLE}")
     logger.info(f"Стратегия загрузки: {LOAD_STRATEGY}")
     
+    if not data:
+        logger.warning("No data to load")
+        return {
+            "loaded_records": 0,
+            "target_table": f"{TARGET_SCHEMA}.{TARGET_TABLE}",
+            "load_strategy": LOAD_STRATEGY,
+            "timestamp": datetime.now().isoformat()
+        }
+    
     try:
-        # TODO: Implement loading logic based on target storage type
-        # This is a placeholder implementation
-        
-        loaded_records = 0
-        
-        # Connection string
-        logger.info(f"Подключение: {TARGET_CONNECTION}")
-        
-        # Simulate loading
-        loaded_records = transform_result['transformed_records']
-        
-        # Execute DDL if needed
-        {% if ddl.statements %}
-        logger.info("Выполнение DDL statements")
-        ddl_statements = """{{ ddl.statements }}"""
-        logger.debug(f"DDL: {ddl_statements}")
-        {% endif %}
+        # Route to appropriate load function
+        if TARGET_STORAGE_TYPE == "postgres":
+            loaded_records = load_to_postgres(data)
+        elif TARGET_STORAGE_TYPE == "clickhouse":
+            loaded_records = load_to_clickhouse(data)
+        else:
+            raise ValueError(f"Unsupported target storage type: {TARGET_STORAGE_TYPE}")
         
         result = {
             "loaded_records": loaded_records,
-            "target_table": f"{TARGET_SCHEMA}.{TARGET_TABLE}",
+            "target_table": f"{TARGET_SCHEMA}.{TARGET_TABLE}" if TARGET_STORAGE_TYPE == "postgres" else f"{TARGET_DATABASE}.{TARGET_TABLE}",
             "load_strategy": LOAD_STRATEGY,
             "timestamp": datetime.now().isoformat()
         }

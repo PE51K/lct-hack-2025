@@ -47,9 +47,16 @@ class LoadConfigBuilder:
             Based on feedback and new prompt, update:
             - Target storage type if needed
             - Target connection string
+            - Database name, schema name, and table name if needed
             - Flat meta model fields
             - Indexes, partitioning, load strategy
             - Other configurations
+
+            IMPORTANT:
+            - Ensure database_name, schema_name, and table_name are properly set
+            - For PostgreSQL: schema_name should be 'public' or appropriate schema
+            - For ClickHouse: schema_name should be 'default'
+            - For HDFS: schema_name should be '' (empty string)
 
             Preserve good parts of the existing config and only change what's specifically
             requested in feedback.
@@ -80,12 +87,22 @@ class LoadConfigBuilder:
               query patterns, and user needs
             - Target connection string (use placeholder format like 'postgresql://user:pass@host:port/db'
               or similar)
+            - Database name (e.g., 'analytics', 'dwh', 'data_warehouse')
+            - Schema name (e.g., 'public' for PostgreSQL, 'default' for ClickHouse)
+            - Table name (e.g., 'customer_orders', 'events', 'transactions')
             - Flat meta model with appropriate fields derived from extract content
             - Indexes for performance (primary keys, clustered indexes)
             - Partitioning strategy
             - Load strategy (append, upsert, etc.)
             - Other configurations (batch, compression, resources, monitoring)
 
+            IMPORTANT:
+            - database_name, schema_name, and table_name are REQUIRED fields
+            - For PostgreSQL: use schema_name='public' or appropriate schema
+            - For ClickHouse: use schema_name='default' (ClickHouse rarely uses schemas)
+            - For HDFS: use schema_name='' (empty string)
+            - Generate meaningful table names based on the data content and user prompt
+            
             For flat_meta_model.fields, map from extract content attributes to ColumnField
             with proper data types.
             Suggest reasonable defaults for all configurations.
