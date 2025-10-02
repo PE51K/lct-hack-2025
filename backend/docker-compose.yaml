@@ -1,7 +1,12 @@
+include:
+  - path: "docker-compose.airflow.yaml"
+    env_file: ".env"
+
 services:
   backend:
     build:
       context: .
+    network_mode: host
     env_file:
       - .env
     ports:
