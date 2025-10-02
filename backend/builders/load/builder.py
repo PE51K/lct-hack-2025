@@ -102,7 +102,7 @@ class LoadConfigBuilder:
             - For ClickHouse: use schema_name='default' (ClickHouse rarely uses schemas)
             - For HDFS: use schema_name='' (empty string)
             - Generate meaningful table names based on the data content and user prompt
-            
+
             For flat_meta_model.fields, map from extract content attributes to ColumnField
             with proper data types.
             Suggest reasonable defaults for all configurations.

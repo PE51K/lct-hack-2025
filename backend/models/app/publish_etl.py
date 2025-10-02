@@ -30,9 +30,11 @@ class PublishETLResponse(BaseModel):
     # Success flag
     success: bool = Field(..., description="Indicates if the ETL publishing was successful.")
     error_message: str | None = Field(None, description="Error message if the publishing failed.")
-    
+
     # DAG information
     dag_id: str | None = Field(None, description="The DAG identifier in Airflow.")
-    dag_status: str | None = Field(None, description="Status of the DAG (registered, triggered, etc.).")
+    dag_status: str | None = Field(
+        None, description="Status of the DAG (registered, triggered, etc.)."
+    )
     dag_run_id: str | None = Field(None, description="The run ID if DAG was triggered.")
     airflow_url: str | None = Field(None, description="URL to view the DAG in Airflow UI.")

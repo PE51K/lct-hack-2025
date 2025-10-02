@@ -3,12 +3,10 @@
 import asyncio
 import logging
 from collections.abc import AsyncGenerator
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from core.settings import settings
 from models.app.publish_etl import PublishETLRequest, PublishETLResponse
 
 logger = logging.getLogger(__name__)
@@ -20,15 +18,15 @@ publish_router = APIRouter()
 async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
     """
     Verify DAG files exist and optionally trigger execution in Airflow.
-    
+
     This endpoint:
     1. Verifies that DAG files were generated for the user/thread
     2. Waits for Airflow to discover the DAG (up to 60 seconds)
     3. Optionally triggers immediate execution if requested
-    
+
     Args:
         request: PublishETLRequest with user/thread IDs and trigger flag
-        
+
     Returns:
         StreamingResponse with status updates and DAG information
     """
@@ -52,6 +50,7 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
             # Check if DAG files exist
             # Resolve path relative to the app directory
             from pathlib import Path
+
             backend_dir = Path(__file__).parent.parent.parent
             dags_dir = backend_dir / "dags"
             dag_dir = dags_dir / ids.user_id / ids.thread_id
@@ -61,7 +60,7 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
                 raise HTTPException(
                     status_code=404,
                     detail=f"DAG files not found for user={ids.user_id}, thread={ids.thread_id}. "
-                    f"Please run /create_etl first."
+                    f"Please run /create_etl first.",
                 )
 
             logger.info(f"✅ DAG file found: {dag_file}")
@@ -85,7 +84,8 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
                     ids=ids,
                     processing_done=False,
                     processing_percentage_done=60.0,
-                    processing_message=f"Airflow scheduler will discover DAG '{dag_id}' within 30-60 seconds...",
+                    processing_message=f"Airflow scheduler will discover DAG '{dag_id}' "
+                    f"within 30-60 seconds...",
                     success=True,
                     dag_id=dag_id,
                 ).model_dump_json()
@@ -97,13 +97,14 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
 
             # Step 4: Provide instructions (80%)
             airflow_url = f"http://localhost:8081/dags/{dag_id}/grid"
-            
+
             yield (
                 PublishETLResponse(
                     ids=ids,
                     processing_done=False,
                     processing_percentage_done=80.0,
-                    processing_message="DAG ready for execution. Access Airflow UI to trigger manually.",
+                    processing_message="DAG ready for execution. Access Airflow UI to trigger "
+                    "manually.",
                     success=True,
                     dag_id=dag_id,
                     dag_status="registered",
@@ -119,7 +120,7 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
                 f"🌐 Airflow UI: {airflow_url}\n"
                 f"⏱️ The DAG will appear in Airflow within 30-60 seconds.\n"
             )
-            
+
             if request.trigger_immediately:
                 completion_message += (
                     f"\n⚠️ Automatic triggering not yet implemented. "
@@ -150,7 +151,7 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
                     ids=ids,
                     processing_done=True,
                     processing_percentage_done=0.0,
-                    processing_message=f"Error publishing DAG: {str(e)}",
+                    processing_message=f"Error publishing DAG: {e!s}",
                     success=False,
                     error_message=str(e),
                 ).model_dump_json()

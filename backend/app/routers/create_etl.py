@@ -39,11 +39,13 @@ def _generate_credentials_form(target_type: str) -> CredentialsRequired:
                     required=True,
                 ),
                 CredentialField(
-                    name="username", label="Username", type="text", placeholder="postgres", required=True
+                    name="username",
+                    label="Username",
+                    type="text",
+                    placeholder="postgres",
+                    required=True,
                 ),
-                CredentialField(
-                    name="password", label="Password", type="password", required=True
-                ),
+                CredentialField(name="password", label="Password", type="password", required=True),
                 CredentialField(
                     name="database",
                     label="Database Name",
@@ -88,11 +90,13 @@ def _generate_credentials_form(target_type: str) -> CredentialsRequired:
                     required=True,
                 ),
                 CredentialField(
-                    name="username", label="Username", type="text", placeholder="default", required=True
+                    name="username",
+                    label="Username",
+                    type="text",
+                    placeholder="default",
+                    required=True,
                 ),
-                CredentialField(
-                    name="password", label="Password", type="password", required=False
-                ),
+                CredentialField(name="password", label="Password", type="password", required=False),
                 CredentialField(
                     name="database",
                     label="Database Name",
@@ -269,7 +273,8 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
             )
 
             logger.info(
-                f"AI recommended target: {load_config.target_storage_type.storage_type} - {load_config.target_storage_type.explanation}"
+                f"AI recommended target: {load_config.target_storage_type.storage_type} - "
+                f"{load_config.target_storage_type.explanation}"
             )
 
             # Final response with configs and credentials form (NO DAG yet)
@@ -279,7 +284,8 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
                     ids=request.ids,
                     processing_done=True,
                     processing_percentage_done=80.0,  # Not 100% - stopped before DAG
-                    processing_message="Configuration complete. Please provide target database credentials.",
+                    processing_message="Configuration complete. Please provide target database "
+                    "credentials.",
                     success=True,
                     extract_config=extract_config,
                     transform_config=transform_config,

@@ -49,7 +49,7 @@ class DDLBuilder:
             );"""
 
             return query
-        
+
         elif target_type == "clickhouse":
             # ClickHouse: database.table with ENGINE
             full_table_name = f"{database_name}.{table_name}"
@@ -62,14 +62,14 @@ class DDLBuilder:
                     {field.name} {nullable}{field.data_type}{closing},"""
 
             # Remove trailing comma
-            query = query.rstrip(',')
-            
+            query = query.rstrip(",")
+
             query += f"""
             ) ENGINE = MergeTree()
             ORDER BY ({load_config.flat_meta_model.partitioning_key});"""
 
             return query
-        
+
         else:
             # HDFS or other
             return f"-- DDL for {target_type} table {database_name}.{schema_name}.{table_name}"
