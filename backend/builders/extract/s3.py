@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import boto3
 from defusedxml import ElementTree
 
+from core.settings import settings
 from models.extract import (
     Attribute,
     Content,
@@ -310,12 +311,30 @@ class S3ExtractConfigBuilder(BaseExtractConfigBuilder):
     @classmethod
     async def get_content_metadata(cls, source: Source) -> list[Content]:
         """Extract content metadata from S3 source."""
-        # Use S3-compatible storage
+        # Use S3-compatible storage with settings fallback
+        endpoint_url = source.connection_string or settings.s3.endpoint_url
+        access_key = source.access_key or settings.s3.access_key_id
+        secret_key = source.secret_key or settings.s3.secret_access_key
+
+        # Transform localhost URLs to Docker network hostnames when running in Docker
+        # This is CRITICAL for Airflow tasks running inside Docker containers
+        if endpoint_url and "localhost:9000" in endpoint_url:
+            endpoint_url = endpoint_url.replace("localhost:9000", "test-minio:9000")
+            # IMPORTANT: Update source.connection_string so DAG generation uses correct endpoint
+            source.connection_string = endpoint_url
+            logger.info(f"Transformed localhost endpoint to Docker network: {endpoint_url}")
+        elif endpoint_url and "127.0.0.1:9000" in endpoint_url:
+            endpoint_url = endpoint_url.replace("127.0.0.1:9000", "test-minio:9000")
+            # IMPORTANT: Update source.connection_string so DAG generation uses correct endpoint
+            source.connection_string = endpoint_url
+            logger.info(f"Transformed 127.0.0.1 endpoint to Docker network: {endpoint_url}")
+
         s3 = boto3.client(
             "s3",
-            endpoint_url=source.connection_string,
-            aws_access_key_id=source.access_key,
-            aws_secret_access_key=source.secret_key,
+            endpoint_url=endpoint_url,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=settings.s3.region,
         )
         bucket = source.bucket_name
         prefix = source.table_name if source.table_name and source.table_name != "na" else ""
@@ -333,24 +352,60 @@ class S3ExtractConfigBuilder(BaseExtractConfigBuilder):
         contents = []
         xml_parser = XMLParser(max_sample_values=20)
 
+        # Limit analysis: only first 3 files, skip files larger than 100MB
+        MAX_FILES_TO_ANALYZE = 3
+        MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
+        MAX_CONTENT_READ_BYTES = 10 * 1024 * 1024  # Read only first 10MB for large files
+
+        files_analyzed = 0
         for obj in xml_objects:
+            if files_analyzed >= MAX_FILES_TO_ANALYZE:
+                logger.info(f"Reached max files to analyze ({MAX_FILES_TO_ANALYZE}), stopping")
+                break
+
             key = obj["Key"]
-            response = s3.get_object(Bucket=bucket, Key=key)
-            content = response["Body"].read().decode("utf-8")
             file_size = obj["Size"]
 
-            analysis = xml_parser.analyze_xml_content(content, key, file_size)
+            # Skip very large files
+            if file_size > MAX_FILE_SIZE_BYTES:
+                logger.warning(f"Skipping large file {key} ({file_size / (1024**2):.1f} MB) - exceeds {MAX_FILE_SIZE_BYTES / (1024**2):.0f} MB limit")
+                continue
 
-            attributes = xml_parser.convert_to_extract_attributes(analysis)
+            try:
+                logger.info(f"Analyzing XML file: {key} ({file_size / (1024**2):.2f} MB)")
+                response = s3.get_object(Bucket=bucket, Key=key)
 
-            is_complex = analysis.max_depth > 3 or analysis.unique_elements > 20
+                # For files larger than 5MB, read only first portion for structure analysis
+                if file_size > 5 * 1024 * 1024:
+                    logger.info(f"Large file detected, reading first {MAX_CONTENT_READ_BYTES / (1024**2):.0f}MB for structure analysis")
+                    content = response["Body"].read(MAX_CONTENT_READ_BYTES).decode("utf-8", errors="ignore")
+                    # Add closing tag if content was truncated
+                    if not content.rstrip().endswith(">"):
+                        content += "\n</root>"
+                else:
+                    content = response["Body"].read().decode("utf-8")
 
-            cnt = Content(
-                message_name=key,
-                is_complex_nesting_present=is_complex,
-                content_type=ContentType.xml,
-                metamodel=attributes,
-            )
-            contents.append(cnt)
+                analysis = xml_parser.analyze_xml_content(content, key, file_size)
+                attributes = xml_parser.convert_to_extract_attributes(analysis)
+                is_complex = analysis.max_depth > 3 or analysis.unique_elements > 20
+
+                cnt = Content(
+                    message_name=key,
+                    is_complex_nesting_present=is_complex,
+                    content_type=ContentType.xml,
+                    metamodel=attributes,
+                )
+                contents.append(cnt)
+                files_analyzed += 1
+                logger.info(f"Successfully analyzed {key}")
+
+            except Exception as e:
+                logger.error(f"Error analyzing XML file {key}: {e}", exc_info=True)
+                # Continue with other files
+                continue
+
+        if not contents:
+            logger.warning("No XML files could be analyzed")
+            return None
 
         return contents

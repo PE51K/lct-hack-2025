@@ -1,5 +1,10 @@
 import { useState } from 'react';
+import { Form, Input, InputNumber, Button, Card, Typography, Space, Alert, Divider } from 'antd';
+import { DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, RobotOutlined } from '@ant-design/icons';
 import type { CredentialsRequired } from '../services/api';
+import { t, tReplace } from '../i18n';
+
+const { Title, Text } = Typography;
 
 interface CredentialsFormProps {
   credentialsRequired: CredentialsRequired;
@@ -8,8 +13,8 @@ interface CredentialsFormProps {
 }
 
 function CredentialsForm({ credentialsRequired, onSubmit, onCancel }: CredentialsFormProps) {
+  const [form] = Form.useForm();
   const [credentials, setCredentials] = useState<Record<string, unknown>>(() => {
-    // Initialize with default values
     const initial: Record<string, unknown> = {};
     credentialsRequired.fields.forEach(field => {
       if (field.default !== undefined) {
@@ -19,87 +24,115 @@ function CredentialsForm({ credentialsRequired, onSubmit, onCancel }: Credential
     return initial;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     onSubmit(credentials);
   };
 
-  const handleChange = (fieldName: string, value: unknown) => {
-    setCredentials(prev => ({ ...prev, [fieldName]: value }));
+  const handleValuesChange = (changedValues: Record<string, unknown>) => {
+    setCredentials(prev => ({ ...prev, ...changedValues }));
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-      <h2>Target Database Credentials</h2>
-      <p>
-        The AI recommends using <strong>{credentialsRequired.target_type}</strong> as your target database.
-        Please provide the connection credentials below.
-      </p>
-
-      <form onSubmit={handleSubmit}>
-        {credentialsRequired.fields.map(field => (
-          <div key={field.name} style={{ marginBottom: '15px' }}>
-            <label htmlFor={field.name} style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              {field.label}
-              {field.required && <span style={{ color: 'red' }}> *</span>}
-            </label>
-            <input
-              type={field.type}
-              id={field.name}
-              name={field.name}
-              placeholder={field.placeholder}
-              required={field.required}
-              value={credentials[field.name] as string || ''}
-              onChange={(e) => {
-                const value = field.type === 'number' ? Number(e.target.value) : e.target.value;
-                handleChange(field.name, value);
-              }}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-        ))}
-
-        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-          <button
-            type="submit"
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            Create DAG
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#f44336',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            Cancel
-          </button>
+    <Card
+      style={{
+        maxWidth: 700,
+        margin: '0 auto',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      }}
+    >
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Title level={2}>
+            <DatabaseOutlined /> {t('credentialsForm.title')}
+          </Title>
         </div>
-      </form>
-    </div>
+
+        <Alert
+          message={
+            <span>
+              <RobotOutlined /> {t('credentialsForm.aiRecommendation')}
+            </span>
+          }
+          description={tReplace('credentialsForm.description', {
+            targetType: credentialsRequired.target_type,
+          })}
+          type="success"
+          showIcon
+        />
+
+        <Divider />
+
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          onValuesChange={handleValuesChange}
+          initialValues={credentials}
+          size="large"
+        >
+          {credentialsRequired.fields.map(field => (
+            <Form.Item
+              key={field.name}
+              name={field.name}
+              label={
+                <span>
+                  {field.label}
+                  {field.required && (
+                    <Text type="danger"> ({t('credentialsForm.required')})</Text>
+                  )}
+                </span>
+              }
+              rules={[
+                {
+                  required: field.required,
+                  message: `Пожалуйста, введите ${field.label.toLowerCase()}`,
+                },
+              ]}
+            >
+              {field.type === 'number' ? (
+                <InputNumber
+                  placeholder={field.placeholder}
+                  style={{ width: '100%' }}
+                />
+              ) : field.type === 'password' ? (
+                <Input.Password
+                  placeholder={field.placeholder}
+                  autoComplete="new-password"
+                />
+              ) : (
+                <Input
+                  type={field.type}
+                  placeholder={field.placeholder}
+                />
+              )}
+            </Form.Item>
+          ))}
+
+          <Space style={{ width: '100%', marginTop: 20 }} size="middle">
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              icon={<CheckCircleOutlined />}
+              style={{ flex: 1 }}
+              block
+            >
+              {t('credentialsForm.submitButton')}
+            </Button>
+            <Button
+              danger
+              size="large"
+              icon={<CloseCircleOutlined />}
+              onClick={onCancel}
+              style={{ flex: 1 }}
+              block
+            >
+              {t('credentialsForm.cancelButton')}
+            </Button>
+          </Space>
+        </Form>
+      </Space>
+    </Card>
   );
 }
 

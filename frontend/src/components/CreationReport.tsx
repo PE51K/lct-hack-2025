@@ -1,4 +1,9 @@
-import React from 'react';
+import { Card, Button, Space, Typography, Alert } from 'antd';
+import { CheckCircleOutlined, EditOutlined } from '@ant-design/icons';
+import ConfigViewer from './ConfigViewer';
+import { t } from '../i18n';
+
+const { Title } = Typography;
 
 interface CreationReportProps {
   extractConfig?: Record<string, unknown>;
@@ -20,40 +25,59 @@ const CreationReport: React.FC<CreationReportProps> = ({
   onNotSatisfied,
 }) => {
   return (
-    <div>
-      <h3>Creation Report</h3>
-      {extractConfig && (
-        <div>
-          <h4>Extract Config</h4>
-          <pre>{JSON.stringify(extractConfig, null, 2)}</pre>
-        </div>
-      )}
-      {transformConfig && (
-        <div>
-          <h4>Transform Config</h4>
-          <pre>{JSON.stringify(transformConfig, null, 2)}</pre>
-        </div>
-      )}
-      {loadConfig && (
-        <div>
-          <h4>Load Config</h4>
-          <pre>{JSON.stringify(loadConfig, null, 2)}</pre>
-        </div>
-      )}
-      {ddl && (
-        <div>
-          <h4>DDL</h4>
-          <pre>{JSON.stringify(ddl, null, 2)}</pre>
-        </div>
-      )}
-      {dag && (
-        <div>
-          <h4>DAG</h4>
-          <pre>{JSON.stringify(dag, null, 2)}</pre>
-        </div>
-      )}
-      <button onClick={onSatisfied}>Satisfied</button>
-      <button onClick={onNotSatisfied}>Not Satisfied</button>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <Card
+        style={{
+          marginBottom: 24,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+      >
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div style={{ textAlign: 'center' }}>
+            <Title level={2}>{t('creationReport.title')}</Title>
+          </div>
+
+          <Alert
+            message={t('creationReport.summary')}
+            description="AI ассистент сгенерировал конфигурацию ETL на основе ваших требований. Проверьте настройки ниже и утвердите конфигурацию или запросите изменения."
+            type="info"
+            showIcon
+          />
+
+          <ConfigViewer
+            extractConfig={extractConfig}
+            transformConfig={transformConfig}
+            loadConfig={loadConfig}
+            ddl={ddl}
+            dag={dag}
+          />
+
+          <Space
+            style={{
+              width: '100%',
+              justifyContent: 'center',
+              marginTop: 24,
+            }}
+            size="large"
+          >
+            <Button
+              type="primary"
+              size="large"
+              icon={<CheckCircleOutlined />}
+              onClick={onSatisfied}
+            >
+              {t('creationReport.satisfiedButton')}
+            </Button>
+            <Button
+              size="large"
+              icon={<EditOutlined />}
+              onClick={onNotSatisfied}
+            >
+              {t('creationReport.notSatisfiedButton')}
+            </Button>
+          </Space>
+        </Space>
+      </Card>
     </div>
   );
 };

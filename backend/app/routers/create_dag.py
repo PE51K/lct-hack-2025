@@ -108,14 +108,20 @@ def _update_connection_string(
     if target_type == "postgres":
         if not isinstance(credentials, PostgresCredentials):
             raise ValueError(f"Expected PostgresCredentials for target type '{target_type}'")
-        
+
+        # Transform localhost to Docker network service name for Airflow
+        host = credentials.host
+        if host == "localhost" or host == "127.0.0.1":
+            host = "test-postgres"
+            logger.info(f"Transformed localhost PostgreSQL host to Docker network: {host}")
+
         connection_string = (
             f"postgresql://{credentials.username}:{credentials.password}"
-            f"@{credentials.host}:{credentials.port}/{credentials.database}"
+            f"@{host}:{credentials.port}/{credentials.database}"
         )
         load_config.database_name = credentials.database
         load_config.schema_name = credentials.schema_name
-        
+
         # Override table name if provided in credentials
         if credentials.table_name:
             logger.info(f"Overriding table name from '{load_config.table_name}' to '{credentials.table_name}'")

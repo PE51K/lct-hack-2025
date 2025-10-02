@@ -661,9 +661,10 @@ def load_to_postgres(data: List[Dict]):
     """Load data to PostgreSQL."""
     import psycopg2
     from psycopg2.extras import execute_batch
-    
+    from urllib.parse import urlparse
+
     logger.info("📤 Загрузка в PostgreSQL")
-    
+
     # DEBUG: Print full connection string (TEMPORARY - REMOVE IN PRODUCTION)
     logger.info("=" * 80)
     logger.info("🔍 DEBUG: POSTGRESQL LOAD CREDENTIALS")
@@ -673,7 +674,58 @@ def load_to_postgres(data: List[Dict]):
     logger.info(f"Target Table: {TARGET_TABLE}")
     logger.info(f"Load Strategy: {LOAD_STRATEGY}")
     logger.info("=" * 80)
-    
+
+    # Parse connection string to extract credentials
+    parsed = urlparse(TARGET_CONNECTION)
+    username = parsed.username
+    password = parsed.password
+    hostname = parsed.hostname
+    port = parsed.port or 5432
+    database = parsed.path.lstrip('/')
+
+    # Step 1: Connect to default 'postgres' database to create user and target database
+    logger.info("🔧 Подключение к postgres для создания пользователя и БД...")
+    admin_conn_string = f"postgresql://test_postgres:89651de2c28dd66507357d7d978fe46e26944e1efb255b470e6b10f5869a3f9a@{hostname}:{port}/test_postgres"
+
+    try:
+        admin_conn = psycopg2.connect(admin_conn_string)
+        admin_conn.autocommit = True
+        admin_cursor = admin_conn.cursor()
+
+        # Create user if not exists
+        logger.info(f"Creating user '{username}' if not exists...")
+        admin_cursor.execute(f"""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = '{username}') THEN
+                    CREATE USER "{username}" WITH PASSWORD '{password}';
+                    RAISE NOTICE 'User created: {username}';
+                ELSE
+                    RAISE NOTICE 'User already exists: {username}';
+                END IF;
+            END
+            $$;
+        """)
+
+        # Create database if not exists
+        logger.info(f"Creating database '{database}' if not exists...")
+        admin_cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")
+        if not admin_cursor.fetchone():
+            admin_cursor.execute(f'CREATE DATABASE "{database}" OWNER "{username}"')
+            logger.info(f"✅ Database '{database}' created")
+        else:
+            logger.info(f"Database '{database}' already exists")
+            # Grant privileges to existing database
+            admin_cursor.execute(f'GRANT ALL PRIVILEGES ON DATABASE "{database}" TO "{username}"')
+
+        admin_cursor.close()
+        admin_conn.close()
+        logger.info("✅ Пользователь и БД готовы")
+
+    except Exception as e:
+        logger.warning(f"Could not create user/database (may already exist): {e}")
+
+    # Step 2: Connect to target database
     conn = psycopg2.connect(TARGET_CONNECTION)
     conn.autocommit = False
     cursor = conn.cursor()

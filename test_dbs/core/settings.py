@@ -27,9 +27,9 @@ class PostgresSettings(BaseSettings):
         extra="ignore",
     )
 
-    user: str = Field(default="postgres")
-    password: str = Field(default="postgres")
-    db: str = Field(default="sample")
+    user: str
+    password: str
+    db: str
     host: str = Field(default="localhost")
     port: int = Field(default=5433)
 
@@ -58,8 +58,8 @@ class ClickHouseSettings(BaseSettings):
         extra="ignore",
     )
 
-    user: str = Field(default="clickhouse")
-    password: str = Field(default="clickhouse")
+    user: str
+    password: str
     host: str = Field(default="localhost")
     port: int = Field(default=9001)
     http_port: int = Field(default=8124)
@@ -89,11 +89,11 @@ class MinioSettings(BaseSettings):
         extra="ignore",
     )
 
-    root_user: str = Field(default="minio")
-    root_password: str = Field(default="miniosecret")
+    root_user: str
+    root_password: str
     host: str = Field(default="localhost")
-    port: int = Field(default=9002)
-    bucket_name: str = Field(default="test-bucket")
+    port: int = Field(default=9000)
+    bucket_name: str
 
     @property
     def endpoint_url(self) -> str:

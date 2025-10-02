@@ -114,6 +114,56 @@ class AISettings(BaseSettings):
     yandex_gpt: YandexGPTSettings = YandexGPTSettings()
 
 
+# ============ S3/MinIO Settings ============
+
+
+class S3Settings(BaseSettings):
+    """
+    Settings for S3/MinIO integration.
+
+    Attributes:
+        endpoint_url (str): S3 endpoint URL (for MinIO).
+        access_key_id (str): AWS access key ID or MinIO access key.
+        secret_access_key (str): AWS secret access key or MinIO secret key.
+        bucket_name (str): Default S3 bucket name.
+        region (str): AWS region or MinIO region.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="S3_",
+        extra="ignore",
+    )
+
+    endpoint_url: str | None = None
+    access_key_id: str
+    secret_access_key: str
+    bucket_name: str
+    region: str = "us-east-1"
+
+
+# ============ Airflow Settings ============
+
+
+class AirflowSettings(BaseSettings):
+    """
+    Settings for Airflow integration.
+
+    Attributes:
+        webserver_url (str): Airflow webserver URL for DAG links.
+        port (int): Airflow webserver port.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="AIRFLOW_",
+        extra="ignore",
+    )
+
+    webserver_url: str = "http://localhost:8081"
+    port: int = 8081
+
+
 # ============ Main Settings Aggregator ============
 
 
@@ -124,10 +174,14 @@ class Settings(BaseSettings):
     Attributes:
         app (AppSettings): Instance of AppSettings containing application server settings.
         ai (AISettings): Instance of AISettings containing AI-related settings.
+        s3 (S3Settings): Instance of S3Settings containing S3/MinIO settings.
+        airflow (AirflowSettings): Instance of AirflowSettings containing Airflow settings.
     """
 
     app: AppSettings = AppSettings()
     ai: AISettings = AISettings()
+    s3: S3Settings = S3Settings()
+    airflow: AirflowSettings = AirflowSettings()
 
 
 # Singleton instance of Settings

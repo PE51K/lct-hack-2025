@@ -1,21 +1,93 @@
-import React from 'react';
+import { Card, Result, Button, Timeline, Typography } from 'antd';
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  LinkOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
+import { t } from '../i18n';
+
+const { Text } = Typography;
 
 interface DeploymentReportProps {
   success: boolean;
   messages: string[];
+  dagId?: string;
+  airflowUrl?: string;
+  onCreateNew?: () => void;
 }
 
-const DeploymentReport: React.FC<DeploymentReportProps> = ({ success, messages }) => {
+const DeploymentReport: React.FC<DeploymentReportProps> = ({
+  success,
+  messages,
+  dagId,
+  airflowUrl,
+  onCreateNew,
+}) => {
   return (
-    <div>
-      <h3>Deployment Report</h3>
-      <p>Status: {success ? 'Success' : 'Failure'}</p>
-      <ul>
-        {messages.map((msg, index) => (
-          <li key={index}>{msg}</li>
-        ))}
-      </ul>
-    </div>
+    <Card
+      style={{
+        maxWidth: 900,
+        margin: '20px auto',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      }}
+    >
+      <Result
+        status={success ? 'success' : 'error'}
+        title={success ? t('deploymentReport.success') : 'Ошибка при публикации DAG'}
+        subTitle={
+          success && dagId ? (
+            <>
+              {t('deploymentReport.dagId')}: <Text code>{dagId}</Text>
+            </>
+          ) : null
+        }
+        extra={[
+          success && airflowUrl && (
+            <Button
+              type="primary"
+              key="airflow"
+              icon={<LinkOutlined />}
+              href={airflowUrl}
+              target="_blank"
+              size="large"
+            >
+              {t('deploymentReport.openInAirflow')}
+            </Button>
+          ),
+          onCreateNew && (
+            <Button
+              key="new"
+              icon={<ReloadOutlined />}
+              onClick={onCreateNew}
+              size="large"
+            >
+              {t('deploymentReport.createNew')}
+            </Button>
+          ),
+        ].filter(Boolean)}
+      />
+
+      {messages.length > 0 && (
+        <>
+          <Typography.Title level={5} style={{ marginTop: 24 }}>
+            Детали процесса:
+          </Typography.Title>
+          <Timeline
+            items={messages.map((msg, index) => ({
+              key: index,
+              dot: success ? (
+                <CheckCircleOutlined style={{ color: '#52c41a' }} />
+              ) : (
+                <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+              ),
+              color: success ? 'green' : 'red',
+              children: <Text>{msg}</Text>,
+            }))}
+          />
+        </>
+      )}
+    </Card>
   );
 };
 
