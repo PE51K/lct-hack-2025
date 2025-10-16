@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, Space, Alert } from 'antd';
-import { RocketOutlined, UserOutlined, ApiOutlined } from '@ant-design/icons';
+import { RocketOutlined, UserOutlined, ApiOutlined, BulbOutlined } from '@ant-design/icons';
 import type { CreateETLRequest } from '../services/api';
 import { t } from '../i18n';
 
@@ -8,6 +8,8 @@ const { TextArea } = Input;
 const { Title, Paragraph } = Typography;
 
 const generateRandomId = () => Math.random().toString(36).substring(2, 15);
+
+const EXAMPLE_PROMPT = `Connect to S3-compatible storage using endpoint: http://localhost:9000, bucket: test-bucket, access_key: test_minio, secret_key: secure_minio_password and extract data from folder: xml/`;
 
 interface InputFormProps {
   onSubmit: (request: CreateETLRequest) => void;
@@ -35,6 +37,10 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
     });
   };
 
+  const handleUseExample = () => {
+    form.setFieldsValue({ userPrompt: EXAMPLE_PROMPT });
+  };
+
   return (
     <Card
       style={{
@@ -60,6 +66,26 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
           showIcon
         />
 
+        <Alert
+          message="Тестовый пример"
+          description={
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Paragraph style={{ margin: 0 }}>
+                Попробуйте создать ETL конфигурацию с тестовыми данными из MinIO
+              </Paragraph>
+              <Button
+                type="link"
+                icon={<BulbOutlined />}
+                onClick={handleUseExample}
+                style={{ padding: 0 }}
+              >
+                Использовать пример промпта
+              </Button>
+            </Space>
+          }
+          type="success"
+          showIcon
+        />
         <Form
           form={form}
           layout="vertical"
