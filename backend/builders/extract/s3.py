@@ -310,16 +310,10 @@ class S3ExtractConfigBuilder(BaseExtractConfigBuilder):
     @classmethod
     async def get_content_metadata(cls, source: Source) -> list[Content]:
         """Extract content metadata from S3 source."""
-        # Normalize endpoint URL for Docker environment
-        # Replace localhost with host.docker.internal to access host machine from container
-        endpoint_url = source.connection_string
-        if "localhost" in endpoint_url:
-            endpoint_url = endpoint_url.replace("localhost", "host.docker.internal")
-
         # Use S3-compatible storage
         s3 = boto3.client(
             "s3",
-            endpoint_url=endpoint_url,
+            endpoint_url=source.connection_string,
             aws_access_key_id=source.access_key,
             aws_secret_access_key=source.secret_key,
         )

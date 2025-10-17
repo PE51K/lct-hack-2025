@@ -38,11 +38,6 @@ def extract_from_s3():
     if not endpoint_url.startswith('http'):
         endpoint_url = f"http://{endpoint_url}"
 
-    # Normalize endpoint URL for Docker environment
-    # Replace localhost with host.docker.internal to access host machine from container
-    if "localhost" in endpoint_url:
-        endpoint_url = endpoint_url.replace("localhost", "host.docker.internal")
-
     logger.info(f"S3 Endpoint: {endpoint_url}")
     
     # Get credentials from config (provided by user in prompt)

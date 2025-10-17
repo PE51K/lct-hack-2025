@@ -20,14 +20,13 @@ services:
     image: apache/airflow:2.8.0
     user: root
     restart: unless-stopped
+    network_mode: host
     depends_on:
       airflow-postgres:
         condition: service_healthy
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER}:${AIRFLOW_POSTGRES_PASSWORD}@airflow-postgres:5432/${AIRFLOW_POSTGRES_DB}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER}:${AIRFLOW_POSTGRES_PASSWORD}@localhost:${AIRFLOW_POSTGRES_PORT:-5434}/${AIRFLOW_POSTGRES_DB}
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
