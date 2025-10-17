@@ -37,7 +37,12 @@ def extract_from_s3():
     endpoint_url = SOURCE_PATH
     if not endpoint_url.startswith('http'):
         endpoint_url = f"http://{endpoint_url}"
-    
+
+    # Normalize endpoint URL for Docker environment
+    # Replace localhost with host.docker.internal to access host machine from container
+    if "localhost" in endpoint_url:
+        endpoint_url = endpoint_url.replace("localhost", "host.docker.internal")
+
     logger.info(f"S3 Endpoint: {endpoint_url}")
     
     # Get credentials from config (provided by user in prompt)
@@ -673,8 +678,15 @@ def load_to_postgres(data: List[Dict]):
     logger.info(f"Target Table: {TARGET_TABLE}")
     logger.info(f"Load Strategy: {LOAD_STRATEGY}")
     logger.info("=" * 80)
-    
-    conn = psycopg2.connect(TARGET_CONNECTION)
+
+    # Normalize PostgreSQL connection string for Docker environment
+    # Replace localhost with host.docker.internal to access host machine from container
+    connection_string = TARGET_CONNECTION
+    if "localhost" in connection_string:
+        connection_string = connection_string.replace("localhost", "host.docker.internal")
+        logger.info(f"Normalized connection string for Docker: {connection_string}")
+
+    conn = psycopg2.connect(connection_string)
     conn.autocommit = False
     cursor = conn.cursor()
     
@@ -829,8 +841,15 @@ def load_to_clickhouse(data: List[Dict]):
     logger.info(f"Target Table: {TARGET_TABLE}")
     logger.info(f"Load Strategy: {LOAD_STRATEGY}")
     logger.info("=" * 80)
-    
-    client = Client.from_url(TARGET_CONNECTION)
+
+    # Normalize ClickHouse connection string for Docker environment
+    # Replace localhost with host.docker.internal to access host machine from container
+    connection_string = TARGET_CONNECTION
+    if "localhost" in connection_string:
+        connection_string = connection_string.replace("localhost", "host.docker.internal")
+        logger.info(f"Normalized connection string for Docker: {connection_string}")
+
+    client = Client.from_url(connection_string)
     
     try:
         # Execute DDL if exists
