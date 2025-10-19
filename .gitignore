@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-*
+.project
+.pydevproject
+.claude/
+
+# Test data files (keep directory structure)
+TESTDATA/*
+!TESTDATA/.gitkeep
+!TESTDATA/xml/
+!TESTDATA/json/
+!TESTDATA/csv/
+TESTDATA/xml/*
+TESTDATA/json/*
+TESTDATA/csv/*
+!TESTDATA/xml/.gitkeep
+!TESTDATA/json/.gitkeep
+!TESTDATA/csv/.gitkeep
+
+# Airflow
+airflow.cfg
+airflow.db
+logs/
+airflow-webserver.pid
+standalone_admin_password.txt
+
+# Docker
+.env
+.env.local
+
+# Generated files
+generated_dags/
+*.pid

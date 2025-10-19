@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Form, Input, InputNumber, Button, Card, Typography, Space, Alert, Divider, Checkbox } from 'antd';
+import { DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, RobotOutlined, SaveOutlined } from '@ant-design/icons';
 import type { CredentialsRequired } from '../services/api';
+import { settingsService } from '../services/settings';
+import { t, tReplace } from '../i18n';
+
+const { Title, Text } = Typography;
 
 interface CredentialsFormProps {
   credentialsRequired: CredentialsRequired;
@@ -8,98 +14,190 @@ interface CredentialsFormProps {
 }
 
 function CredentialsForm({ credentialsRequired, onSubmit, onCancel }: CredentialsFormProps) {
+  const [form] = Form.useForm();
+  const [saveCredentials, setSaveCredentials] = useState<boolean>(true); // По умолчанию включено
   const [credentials, setCredentials] = useState<Record<string, unknown>>(() => {
-    // Initialize with default values
     const initial: Record<string, unknown> = {};
-    credentialsRequired.fields.forEach(field => {
-      if (field.default !== undefined) {
-        initial[field.name] = field.default;
+
+    // Auto-fill PostgreSQL credentials from settings if available
+    if (credentialsRequired.target_type === 'postgres') {
+      const savedCreds = settingsService.getPostgresCredentials();
+      if (savedCreds) {
+        // Map saved credentials to field names
+        const fieldMapping: Record<string, string | number> = {
+          'host': savedCreds.host || '',
+          'port': savedCreds.port || 5432,
+          'database': savedCreds.database || '',
+          'username': savedCreds.username || '',
+          'password': savedCreds.password || '',
+          'schema': savedCreds.schema || 'public',
+          'table': savedCreds.table || '',
+        };
+
+        credentialsRequired.fields.forEach(field => {
+          const mappedValue = fieldMapping[field.name.toLowerCase()];
+          if (mappedValue !== undefined && mappedValue !== '') {
+            initial[field.name] = mappedValue;
+          } else if (field.default !== undefined) {
+            initial[field.name] = field.default;
+          }
+        });
       }
-    });
+    } else {
+      // Use defaults from API for non-postgres targets
+      credentialsRequired.fields.forEach(field => {
+        if (field.default !== undefined) {
+          initial[field.name] = field.default;
+        }
+      });
+    }
+
     return initial;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Update form values when credentials change
+    form.setFieldsValue(credentials);
+  }, [form, credentials]);
+
+  const handleSubmit = () => {
+    // Сохранить credentials в settings, если пользователь выбрал эту опцию и это PostgreSQL
+    if (saveCredentials && credentialsRequired.target_type === 'postgres') {
+      const settings = settingsService.getSettings();
+      settings.postgresCredentials = {
+        host: credentials.host as string,
+        port: credentials.port as number,
+        database: credentials.database as string,
+        username: credentials.username as string,
+        password: credentials.password as string,
+        schema: credentials.schema as string || 'public',
+        table: credentials.table as string || '',
+      };
+      settingsService.saveSettings(settings);
+    }
+
     onSubmit(credentials);
   };
 
-  const handleChange = (fieldName: string, value: unknown) => {
-    setCredentials(prev => ({ ...prev, [fieldName]: value }));
+  const handleValuesChange = (changedValues: Record<string, unknown>) => {
+    setCredentials(prev => ({ ...prev, ...changedValues }));
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-      <h2>Target Database Credentials</h2>
-      <p>
-        The AI recommends using <strong>{credentialsRequired.target_type}</strong> as your target database.
-        Please provide the connection credentials below.
-      </p>
-
-      <form onSubmit={handleSubmit}>
-        {credentialsRequired.fields.map(field => (
-          <div key={field.name} style={{ marginBottom: '15px' }}>
-            <label htmlFor={field.name} style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              {field.label}
-              {field.required && <span style={{ color: 'red' }}> *</span>}
-            </label>
-            <input
-              type={field.type}
-              id={field.name}
-              name={field.name}
-              placeholder={field.placeholder}
-              required={field.required}
-              value={credentials[field.name] as string || ''}
-              onChange={(e) => {
-                const value = field.type === 'number' ? Number(e.target.value) : e.target.value;
-                handleChange(field.name, value);
-              }}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-        ))}
-
-        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-          <button
-            type="submit"
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            Create DAG
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#f44336',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            Cancel
-          </button>
+    <Card
+      style={{
+        maxWidth: 700,
+        margin: '0 auto',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      }}
+    >
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Title level={2}>
+            <DatabaseOutlined /> {t('credentialsForm.title')}
+          </Title>
         </div>
-      </form>
-    </div>
+
+        <Alert
+          message={
+            <span>
+              <RobotOutlined /> {t('credentialsForm.aiRecommendation')}
+            </span>
+          }
+          description={tReplace('credentialsForm.description', {
+            targetType: credentialsRequired.target_type,
+          })}
+          type="success"
+          showIcon
+        />
+
+        <Divider />
+
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          onValuesChange={handleValuesChange}
+          initialValues={credentials}
+          size="large"
+        >
+          {credentialsRequired.fields.map(field => (
+            <Form.Item
+              key={field.name}
+              name={field.name}
+              label={
+                <span>
+                  {field.label}
+                  {field.required && (
+                    <Text type="danger"> ({t('credentialsForm.required')})</Text>
+                  )}
+                </span>
+              }
+              rules={[
+                {
+                  required: field.required,
+                  message: `Пожалуйста, введите ${field.label.toLowerCase()}`,
+                },
+              ]}
+            >
+              {field.type === 'number' ? (
+                <InputNumber
+                  placeholder={field.placeholder}
+                  style={{ width: '100%' }}
+                />
+              ) : field.type === 'password' ? (
+                <Input.Password
+                  placeholder={field.placeholder}
+                  autoComplete="new-password"
+                />
+              ) : (
+                <Input
+                  type={field.type}
+                  placeholder={field.placeholder}
+                />
+              )}
+            </Form.Item>
+          ))}
+
+          {credentialsRequired.target_type === 'postgres' && (
+            <Form.Item style={{ marginTop: 24 }}>
+              <Checkbox
+                checked={saveCredentials}
+                onChange={(e) => setSaveCredentials(e.target.checked)}
+              >
+                <Space>
+                  <SaveOutlined />
+                  <span>Сохранить эти учётные данные в настройках для последующего использования</span>
+                </Space>
+              </Checkbox>
+            </Form.Item>
+          )}
+
+          <Space style={{ width: '100%', marginTop: 20 }} size="middle">
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              icon={<CheckCircleOutlined />}
+              style={{ flex: 1 }}
+              block
+            >
+              {t('credentialsForm.submitButton')}
+            </Button>
+            <Button
+              danger
+              size="large"
+              icon={<CloseCircleOutlined />}
+              onClick={onCancel}
+              style={{ flex: 1 }}
+              block
+            >
+              {t('credentialsForm.cancelButton')}
+            </Button>
+          </Space>
+        </Form>
+      </Space>
+    </Card>
   );
 }
 

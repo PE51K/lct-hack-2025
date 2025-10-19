@@ -37,7 +37,7 @@ def extract_from_s3():
     endpoint_url = SOURCE_PATH
     if not endpoint_url.startswith('http'):
         endpoint_url = f"http://{endpoint_url}"
-    
+
     logger.info(f"S3 Endpoint: {endpoint_url}")
     
     # Get credentials from config (provided by user in prompt)
@@ -673,8 +673,10 @@ def load_to_postgres(data: List[Dict]):
     logger.info(f"Target Table: {TARGET_TABLE}")
     logger.info(f"Load Strategy: {LOAD_STRATEGY}")
     logger.info("=" * 80)
-    
-    conn = psycopg2.connect(TARGET_CONNECTION)
+
+    connection_string = TARGET_CONNECTION
+
+    conn = psycopg2.connect(connection_string)
     conn.autocommit = False
     cursor = conn.cursor()
     
@@ -829,8 +831,10 @@ def load_to_clickhouse(data: List[Dict]):
     logger.info(f"Target Table: {TARGET_TABLE}")
     logger.info(f"Load Strategy: {LOAD_STRATEGY}")
     logger.info("=" * 80)
-    
-    client = Client.from_url(TARGET_CONNECTION)
+
+    connection_string = TARGET_CONNECTION
+
+    client = Client.from_url(connection_string)
     
     try:
         # Execute DDL if exists

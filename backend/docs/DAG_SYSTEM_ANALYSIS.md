@@ -163,7 +163,7 @@ graph TD
    ```
 
 3. **Access Airflow UI**:
-   - URL: http://localhost:8081
+   - URL: http://localhost:8080
    - Username: `admin`
    - Password: `admin`
 
@@ -223,7 +223,7 @@ docker exec airflow airflow dags list | grep etl_user_123_thread_456
 
 ### Method 2: Execute via Airflow UI
 
-1. **Open Airflow UI**: http://localhost:8081
+1. **Open Airflow UI**: http://localhost:8080
 2. **Login**: admin / admin
 3. **Find Your DAG**: Search for `etl_user_123_thread_456`
 4. **Unpause DAG**: Toggle switch to enable
@@ -273,7 +273,7 @@ docker exec airflow airflow tasks list etl_user_123_thread_456
 
 **Trigger DAG Run**:
 ```bash
-curl -X POST "http://localhost:8081/api/v1/dags/etl_user_123_thread_456/dagRuns" \
+curl -X POST "http://localhost:8080/api/v1/dags/etl_user_123_thread_456/dagRuns" \
   -H "Content-Type: application/json" \
   -u admin:admin \
   -d '{
@@ -284,19 +284,19 @@ curl -X POST "http://localhost:8081/api/v1/dags/etl_user_123_thread_456/dagRuns"
 
 **Get DAG status**:
 ```bash
-curl "http://localhost:8081/api/v1/dags/etl_user_123_thread_456" \
+curl "http://localhost:8080/api/v1/dags/etl_user_123_thread_456" \
   -u admin:admin
 ```
 
 **List DAG runs**:
 ```bash
-curl "http://localhost:8081/api/v1/dags/etl_user_123_thread_456/dagRuns" \
+curl "http://localhost:8080/api/v1/dags/etl_user_123_thread_456/dagRuns" \
   -u admin:admin
 ```
 
 **Get specific run details**:
 ```bash
-curl "http://localhost:8081/api/v1/dags/etl_user_123_thread_456/dagRuns/{dag_run_id}" \
+curl "http://localhost:8080/api/v1/dags/etl_user_123_thread_456/dagRuns/{dag_run_id}" \
   -u admin:admin
 ```
 
@@ -355,7 +355,7 @@ docker exec airflow airflow tasks logs etl_user_123_thread_456 extract_data 2025
 
 **Get task instances**:
 ```bash
-curl "http://localhost:8081/api/v1/dags/etl_user_123_thread_456/dagRuns/{run_id}/taskInstances" \
+curl "http://localhost:8080/api/v1/dags/etl_user_123_thread_456/dagRuns/{run_id}/taskInstances" \
   -u admin:admin
 ```
 
@@ -489,7 +489,7 @@ max_active_tasks=1
 
 ```bash
 # Airflow Service
-AIRFLOW_PORT=8081
+AIRFLOW_PORT=8080
 AIRFLOW_POSTGRES_USER=airflow
 AIRFLOW_POSTGRES_PASSWORD=airflow
 AIRFLOW_POSTGRES_DB=airflow
@@ -586,7 +586,7 @@ docker stats airflow
 
 - [DAG File Generation Implementation](./DAG_FILE_GENERATION_IMPLEMENTATION.md)
 - Generated DAG files in: `backend/dags/user_id/thread_id/`
-- Airflow UI: http://localhost:8081
+- Airflow UI: http://localhost:8080
 - API endpoints: `/create_etl`, `/publish_etl`
 
 ---

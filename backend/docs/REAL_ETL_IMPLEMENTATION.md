@@ -19,7 +19,7 @@ def load_data():
 ```python
 def extract_data():
     import boto3
-    s3 = boto3.client('s3', endpoint_url='http://minio:9000')
+    s3 = boto3.client('s3', endpoint_url='http://minio:9002')
     files = s3.list_objects(Bucket='mybucket')
     data = parse_files(files)  # Real data
     return {"total_records": len(data), "data": data}
@@ -36,7 +36,7 @@ def load_data():
 ### 1. S3/MinIO
 **Configuration:**
 - `SOURCE_TYPE`: `"s3"`
-- `SOURCE_PATH`: S3 endpoint URL (e.g., `"http://minio:9000"`)
+- `SOURCE_PATH`: S3 endpoint URL (e.g., `"http://minio:9002"`)
 - `CONTENT_TYPE`: `"csv"`, `"json"`, or `"xml"`
 
 **Environment Variables Required:**
@@ -251,7 +251,7 @@ Extract CSV files from MinIO → Transform → Load to PostgreSQL
 ### 1. Source Configuration (MinIO)
 ```python
 SOURCE_TYPE = "s3"
-SOURCE_PATH = "http://minio:9000"
+SOURCE_PATH = "http://minio:9002"
 CONTENT_TYPE = "csv"
 BATCH_SIZE = 1000
 
@@ -299,7 +299,7 @@ PRIMARY_KEY_COLUMNS = ["employee_id"]
 ### 4. Execution Flow
 ```
 1. Extract Task:
-   - Connects to MinIO at http://minio:9000
+   - Connects to MinIO at http://minio:9002
    - Lists objects in bucket "employee-data" with prefix "2025/01/"
    - Downloads CSV files
    - Parses into 1000 records

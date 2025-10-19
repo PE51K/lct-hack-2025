@@ -31,7 +31,6 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
         StreamingResponse with status updates and DAG information
     """
     ids = request.ids
-    dag_id = f"etl_{ids.user_id}_{ids.thread_id}"
 
     async def publish(request: PublishETLRequest) -> AsyncGenerator[str, None]:
         try:
@@ -47,23 +46,33 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
                 + "\n"
             )
 
-            # Check if DAG files exist
+            # Check if DAG files exist and discover the real dag_id
             # Resolve path relative to the app directory
             from pathlib import Path
 
             backend_dir = Path(__file__).parent.parent.parent
             dags_dir = backend_dir / "dags"
             dag_dir = dags_dir / ids.user_id / ids.thread_id
-            dag_file = dag_dir / f"{dag_id}.py"
 
-            if not dag_file.exists():
+            if not dag_dir.exists():
                 raise HTTPException(
                     status_code=404,
-                    detail=f"DAG files not found for user={ids.user_id}, thread={ids.thread_id}. "
-                    f"Please run /create_etl first.",
+                    detail=f"DAG directory not found for user={ids.user_id}, thread={ids.thread_id}. "
+                    f"Please run /create_dag first.",
                 )
 
-            logger.info(f"✅ DAG file found: {dag_file}")
+            # Find the DAG file (should be etl_*.py)
+            dag_files = list(dag_dir.glob("etl_*.py"))
+            if not dag_files:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No DAG files found in {dag_dir}. Please run /create_dag first.",
+                )
+
+            # Extract dag_id from the filename
+            dag_file = dag_files[0]
+            dag_id = dag_file.stem  # filename without extension
+            logger.info(f"✅ DAG file found: {dag_file}, DAG ID: {dag_id}")
 
             # Step 2: Notify about Airflow discovery (40%)
             yield (
@@ -96,7 +105,7 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
             await asyncio.sleep(1)
 
             # Step 4: Provide instructions (80%)
-            airflow_url = f"http://localhost:8081/dags/{dag_id}/grid"
+            airflow_url = f"http://localhost:8080/dags/{dag_id}/grid"
 
             yield (
                 PublishETLResponse(

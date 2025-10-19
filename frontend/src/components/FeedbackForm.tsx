@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import { Card, Form, Input, Button, Space, Typography, Divider, Alert } from 'antd';
+import { SendOutlined, CloseCircleOutlined, MessageOutlined, BulbOutlined } from '@ant-design/icons';
 import type { Feedback } from '../services/api';
+import { t } from '../i18n';
+
+const { TextArea } = Input;
+const { Title, Paragraph } = Typography;
 
 interface FeedbackFormProps {
   onSubmit: (feedback: Feedback) => void;
@@ -7,71 +12,104 @@ interface FeedbackFormProps {
 }
 
 const FeedbackForm: React.FC<FeedbackFormProps> = ({ onSubmit, onCancel }) => {
-  const [overall, setOverall] = useState('');
-  const [items, setItems] = useState<{ area: string; message: string; suggestion: string }[]>([]);
+  const [form] = Form.useForm();
 
-  const addItem = () => {
-    setItems([...items, { area: '', message: '', suggestion: '' }]);
-  };
-
-  const updateItem = (index: number, field: string, value: string) => {
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setItems(newItems);
-  };
-
-  const removeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (values: { overall?: string }) => {
     onSubmit({
-      overall: overall || undefined,
-      items: items.filter(item => item.area && item.message),
+      overall: values.overall || undefined,
+      items: [],
     });
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>Feedback</h3>
-      <div>
-        <label>Overall Comment:</label>
-        <textarea
-          value={overall}
-          onChange={(e) => setOverall(e.target.value)}
+    <Card
+      style={{
+        maxWidth: 700,
+        margin: '0 auto',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      }}
+    >
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Title level={2}>
+            <MessageOutlined /> {t('feedbackForm.title')}
+          </Title>
+          <Paragraph type="secondary">
+            {t('feedbackForm.description')}
+          </Paragraph>
+        </div>
+
+        <Divider />
+
+        <Alert
+          message={
+            <Space>
+              <BulbOutlined />
+              <span>Примеры того, что можно указать в обратной связи:</span>
+            </Space>
+          }
+          description={
+            <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+              <li>Изменить расписание выполнения (например, "запускать каждый час" вместо "раз в день")</li>
+              <li>Добавить/убрать столбцы из таблицы</li>
+              <li>Изменить типы данных полей</li>
+              <li>Настроить фильтрацию или валидацию данных</li>
+              <li>Изменить стратегию загрузки (добавление vs перезапись)</li>
+            </ul>
+          }
+          type="success"
+          showIcon
+          style={{ marginBottom: 24 }}
         />
-      </div>
-      <div>
-        <h4>Feedback Items</h4>
-        {items.map((item, index) => (
-          <div key={index}>
-            <input
-              type="text"
-              placeholder="Area (e.g., extract)"
-              value={item.area}
-              onChange={(e) => updateItem(index, 'area', e.target.value)}
+
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          size="large"
+        >
+          <Form.Item
+            name="overall"
+            label="Комментарий и пожелания по конфигурации"
+            rules={[
+              {
+                required: true,
+                message: 'Пожалуйста, опишите требуемые изменения',
+              },
+            ]}
+            help="Опишите, что именно вы хотели бы изменить в конфигурации ETL"
+          >
+            <TextArea
+              rows={6}
+              placeholder={t('feedbackForm.placeholder')}
             />
-            <input
-              type="text"
-              placeholder="Message"
-              value={item.message}
-              onChange={(e) => updateItem(index, 'message', e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Suggestion (optional)"
-              value={item.suggestion}
-              onChange={(e) => updateItem(index, 'suggestion', e.target.value)}
-            />
-            <button type="button" onClick={() => removeItem(index)}>Remove</button>
-          </div>
-        ))}
-        <button type="button" onClick={addItem}>Add Item</button>
-      </div>
-      <button type="submit">Submit Feedback</button>
-      <button type="button" onClick={onCancel}>Cancel</button>
-    </form>
+          </Form.Item>
+
+          <Space style={{ width: '100%', marginTop: 20 }} size="middle">
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              icon={<SendOutlined />}
+              style={{ flex: 1 }}
+              block
+            >
+              {t('feedbackForm.submitButton')}
+            </Button>
+            <Button
+              danger
+              size="large"
+              icon={<CloseCircleOutlined />}
+              onClick={onCancel}
+              style={{ flex: 1 }}
+              block
+            >
+              Отмена
+            </Button>
+          </Space>
+        </Form>
+      </Space>
+    </Card>
   );
 };
 

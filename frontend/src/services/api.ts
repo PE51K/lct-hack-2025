@@ -38,6 +38,10 @@ export interface ETLResponse {
   dag?: Record<string, unknown>;
   credentials_required?: CredentialsRequired;
   next_step?: string;
+  dag_id?: string;
+  dag_status?: string;
+  dag_run_id?: string;
+  airflow_url?: string;
 }
 
 export type CreateETLResponse = ETLResponse;
@@ -90,6 +94,49 @@ export interface PublishETLRequest {
 }
 
 export type PublishETLResponse = ETLResponse;
+
+export interface FetchSampleRequest {
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  schema?: string;
+  table: string;
+  limit?: number;
+}
+
+export interface FetchSampleResponse {
+  success: boolean;
+  columns: string[];
+  rows: Record<string, unknown>[];
+  total_rows: number;
+  error_message?: string;
+}
+
+export interface FetchPostgresDataRequest {
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  schema?: string;
+  table: string;
+  limit?: number;
+}
+
+export interface PostgresColumn {
+  name: string;
+  type: string;
+}
+
+export interface FetchPostgresDataResponse {
+  success: boolean;
+  columns: PostgresColumn[];
+  rows: Record<string, any>[];
+  total_rows: number;
+  error_message?: string;
+}
 
 export async function* createETL(request: CreateETLRequest): AsyncGenerator<CreateETLResponse> {
   const response = await fetch(`${API_BASE_URL}/create_etl`, {
@@ -204,6 +251,65 @@ export async function* publishETL(request: PublishETLRequest): AsyncGenerator<Pu
 
 export async function createDAG(request: CreateDAGRequest): Promise<CreateDAGResponse> {
   const response = await fetch(`${API_BASE_URL}/create_dag`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchSample(request: FetchSampleRequest): Promise<FetchSampleResponse> {
+  const response = await fetch(`${API_BASE_URL}/fetch_sample`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchPostgresData(request: FetchPostgresDataRequest): Promise<FetchPostgresDataResponse> {
+  const response = await fetch(`${API_BASE_URL}/fetch_postgres_data`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export interface TriggerDAGRequest {
+  dag_id: string;
+}
+
+export interface TriggerDAGResponse {
+  success: boolean;
+  message: string;
+  dag_run_id?: string;
+  error_message?: string;
+}
+
+export async function triggerDAG(request: TriggerDAGRequest): Promise<TriggerDAGResponse> {
+  const response = await fetch(`${API_BASE_URL}/trigger_dag`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
