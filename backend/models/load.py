@@ -23,7 +23,7 @@ class TargetStorageTypeRecommendation(BaseModel):
         explanation: Human-readable explanation of the recommendation.
     """
 
-    storage_type: Annotated[str, TargetStorageEnum]
+    storage_type: TargetStorageEnum = Field(..., description="Target storage system type.", examples=["postgres", "clickhouse", "hdfs"])
     explanation: str
 
 
