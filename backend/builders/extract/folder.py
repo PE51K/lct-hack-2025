@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from defusedxml import ElementTree
 
@@ -402,6 +403,48 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
     """
 
     @classmethod
+    def _analyze_single_xml_file(cls, file_path: Path) -> Content:
+        """Analyze a single XML file to build content metadata."""
+        xml_parser = XMLParser(max_sample_values=20)
+        analysis = xml_parser.analyze_xml_file(file_path)
+        attributes = xml_parser.convert_to_extract_attributes(analysis)
+        is_complex = analysis.max_depth > 3 or analysis.unique_elements > 20
+
+        return Content(
+            message_name=file_path.name,
+            is_complex_nesting_present=is_complex,
+            metamodel=attributes,
+            content_type=ContentType.xml,
+        )
+
+    @classmethod
+    async def get_src_content_type(cls, source: Source) -> ContentType:
+        """Infer content type from folder contents."""
+        folder_path = Path(source.connection_string.replace("//", "").replace("file:", ""))
+
+        if not folder_path.exists():
+            return ContentType.na
+
+        if folder_path.is_file():
+            suffix = folder_path.suffix.lower()
+            if suffix == ".xml":
+                return ContentType.xml
+            if suffix == ".csv":
+                return ContentType.csv
+            if suffix == ".json":
+                return ContentType.json
+            return ContentType.na
+
+        if list(folder_path.glob("*.xml")):
+            return ContentType.xml
+        if list(folder_path.glob("*.csv")):
+            return ContentType.csv
+        if list(folder_path.glob("*.json")):
+            return ContentType.json
+
+        return ContentType.na
+
+    @classmethod
     async def get_content_metadata(cls, source: Source) -> list[Content]:
         """Extract content metadata from folder source."""
         folder_path = Path(source.connection_string.replace("//", "").replace("file:", ""))
@@ -412,15 +455,96 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
         # Determine content type
         content_type = await cls.get_src_content_type(source)
 
-        if content_type == ContentType.xml:
-            content = await cls._analyze_xml_folder(folder_path)
-            return [content]
-        else:
+        if folder_path.is_file():
+            if content_type == ContentType.xml:
+                return [cls._analyze_single_xml_file(folder_path)]
+
             return [
                 Content(
-                    message_name=folder_path.name, is_complex_nesting_present=False, metamodel=[]
+                    message_name=folder_path.name,
+                    is_complex_nesting_present=False,
+                    metamodel=[],
+                    content_type=content_type,
                 )
             ]
+
+        if content_type == ContentType.xml:
+            xml_files = sorted(folder_path.glob("*.xml"))
+            if not xml_files:
+                return [
+                    Content(
+                        message_name="no_xml_files",
+                        is_complex_nesting_present=False,
+                        metamodel=[],
+                        content_type=ContentType.xml,
+                    )
+                ]
+            return [cls._analyze_single_xml_file(xml_file) for xml_file in xml_files]
+
+        # For CSV/JSON and other flat formats, list individual files
+        if content_type in {ContentType.csv, ContentType.json}:
+            extension = content_type.value
+            files = sorted(folder_path.glob(f"*.{extension}"))
+            if not files:
+                return [
+                    Content(
+                        message_name=f"no_{extension}_files",
+                        is_complex_nesting_present=False,
+                        metamodel=[],
+                        content_type=content_type,
+                    )
+                ]
+            return [
+                Content(
+                    message_name=file.name,
+                    is_complex_nesting_present=False,
+                    metamodel=[],
+                    content_type=content_type,
+                )
+                for file in files
+            ]
+
+        # Fallback: treat folder as generic message
+        return [
+            Content(
+                message_name=folder_path.name,
+                is_complex_nesting_present=False,
+                metamodel=[],
+                content_type=content_type,
+            )
+        ]
+
+    @classmethod
+    async def get_content_statistics(cls, source: Source) -> dict[str, Any] | None:
+        """Collect simple statistics for folder contents."""
+        folder_path = Path(source.connection_string.replace("//", "").replace("file:", ""))
+
+        if not folder_path.exists():
+            return {"total_items": 0, "total_size_bytes": 0}
+
+        if folder_path.is_file():
+            return {
+                "total_items": 1,
+                "total_size_bytes": folder_path.stat().st_size,
+                "filenames": [folder_path.name],
+            }
+
+        content_type = await cls.get_src_content_type(source)
+        pattern_map = {
+            ContentType.xml: "*.xml",
+            ContentType.csv: "*.csv",
+            ContentType.json: "*.json",
+        }
+        pattern = pattern_map.get(content_type, "*")
+
+        files = [f for f in folder_path.glob(pattern) if f.is_file()]
+        total_size = sum(f.stat().st_size for f in files)
+
+        return {
+            "total_items": len(files),
+            "total_size_bytes": total_size,
+            "filenames": [f.name for f in files if f.is_file()],
+        }
 
     @classmethod
     async def _analyze_xml_folder(cls, folder_path: Path) -> Content:

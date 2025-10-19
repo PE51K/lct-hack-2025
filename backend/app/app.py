@@ -10,7 +10,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.logging import setup_logger
 from core.settings import settings
 
-from .routers import create_dag_router, create_router, publish_router, update_router
+from .routers import (
+    create_dag_router,
+    create_router,
+    publish_router,
+    update_router,
+    upload_router,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,3 +58,4 @@ app.include_router(create_router)
 app.include_router(create_dag_router)
 app.include_router(publish_router)
 app.include_router(update_router)
+app.include_router(upload_router)

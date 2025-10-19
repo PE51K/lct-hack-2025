@@ -35,6 +35,7 @@ services:
     volumes:
       - ${AIRFLOW_DAGS_VOLUME:-./dags}:/opt/airflow/dags
       - ${AIRFLOW_LOGS_VOLUME:-./logs}:/opt/airflow/logs
+      - ${USER_FILES_VOLUME:-./volumes/user_files}:/opt/airflow/user_files
     command: >
       bash -c "
       airflow db migrate &&

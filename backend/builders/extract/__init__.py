@@ -2,12 +2,15 @@
 
 import logging
 import sys
+from pathlib import Path
 from typing import ClassVar
+
+from urllib.parse import urlparse
 
 sys.path.insert(0, ".")
 
 from models.app.update_etl import FeedbackItem
-from models.extract import ExtractConfig, SourceType
+from models.extract import ExtractConfig, Source, SourceType
 
 from .base import BaseExtractConfigBuilder
 from .clickhouse import ClickHouseExtractConfigBuilder
@@ -84,6 +87,74 @@ class ExtractConfigBuilder:
 
         return ExtractConfig(
             source_metadata=src,
+            content_metadata=content_metadata,
+            content_statistics=content_statistics,
+            schedule=schedule,
+            resources=resources,
+            incremental=incremental,
+            data_quality=data_quality,
+            batch_size=batch_size,
+        )
+
+    @classmethod
+    async def from_uri(cls, uri: str) -> ExtractConfig:
+        """Build an ExtractConfig directly from a concrete source URI.
+
+        Currently supports local filesystem URIs (file:// or absolute paths).
+
+        Args:
+            uri: Pointer to the data source.
+
+        Returns:
+            An ExtractConfig built using the appropriate builder.
+
+        Raises:
+            ValueError: If the URI scheme is not supported.
+        """
+        if not uri:
+            raise ValueError("URI must be provided")
+
+        parsed = urlparse(uri)
+        scheme = parsed.scheme or "file"
+        logger.debug("Building extract config from URI '%s' (scheme=%s)", uri, scheme)
+
+        if scheme == "file":
+            # Support both file:/absolute/path and plain absolute/relative paths
+            path_str = uri[5:] if uri.startswith("file:") else uri
+            # Remove leading slashes introduced by file://
+            if path_str.startswith("//"):
+                path_str = path_str[2:]
+            target_path = Path(path_str).expanduser().resolve()
+            if not target_path.exists():
+                raise ValueError(f"Path does not exist: {target_path}")
+
+            source = Source(
+                source_type=SourceType.folder,
+                connection_string=f"file:{target_path.as_posix()}",
+            )
+            builder_cls = cls.source_to_builder_map.get(SourceType.folder, BaseExtractConfigBuilder)
+        else:
+            raise ValueError(f"Unsupported URI scheme: {scheme}")
+
+        logger.debug("Using builder %s for URI %s", builder_cls.__name__, uri)
+
+        content_metadata = await builder_cls.get_content_metadata(source)
+        logger.debug("Content metadata: %s", content_metadata)
+        content_statistics = await builder_cls.get_content_statistics(source)
+        logger.debug("Content statistics: %s", content_statistics)
+        schedule = await builder_cls.get_schedule(source)
+        logger.debug("Schedule: %s", schedule)
+        resources = await builder_cls.get_resources(source)
+        logger.debug("Resources: %s", resources)
+        incremental = await builder_cls.get_incremental(source)
+        logger.debug("Incremental: %s", incremental)
+        data_quality = await builder_cls.get_data_quality(source)
+        logger.debug("Data quality: %s", data_quality)
+        batch_size = await builder_cls.get_batch_size(source)
+        logger.debug("Batch size: %s", batch_size)
+
+        return ExtractConfig(
+            source_metadata=source,
             content_metadata=content_metadata,
             content_statistics=content_statistics,
             schedule=schedule,

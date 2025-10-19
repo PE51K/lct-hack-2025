@@ -37,6 +37,10 @@ class CreateETLRequest(BaseModel):
     user_prompt: str = Field(
         ..., description="User's natural language prompt with connection string and requirements."
     )
+    uploaded_source_uri: str | None = Field(
+        default=None,
+        description="URI of a previously uploaded source (e.g. file:// path).",
+    )
 
 
 class CreateETLResponse(BaseModel):

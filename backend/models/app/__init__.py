@@ -9,6 +9,7 @@ from .create_dag import (
 )
 from .create_etl import CreateETLRequest, CreateETLResponse, CredentialField, CredentialsRequired
 from .publish_etl import PublishETLRequest, PublishETLResponse
+from .upload_source import UploadSourceResponse
 from .update_etl import UpdateETLRequest, UpdateETLResponse
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "PublishETLResponse",
     "UpdateETLRequest",
     "UpdateETLResponse",
+    "UploadSourceResponse",
 ]

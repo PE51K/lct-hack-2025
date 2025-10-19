@@ -11,6 +11,7 @@ services:
       - .env
     volumes:
       - ${AIRFLOW_DAGS_VOLUME:-./dags}:/app/dags
+      - ${USER_FILES_VOLUME:-./volumes/user_files}:/app/volumes/user_files
     ports:
       - ${APP_PORT:-8000}:8000
     restart: unless-stopped

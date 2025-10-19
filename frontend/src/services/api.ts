@@ -8,6 +8,7 @@ export interface ThreadUserIds {
 export interface CreateETLRequest {
   user_prompt: string;
   ids: ThreadUserIds;
+  uploaded_source_uri?: string;
 }
 
 export interface CredentialField {
@@ -213,6 +214,35 @@ export async function createDAG(request: CreateDAGRequest): Promise<CreateDAGRes
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export interface UploadSourceResponse {
+  ids: ThreadUserIds;
+  filename: string;
+  stored_path: string;
+  source_uri: string;
+  container_source_uri: string;
+  content_type?: string;
+  extract_config?: Record<string, unknown>;
+}
+
+export async function uploadSourceFile(file: File, ids: ThreadUserIds): Promise<UploadSourceResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('user_id', ids.user_id);
+  formData.append('thread_id', ids.thread_id);
+
+  const response = await fetch(`${API_BASE_URL}/upload_source`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || `HTTP error! status: ${response.status}`);
   }
 
   return response.json();

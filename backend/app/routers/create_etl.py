@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -15,6 +16,29 @@ from models.app import CreateETLRequest, CreateETLResponse, CredentialField, Cre
 logger = logging.getLogger(__name__)
 
 create_router = APIRouter()
+
+HOST_UPLOAD_DIR = Path(__file__).resolve().parents[2] / "volumes" / "user_files"
+CONTAINER_UPLOAD_DIR = Path("/opt/airflow/user_files")
+
+
+def _map_host_uri_to_container(uri: str) -> str:
+    """Translate host file:// URI into container-accessible URI if under uploads root."""
+    if not uri or not uri.startswith("file:"):
+        return uri
+
+    path_str = uri[5:]
+    try:
+        host_path = Path(path_str).resolve()
+    except OSError:
+        return uri
+
+    try:
+        relative = host_path.relative_to(HOST_UPLOAD_DIR.resolve())
+    except ValueError:
+        return uri
+
+    container_path = (CONTAINER_UPLOAD_DIR / relative).as_posix()
+    return f"file:{container_path}"
 
 
 def _generate_credentials_form(target_type: str) -> CredentialsRequired:
@@ -188,21 +212,51 @@ async def create_etl(request: CreateETLRequest) -> StreamingResponse:
     async def create(request: CreateETLRequest) -> AsyncGenerator[str, None]:
         try:
             logger.info("Initializing ETL creation process")
-            # Step 1. Build ExtractConfig from user prompt (20%)
+            # Step 1. Build ExtractConfig either from uploaded source or user prompt (20%)
             logger.info("Step 1: Building extract configuration")
-            yield (
-                CreateETLResponse(
-                    ids=request.ids,
-                    processing_done=False,
-                    processing_percentage_done=20.0,
-                    processing_message="Building extract configuration...",
-                    success=True,
-                ).model_dump_json()
-                + "\n"
-            )
+            if request.uploaded_source_uri:
+                yield (
+                    CreateETLResponse(
+                        ids=request.ids,
+                        processing_done=False,
+                        processing_percentage_done=20.0,
+                        processing_message="Analyzing uploaded source with local builder...",
+                        success=True,
+                    ).model_dump_json()
+                    + "\n"
+                )
 
-            extract_config = await ExtractConfigBuilder.from_user_prompt(request.user_prompt)
-            logger.info(f"ExtractConfig received: {extract_config}")
+                extract_config = await ExtractConfigBuilder.from_uri(request.uploaded_source_uri)
+                logger.info(
+                    "ExtractConfig received from uploaded source %s: %s",
+                    request.uploaded_source_uri,
+                    extract_config,
+                )
+            else:
+                yield (
+                    CreateETLResponse(
+                        ids=request.ids,
+                        processing_done=False,
+                        processing_percentage_done=20.0,
+                        processing_message="Building extract configuration...",
+                        success=True,
+                    ).model_dump_json()
+                    + "\n"
+                )
+
+                extract_config = await ExtractConfigBuilder.from_user_prompt(request.user_prompt)
+                logger.info(f"ExtractConfig received: {extract_config}")
+
+            if extract_config.source_metadata and extract_config.source_metadata.connection_string:
+                original_uri = extract_config.source_metadata.connection_string
+                container_uri = _map_host_uri_to_container(original_uri)
+                extract_config.source_metadata.connection_string = container_uri
+                if container_uri != original_uri:
+                    logger.info(
+                        "Mapped host source URI %s to container URI %s",
+                        original_uri,
+                        container_uri,
+                    )
 
             # Step 3. Generate LoadConfig from ExtractConfig and user prompt (40%)
             yield (
