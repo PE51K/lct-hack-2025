@@ -6,6 +6,7 @@ from typing import ClassVar
 
 sys.path.insert(0, ".")
 
+from core.settings import settings
 from models.app.update_etl import FeedbackItem
 from models.extract import ExtractConfig, SourceType
 
@@ -59,6 +60,18 @@ class ExtractConfigBuilder:
             user_prompt, old_source, feedback_items, overall_feedback
         )
         logger.debug(f"Extracted source from user prompt: {src}")
+
+        # Fix S3 connection details if they're missing or pointing to localhost
+        if src.source_type == SourceType.s3:
+            if not src.connection_string or "localhost" in src.connection_string:
+                src.connection_string = settings.s3.endpoint_url
+                logger.debug(f"Using S3 endpoint from settings: {src.connection_string}")
+            if not src.access_key:
+                src.access_key = settings.s3.access_key_id
+            if not src.secret_key:
+                src.secret_key = settings.s3.secret_access_key
+            if not src.bucket_name:
+                src.bucket_name = settings.s3.bucket_name
 
         # Now build the config from the source
         builder = cls.source_to_builder_map.get(src.source_type)

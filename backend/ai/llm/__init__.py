@@ -18,4 +18,7 @@ llm = ChatOpenAI(
     api_key=settings.ai.yandex_gpt.api_key,
     base_url=settings.ai.yandex_gpt.base_url,
     model_name=settings.ai.yandex_gpt.model_name,
+    default_headers={
+        "x-folder-id": settings.ai.yandex_gpt.folder_id,
+    },
 )

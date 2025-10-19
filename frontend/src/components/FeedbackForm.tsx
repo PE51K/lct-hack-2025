@@ -1,5 +1,5 @@
-import { Card, Form, Input, Button, Space, Typography, Divider } from 'antd';
-import { SendOutlined, CloseCircleOutlined, MessageOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Space, Typography, Divider, Alert } from 'antd';
+import { SendOutlined, CloseCircleOutlined, MessageOutlined, BulbOutlined } from '@ant-design/icons';
 import type { Feedback } from '../services/api';
 import { t } from '../i18n';
 
@@ -41,6 +41,27 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ onSubmit, onCancel }) => {
 
         <Divider />
 
+        <Alert
+          message={
+            <Space>
+              <BulbOutlined />
+              <span>Примеры того, что можно указать в обратной связи:</span>
+            </Space>
+          }
+          description={
+            <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+              <li>Изменить расписание выполнения (например, "запускать каждый час" вместо "раз в день")</li>
+              <li>Добавить/убрать столбцы из таблицы</li>
+              <li>Изменить типы данных полей</li>
+              <li>Настроить фильтрацию или валидацию данных</li>
+              <li>Изменить стратегию загрузки (добавление vs перезапись)</li>
+            </ul>
+          }
+          type="success"
+          showIcon
+          style={{ marginBottom: 24 }}
+        />
+
         <Form
           form={form}
           layout="vertical"
@@ -56,6 +77,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ onSubmit, onCancel }) => {
                 message: 'Пожалуйста, опишите требуемые изменения',
               },
             ]}
+            help="Опишите, что именно вы хотели бы изменить в конфигурации ETL"
           >
             <TextArea
               rows={6}

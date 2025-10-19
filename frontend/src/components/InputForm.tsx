@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, Space, Alert } from 'antd';
-import { RocketOutlined, UserOutlined, ApiOutlined, BulbOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Space, Alert, Collapse } from 'antd';
+import { RocketOutlined, UserOutlined, ApiOutlined, BulbOutlined, UploadOutlined } from '@ant-design/icons';
 import type { CreateETLRequest } from '../services/api';
+import { settingsService } from '../services/settings';
 import { t } from '../i18n';
+import FileUploader from './FileUploader';
 
 const { TextArea } = Input;
 const { Title, Paragraph } = Typography;
@@ -21,9 +23,13 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
   const [userId] = useState(generateRandomId());
 
   useEffect(() => {
+    // Load default prompt from settings
+    const defaultPrompt = settingsService.getDefaultPrompt();
+
     form.setFieldsValue({
       threadId,
       userId,
+      userPrompt: defaultPrompt || '',
     });
   }, [form, threadId, userId]);
 
@@ -39,6 +45,16 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
 
   const handleUseExample = () => {
     form.setFieldsValue({ userPrompt: EXAMPLE_PROMPT });
+  };
+
+  const handleFileUploadSuccess = (bucket: string, filePath: string) => {
+    // Extract folder from file path
+    const folder = filePath.substring(0, filePath.lastIndexOf('/'));
+
+    // Generate prompt with uploaded file details
+    const uploadedFilePrompt = `Connect to S3-compatible storage using endpoint: http://test-minio:9000, bucket: ${bucket}, access_key: test_minio, secret_key: secure_minio_password and extract data from folder: ${folder}/`;
+
+    form.setFieldsValue({ userPrompt: uploadedFilePrompt });
   };
 
   return (
@@ -86,6 +102,23 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
           type="success"
           showIcon
         />
+
+        <Collapse
+          items={[
+            {
+              key: '1',
+              label: (
+                <Space>
+                  <UploadOutlined />
+                  <span>Загрузить свой файл в MinIO</span>
+                </Space>
+              ),
+              children: <FileUploader onUploadSuccess={handleFileUploadSuccess} />,
+            },
+          ]}
+          style={{ marginBottom: 24 }}
+        />
+
         <Form
           form={form}
           layout="vertical"

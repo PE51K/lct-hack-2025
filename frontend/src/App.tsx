@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ConfigProvider, Layout, Typography, Steps, theme } from 'antd';
+import { ConfigProvider, Layout, Typography, Steps, theme, Button, Space } from 'antd';
+import { SettingOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import ruRU from 'antd/locale/ru_RU';
 import InputForm from './components/InputForm';
 import ProgressBar from './components/ProgressBar';
@@ -8,6 +9,7 @@ import CredentialsForm from './components/CredentialsForm';
 import FeedbackForm from './components/FeedbackForm';
 import DeploymentProgress from './components/DeploymentProgress';
 import DeploymentReport from './components/DeploymentReport';
+import Settings from './components/Settings';
 import { createETL, createDAG, updateETL, publishETL, type CreateETLRequest, type Feedback, type ThreadUserIds, type ETLResponse } from './services/api';
 import { t } from './i18n';
 import './App.css';
@@ -26,6 +28,8 @@ function App() {
   const [deploymentSuccess, setDeploymentSuccess] = useState<boolean>(false);
   const [dagId, setDagId] = useState<string>('');
   const [airflowUrl, setAirflowUrl] = useState<string>('');
+  const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
+  const [dbCredentials, setDbCredentials] = useState<Record<string, unknown> | null>(null);
 
   const handleCreate = async (request: CreateETLRequest) => {
     setIds(request.ids);
@@ -60,7 +64,10 @@ function App() {
 
   const handleCredentialsSubmit = async (credentials: Record<string, unknown>) => {
     if (!ids || !latestResponse) return;
-    
+
+    // Store credentials for later use (e.g., viewing data sample)
+    setDbCredentials(credentials);
+
     setStep('creating_dag');
     setProgressMessages(['Creating DAG with provided credentials...']);
 
@@ -75,7 +82,7 @@ function App() {
       });
 
       setProgressMessages(prev => [...prev, response.processing_message]);
-      
+
       if (response.success) {
         // Update latestResponse with DAG
         setLatestResponse(prev => ({
@@ -171,6 +178,26 @@ function App() {
     setDeploymentSuccess(false);
     setDagId('');
     setAirflowUrl('');
+    setDbCredentials(null);
+  };
+
+  const handleBack = () => {
+    // Define allowed back transitions
+    const backTransitions: Partial<Record<Step, Step>> = {
+      credentials: 'input',
+      report: 'credentials',
+      feedback: 'report',
+      published: 'input',
+    };
+
+    const previousStep = backTransitions[step];
+    if (previousStep) {
+      setStep(previousStep);
+    }
+  };
+
+  const canGoBack = () => {
+    return ['credentials', 'report', 'feedback', 'published'].includes(step);
   };
 
   const getStepNumber = () => {
@@ -228,6 +255,7 @@ function App() {
             dagId={dagId}
             airflowUrl={airflowUrl}
             onCreateNew={handleReset}
+            dbCredentials={dbCredentials}
           />
         );
       default:
@@ -276,6 +304,9 @@ function App() {
               position: 'sticky',
               top: 0,
               zIndex: 100,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
             }}
           >
             <div className="app-logo">
@@ -286,6 +317,27 @@ function App() {
                 {t('app.title')}
               </Title>
             </div>
+            <Space>
+              {canGoBack() && (
+                <Button
+                  icon={<ArrowLeftOutlined />}
+                  onClick={handleBack}
+                  size="large"
+                  style={{ borderRadius: 8 }}
+                >
+                  Назад
+                </Button>
+              )}
+              <Button
+                icon={<SettingOutlined />}
+                onClick={() => setSettingsVisible(true)}
+                size="large"
+                type="text"
+                style={{ borderRadius: 8 }}
+              >
+                Настройки
+              </Button>
+            </Space>
           </Header>
           <Content style={{ padding: '24px 50px', position: 'relative', zIndex: 1 }}>
             <div style={{ maxWidth: 1400, margin: '0 auto' }}>
@@ -312,6 +364,7 @@ function App() {
             </div>
           </Content>
         </Layout>
+        <Settings visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
       </div>
     </ConfigProvider>
   );

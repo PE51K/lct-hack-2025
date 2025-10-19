@@ -1,4 +1,4 @@
-import { Card, Descriptions, Tabs, Typography, Tag, Space, Collapse } from 'antd';
+import { Card, Descriptions, Tabs, Typography, Tag, Space, Collapse, Alert } from 'antd';
 import {
   DatabaseOutlined,
   CloudUploadOutlined,
@@ -35,6 +35,13 @@ const ConfigViewer: React.FC<ConfigViewerProps> = ({
 
     return (
       <Card>
+        <Alert
+          message="Извлечение данных (Extract)"
+          description="Здесь указано, откуда система будет брать данные: источник (S3, база данных), формат файлов (XML, CSV, JSON) и схема данных."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
         <Descriptions title={<Title level={4}><DatabaseOutlined /> {t('configViewer.source')}</Title>} bordered column={2}>
           <Descriptions.Item label={t('configViewer.sourceType')}>
             <Tag color="blue">{source.source_type as string || 'N/A'}</Tag>
@@ -75,6 +82,13 @@ const ConfigViewer: React.FC<ConfigViewerProps> = ({
 
     return (
       <Card>
+        <Alert
+          message="Преобразование данных (Transform)"
+          description="Правила обработки данных: как данные будут фильтроваться, очищаться и подготавливаться перед загрузкой. Настройки параллелизма определяют скорость обработки."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
         <Descriptions title={<Title level={4}><ThunderboltOutlined /> {t('configViewer.transformation')}</Title>} bordered column={2}>
           <Descriptions.Item label="Ключи идентификации">
             {Array.isArray(config.identity_keys) && config.identity_keys.length > 0 ? (
@@ -121,6 +135,13 @@ const ConfigViewer: React.FC<ConfigViewerProps> = ({
 
     return (
       <Card>
+        <Alert
+          message="Загрузка данных (Load)"
+          description="Настройки целевого хранилища: куда будут записаны данные (PostgreSQL, ClickHouse и др.), стратегия загрузки (добавление/перезапись), партиционирование и сжатие."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
         <Descriptions title={<Title level={4}><CloudUploadOutlined /> Конфигурация загрузки</Title>} bordered column={2}>
           <Descriptions.Item label={t('configViewer.targetType')}>
             <Tag color="purple">{targetType || 'N/A'}</Tag>
@@ -161,6 +182,13 @@ const ConfigViewer: React.FC<ConfigViewerProps> = ({
 
     return (
       <Card>
+        <Alert
+          message="Настройки планировщика (DAG)"
+          description="Расписание автоматического выполнения ETL: когда и как часто будет запускаться процесс обработки данных. Можно настроить ежедневное, еженедельное или другое расписание."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
         <Descriptions title={<Title level={4}><CalendarOutlined /> {t('configViewer.schedule')}</Title>} bordered column={2}>
           <Descriptions.Item label="DAG ID">
             <Text code>{config.dag_id as string || 'N/A'}</Text>
@@ -194,6 +222,13 @@ const ConfigViewer: React.FC<ConfigViewerProps> = ({
 
     return (
       <Card>
+        <Alert
+          message="Схема базы данных (DDL)"
+          description="SQL-команды для создания таблицы в базе данных. DDL определяет структуру таблицы: названия столбцов, типы данных, индексы и ограничения."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
         <Title level={4} style={{ color: '#F5F7FF' }}>
           <SafetyOutlined /> DDL Схема
         </Title>

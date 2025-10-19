@@ -62,6 +62,34 @@ class AppSettings(BaseSettings):
     cors: AppCORSSettings = AppCORSSettings()
 
 
+# ============ S3/MinIO Storage ============
+
+
+class S3Settings(BaseSettings):
+    """
+    Settings for S3/MinIO storage integration.
+
+    Attributes:
+        endpoint_url (str): S3/MinIO endpoint URL.
+        access_key_id (str): Access key ID for S3/MinIO.
+        secret_access_key (str): Secret access key for S3/MinIO.
+        bucket_name (str): Default bucket name.
+        region (str): AWS region or S3 region.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="S3_",
+        extra="ignore",
+    )
+
+    endpoint_url: str
+    access_key_id: str
+    secret_access_key: str
+    bucket_name: str
+    region: str = "us-east-1"
+
+
 # ============ AI-related integrations ============
 
 
@@ -124,10 +152,12 @@ class Settings(BaseSettings):
     Attributes:
         app (AppSettings): Instance of AppSettings containing application server settings.
         ai (AISettings): Instance of AISettings containing AI-related settings.
+        s3 (S3Settings): Instance of S3Settings containing S3/MinIO storage settings.
     """
 
     app: AppSettings = AppSettings()
     ai: AISettings = AISettings()
+    s3: S3Settings = S3Settings()
 
 
 # Singleton instance of Settings

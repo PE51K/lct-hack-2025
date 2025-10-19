@@ -91,6 +91,25 @@ export interface PublishETLRequest {
 
 export type PublishETLResponse = ETLResponse;
 
+export interface FetchSampleRequest {
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  schema?: string;
+  table: string;
+  limit?: number;
+}
+
+export interface FetchSampleResponse {
+  success: boolean;
+  columns: string[];
+  rows: Record<string, unknown>[];
+  total_rows: number;
+  error_message?: string;
+}
+
 export async function* createETL(request: CreateETLRequest): AsyncGenerator<CreateETLResponse> {
   const response = await fetch(`${API_BASE_URL}/create_etl`, {
     method: 'POST',
@@ -204,6 +223,22 @@ export async function* publishETL(request: PublishETLRequest): AsyncGenerator<Pu
 
 export async function createDAG(request: CreateDAGRequest): Promise<CreateDAGResponse> {
   const response = await fetch(`${API_BASE_URL}/create_dag`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchSample(request: FetchSampleRequest): Promise<FetchSampleResponse> {
+  const response = await fetch(`${API_BASE_URL}/fetch_sample`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
