@@ -6,6 +6,7 @@ services:
   backend:
     build:
       context: .
+    network_mode: host
     env_file:
       - .env
     volumes:
