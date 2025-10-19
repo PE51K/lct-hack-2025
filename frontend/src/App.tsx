@@ -194,6 +194,9 @@ function App() {
       extractConfigRecord && Object.prototype.hasOwnProperty.call(extractConfigRecord, 'sample_records')
         ? (extractConfigRecord.sample_records as unknown[] | undefined)
         : undefined;
+    const loadConfigRecord = latestResponse?.load_config as Record<string, unknown> | undefined;
+    const targetStorageRecommendation = loadConfigRecord?.target_storage_type as Record<string, unknown> | undefined;
+    const recommendationExplanation = targetStorageRecommendation?.explanation as string | undefined;
 
     switch (step) {
       case 'input':
@@ -209,6 +212,7 @@ function App() {
             onSubmit={handleCredentialsSubmit}
             onCancel={handleCredentialsCancel}
             dataSample={sampleRecords}
+            recommendationExplanation={recommendationExplanation}
           />
         ) : null;
       case 'report':

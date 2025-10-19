@@ -45,9 +45,9 @@ class LoadConfigBuilder:
             Start with the existing configuration and modify only what's needed based on feedback.
             Analyze the ExtractConfig to understand current source structure.
             Based on feedback and new prompt, update:
-            - Target storage type if needed
+            - Target storage type if needed (provide explanation)
             - Target connection string
-            - Database name, schema name, and table name if needed
+            - Database name, schema name, and table name if needed (include explanation for database choice)
             - Flat meta model fields
             - Indexes, partitioning, load strategy
             - Other configurations
@@ -84,10 +84,10 @@ class LoadConfigBuilder:
 
             Based on the source and user prompt, determine:
             - Target storage type (postgres, clickhouse, or hdfs) - choose based on data volume,
-              query patterns, and user needs
+              query patterns, and user needs, and explain the recommendation
             - Target connection string (use placeholder format like 'postgresql://user:pass@host:port/db'
               or similar)
-            - Database name (e.g., 'analytics', 'dwh', 'data_warehouse')
+            - Database name (e.g., 'analytics', 'dwh', 'data_warehouse') with a short explanation
             - Schema name (e.g., 'public' for PostgreSQL, 'default' for ClickHouse)
             - Table name (e.g., 'customer_orders', 'events', 'transactions')
             - Flat meta model with appropriate fields derived from extract content

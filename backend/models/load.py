@@ -157,6 +157,9 @@ class LoadConfig(BaseModel):
         ..., description="Target storage connection string."
     )
     database_name: str = Field(..., description="Target database name.")
+    database_explanation: str | None = Field(
+        default=None, description="Explanation for the recommended target database."
+    )
     schema_name: str = Field("public", description="Target schema name.")
     table_name: str = Field(..., description="Target table name.")
     nesting_metamodel: NestingMetaModel = Field(..., description="Metamodel for hdfs.")

@@ -12,9 +12,16 @@ interface CredentialsFormProps {
   onSubmit: (credentials: Record<string, unknown>) => void;
   onCancel: () => void;
   dataSample?: unknown[];
+  recommendationExplanation?: string;
 }
 
-function CredentialsForm({ credentialsRequired, onSubmit, onCancel, dataSample }: CredentialsFormProps) {
+function CredentialsForm({
+  credentialsRequired,
+  onSubmit,
+  onCancel,
+  dataSample,
+  recommendationExplanation,
+}: CredentialsFormProps) {
   const [form] = Form.useForm();
   const [credentials, setCredentials] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
@@ -55,9 +62,18 @@ function CredentialsForm({ credentialsRequired, onSubmit, onCancel, dataSample }
               <RobotOutlined /> {t('credentialsForm.aiRecommendation')}
             </span>
           }
-          description={tReplace('credentialsForm.description', {
-            targetType: credentialsRequired.target_type,
-          })}
+          description={
+            <Space direction="vertical">
+              <span>
+                {tReplace('credentialsForm.description', {
+                  targetType: credentialsRequired.target_type,
+                })}
+              </span>
+              {recommendationExplanation ? (
+                <Text type="secondary">{recommendationExplanation}</Text>
+              ) : null}
+            </Space>
+          }
           type="success"
           showIcon
         />

@@ -121,6 +121,8 @@ const ConfigViewer: React.FC<ConfigViewerProps> = ({
     const config = (loadConfig.config || loadConfig) as Record<string, unknown>;
     const targetType = (config.target_storage_type as Record<string, unknown>)?.storage_type as string ||
                       config.target_storage_type as string;
+    const targetExplanation = (config.target_storage_type as Record<string, unknown>)?.explanation as string | undefined;
+    const databaseExplanation = config.database_explanation as string | undefined;
     const partitioning = (config.partitioning || {}) as Record<string, unknown>;
     const compression = (config.compression || {}) as Record<string, unknown>;
     const batchConfig = (config.batch_config || {}) as Record<string, unknown>;
@@ -133,6 +135,12 @@ const ConfigViewer: React.FC<ConfigViewerProps> = ({
           </Descriptions.Item>
           <Descriptions.Item label={t('configViewer.targetTable')}>
             <Text code>{config.table_name as string || 'N/A'}</Text>
+          </Descriptions.Item>
+          <Descriptions.Item label="Пояснение" span={2}>
+            {targetExplanation || 'N/A'}
+          </Descriptions.Item>
+          <Descriptions.Item label="Пояснение к базе" span={2}>
+            {databaseExplanation || 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Стратегия загрузки">
             <Tag color="magenta">{config.load_strategy as string || 'append'}</Tag>
