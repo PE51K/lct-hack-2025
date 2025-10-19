@@ -142,6 +142,30 @@ class AISettings(BaseSettings):
     yandex_gpt: YandexGPTSettings = YandexGPTSettings()
 
 
+# ============ Airflow ============
+
+
+class AirflowSettings(BaseSettings):
+    """
+    Settings for Apache Airflow integration.
+
+    Attributes:
+        url (str): Airflow webserver URL.
+        username (str): Airflow admin username.
+        password (str): Airflow admin password.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="AIRFLOW_",
+        extra="ignore",
+    )
+
+    url: str = "http://airflow:8080"
+    username: str = "admin"
+    password: str = "admin"
+
+
 # ============ Main Settings Aggregator ============
 
 
@@ -153,11 +177,13 @@ class Settings(BaseSettings):
         app (AppSettings): Instance of AppSettings containing application server settings.
         ai (AISettings): Instance of AISettings containing AI-related settings.
         s3 (S3Settings): Instance of S3Settings containing S3/MinIO storage settings.
+        airflow (AirflowSettings): Instance of AirflowSettings containing Airflow settings.
     """
 
     app: AppSettings = AppSettings()
     ai: AISettings = AISettings()
     s3: S3Settings = S3Settings()
+    airflow: AirflowSettings = AirflowSettings()
 
 
 # Singleton instance of Settings

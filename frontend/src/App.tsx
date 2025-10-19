@@ -130,15 +130,23 @@ function App() {
 
     try {
       for await (const response of publishETL({ ids })) {
+        console.log('[App] publishETL response:', response);
         setDeploymentMessages(prev => [...prev, response.processing_message]);
+
+        // Extract dagId from response if available
+        if (response.dag_id) {
+          console.log('[App] Setting dagId from response:', response.dag_id);
+          setDagId(response.dag_id);
+        }
+
+        // Extract airflowUrl from response if available
+        if (response.airflow_url) {
+          console.log('[App] Setting airflowUrl from response:', response.airflow_url);
+          setAirflowUrl(response.airflow_url);
+        }
+
         if (response.processing_done) {
           setDeploymentSuccess(response.success);
-          if (response.success && response.processing_message) {
-            const dagIdMatch = response.processing_message.match(/DAG ID: ([^\s]+)/);
-            const urlMatch = response.processing_message.match(/URL: ([^\s]+)/);
-            if (dagIdMatch) setDagId(dagIdMatch[1]);
-            if (urlMatch) setAirflowUrl(urlMatch[1]);
-          }
           setStep('published');
         }
       }

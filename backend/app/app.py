@@ -13,8 +13,10 @@ from core.settings import settings
 from .routers import (
     create_dag_router,
     create_router,
+    fetch_postgres_data_router,
     fetch_sample_router,
     publish_router,
+    trigger_dag_router,
     update_router,
     upload_router,
 )
@@ -61,3 +63,5 @@ app.include_router(publish_router)
 app.include_router(update_router)
 app.include_router(fetch_sample_router)
 app.include_router(upload_router)
+app.include_router(fetch_postgres_data_router)
+app.include_router(trigger_dag_router)

@@ -5,6 +5,7 @@ import {
   SyncOutlined,
   ClockCircleOutlined,
   LinkOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import { t } from '../i18n';
 
@@ -16,6 +17,8 @@ interface AirflowStatusProps {
   status?: 'success' | 'failed' | 'running' | 'queued';
   lastRun?: string;
   nextRun?: string;
+  onShowResults?: () => void;
+  loadConfig?: Record<string, unknown>;
 }
 
 const AirflowStatus: React.FC<AirflowStatusProps> = ({
@@ -24,6 +27,8 @@ const AirflowStatus: React.FC<AirflowStatusProps> = ({
   status,
   lastRun,
   nextRun,
+  onShowResults,
+  loadConfig,
 }) => {
   const getStatusTag = () => {
     switch (status) {
@@ -78,17 +83,30 @@ const AirflowStatus: React.FC<AirflowStatusProps> = ({
           )}
         </Descriptions>
 
-        {airflowUrl && (
-          <Button
-            type="primary"
-            icon={<LinkOutlined />}
-            href={airflowUrl}
-            target="_blank"
-            size="large"
-          >
-            {t('airflowStatus.viewInAirflow')}
-          </Button>
-        )}
+        <Space>
+          {airflowUrl && (
+            <Button
+              type="primary"
+              icon={<LinkOutlined />}
+              href={airflowUrl}
+              target="_blank"
+              size="large"
+            >
+              {t('airflowStatus.viewInAirflow')}
+            </Button>
+          )}
+          {status === 'success' && onShowResults && loadConfig && (
+            <Button
+              type="primary"
+              icon={<DatabaseOutlined />}
+              onClick={onShowResults}
+              size="large"
+              style={{ background: '#52c41a', borderColor: '#52c41a' }}
+            >
+              Показать результаты в PostgreSQL
+            </Button>
+          )}
+        </Space>
       </Space>
     </Card>
   );
