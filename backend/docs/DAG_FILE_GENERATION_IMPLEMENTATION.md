@@ -132,7 +132,7 @@ async def generate_dag_files(
 {
     "dag_id": "etl_123_456",
     "dag_status": "registered",
-    "airflow_url": "http://localhost:8081/dags/etl_123_456/grid"
+    "airflow_url": "http://localhost:8080/dags/etl_123_456/grid"
 }
 ```
 
@@ -286,7 +286,7 @@ curl -X POST http://localhost:8000/publish_etl \
 {
   "dag_id": "etl_user_123_thread_456",
   "dag_status": "registered",
-  "airflow_url": "http://localhost:8081/dags/etl_user_123_thread_456/grid",
+  "airflow_url": "http://localhost:8080/dags/etl_user_123_thread_456/grid",
   "processing_message": "✅ DAG ready! Access Airflow UI..."
 }
 ```
@@ -295,7 +295,7 @@ curl -X POST http://localhost:8000/publish_etl \
 
 **Option A: Airflow UI**
 ```
-1. Open http://localhost:8081
+1. Open http://localhost:8080
 2. Login (admin/admin)
 3. Find DAG "etl_user_123_thread_456"
 4. Click "Trigger DAG" button
@@ -308,7 +308,7 @@ docker exec -it airflow airflow dags trigger etl_user_123_thread_456
 
 **Option C: Airflow API**
 ```bash
-curl -X POST http://localhost:8081/api/v1/dags/etl_user_123_thread_456/dagRuns \
+curl -X POST http://localhost:8080/api/v1/dags/etl_user_123_thread_456/dagRuns \
   -u admin:admin \
   -H "Content-Type: application/json" \
   -d '{}'
@@ -318,11 +318,11 @@ curl -X POST http://localhost:8081/api/v1/dags/etl_user_123_thread_456/dagRuns \
 
 ```bash
 # Check DAG status
-curl http://localhost:8081/api/v1/dags/etl_user_123_thread_456 \
+curl http://localhost:8080/api/v1/dags/etl_user_123_thread_456 \
   -u admin:admin
 
 # Check DAG runs
-curl http://localhost:8081/api/v1/dags/etl_user_123_thread_456/dagRuns \
+curl http://localhost:8080/api/v1/dags/etl_user_123_thread_456/dagRuns \
   -u admin:admin
 
 # View logs
@@ -462,7 +462,7 @@ TARGET_TABLE = "geospatial_data"
 4. **Check Airflow**:
    ```bash
    # Wait 30-60 seconds
-   # Open http://localhost:8081
+   # Open http://localhost:8080
    # Login: admin/admin
    # Look for DAG "etl_user_123_thread_456"
    ```
@@ -493,7 +493,7 @@ AIRFLOW_DAGS_VOLUME=./dags
 AIRFLOW_LOGS_VOLUME=./logs
 
 # Airflow Service
-AIRFLOW_PORT=8081
+AIRFLOW_PORT=8080
 AIRFLOW_POSTGRES_USER=airflow
 AIRFLOW_POSTGRES_PASSWORD=airflow
 AIRFLOW_POSTGRES_DB=airflow

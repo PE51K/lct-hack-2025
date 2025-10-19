@@ -262,7 +262,7 @@ graph TD
 
    **Option A: Trigger via Airflow UI**
    ```
-   http://localhost:8081/  # Default Airflow port
+   http://localhost:8080/  # Default Airflow port
    Navigate to DAGs → etl_123_456 → Trigger DAG
    ```
 
@@ -272,7 +272,7 @@ graph TD
    
    # Trigger DAG execution
    response = requests.post(
-       "http://localhost:8081/api/v1/dags/etl_123_456/dagRuns",
+       "http://localhost:8080/api/v1/dags/etl_123_456/dagRuns",
        auth=("admin", "admin"),
        json={"conf": {}}
    )
@@ -286,7 +286,7 @@ graph TD
 5. **Monitoring**:
    ```python
    # Check DAG status via API
-   GET http://localhost:8081/api/v1/dags/etl_123_456/dagRuns
+   GET http://localhost:8080/api/v1/dags/etl_123_456/dagRuns
    ```
 
 **Volume Configuration**:

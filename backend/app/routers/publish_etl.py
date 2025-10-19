@@ -105,7 +105,7 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
             await asyncio.sleep(1)
 
             # Step 4: Provide instructions (80%)
-            airflow_url = f"http://localhost:8081/dags/{dag_id}/grid"
+            airflow_url = f"http://localhost:8080/dags/{dag_id}/grid"
 
             yield (
                 PublishETLResponse(

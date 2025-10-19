@@ -29,7 +29,7 @@ def extract_from_s3():
     """Extract data from S3/MinIO."""
     s3_client = boto3.client(
         's3',
-        endpoint_url=SOURCE_PATH,  # e.g., http://minio:9000
+        endpoint_url=SOURCE_PATH,  # e.g., http://minio:9002
         aws_access_key_id=S3_ACCESS_KEY,
         aws_secret_access_key=S3_SECRET_KEY,
         config=Config(signature_version='s3v4')

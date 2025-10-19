@@ -258,7 +258,7 @@ load_config = LoadConfig(
         storage_type="hdfs",
         explanation="Big data lake storage"
     ),
-    target_storage_connection_string="hdfs://namenode:9000",
+    target_storage_connection_string="hdfs://namenode:9002",
     database_name="analytics",  # Hive database
     schema_name="",  # Not used in HDFS/Hive
     table_name="events",  # Hive table
@@ -291,7 +291,7 @@ load_config = LoadConfig(
         storage_type="hdfs",
         explanation="Raw data lake storage"
     ),
-    target_storage_connection_string="hdfs://namenode:9000",
+    target_storage_connection_string="hdfs://namenode:9002",
     database_name="",  # Not used
     schema_name="",    # Not used
     table_name="",     # Not used (files, not tables)

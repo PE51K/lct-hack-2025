@@ -34,7 +34,7 @@ class ClickHouseCredentials(BaseModel):
     host: str = Field(
         ..., description="ClickHouse host address", examples=["clickhouse.example.com"]
     )
-    port: int = Field(8123, description="ClickHouse HTTP port", examples=[8123, 9000])
+    port: int = Field(8123, description="ClickHouse HTTP port", examples=[8123, 9002])
     username: str = Field(..., description="ClickHouse username", examples=["etl_user"])
     password: str = Field(..., description="ClickHouse password", examples=["secure_password"])
     database: str = Field(..., description="ClickHouse database name", examples=["analytics"])

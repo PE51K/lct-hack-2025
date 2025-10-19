@@ -841,7 +841,7 @@ class ComprehensiveDAGBuilder:
 
         if complexity > 6.0 and records > 50000:
             target_storage = TargetStorageType.CLICKHOUSE
-            connection_string = "clickhouse://localhost:9000/analytics"
+            connection_string = "clickhouse://localhost:9002/analytics"
         else:
             target_storage = TargetStorageType.POSTGRES
             connection_string = "postgresql://localhost:5432/dwh"
