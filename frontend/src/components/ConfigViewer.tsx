@@ -8,6 +8,7 @@ import {
   CodeOutlined,
 } from '@ant-design/icons';
 import { t } from '../i18n';
+import DataSample from './DataSample';
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -32,39 +33,44 @@ const ConfigViewer: React.FC<ConfigViewerProps> = ({
 
     const source = (extractConfig.source_metadata || extractConfig.source) as Record<string, unknown> || {};
     const content = (extractConfig.content_metadata || extractConfig.content) as Array<Record<string, unknown>> || [];
+    const sampleRecords = (extractConfig as Record<string, unknown>).sample_records as unknown[] | undefined;
 
     return (
-      <Card>
-        <Descriptions title={<Title level={4}><DatabaseOutlined /> {t('configViewer.source')}</Title>} bordered column={2}>
-          <Descriptions.Item label={t('configViewer.sourceType')}>
-            <Tag color="blue">{source.source_type as string || 'N/A'}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label={t('configViewer.sourcePath')}>
-            <Text code>{source.connection_string as string || source.table_name as string || 'N/A'}</Text>
-          </Descriptions.Item>
-          <Descriptions.Item label="Bucket/Database">
-            {source.bucket_name as string || source.database_name as string || 'N/A'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Тип контента">
-            {content.length > 0 && content[0].content_type ? (
-              <Tag color="green">{content[0].content_type as string}</Tag>
-            ) : 'N/A'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Количество файлов/таблиц" span={2}>
-            <Tag color="purple">{content.length}</Tag>
-          </Descriptions.Item>
-        </Descriptions>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Card>
+          <Descriptions title={<Title level={4}><DatabaseOutlined /> {t('configViewer.source')}</Title>} bordered column={2}>
+            <Descriptions.Item label={t('configViewer.sourceType')}>
+              <Tag color="blue">{source.source_type as string || 'N/A'}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label={t('configViewer.sourcePath')}>
+              <Text code>{source.connection_string as string || source.table_name as string || 'N/A'}</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label="Bucket/Database">
+              {source.bucket_name as string || source.database_name as string || 'N/A'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Тип контента">
+              {content.length > 0 && content[0].content_type ? (
+                <Tag color="green">{content[0].content_type as string}</Tag>
+              ) : 'N/A'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Количество файлов/таблиц" span={2}>
+              <Tag color="purple">{content.length}</Tag>
+            </Descriptions.Item>
+          </Descriptions>
 
-        {content.length > 0 && content[0].metamodel ? (
-          <Collapse style={{ marginTop: 16 }}>
-            <Panel header="Схема данных (metamodel)" key="1">
-              <pre style={{ maxHeight: 300, overflow: 'auto', background: '#0B0F14', color: '#F5F7FF', padding: 12, border: '1px solid #1D2B44', borderRadius: 8 }}>
-                {JSON.stringify(content[0].metamodel, null, 2)}
-              </pre>
-            </Panel>
-          </Collapse>
-        ) : null}
-      </Card>
+          {content.length > 0 && content[0].metamodel ? (
+            <Collapse style={{ marginTop: 16 }}>
+              <Panel header="Схема данных (metamodel)" key="1">
+                <pre style={{ maxHeight: 300, overflow: 'auto', background: '#0B0F14', color: '#F5F7FF', padding: 12, border: '1px solid #1D2B44', borderRadius: 8 }}>
+                  {JSON.stringify(content[0].metamodel, null, 2)}
+                </pre>
+              </Panel>
+            </Collapse>
+          ) : null}
+        </Card>
+
+        <DataSample records={sampleRecords} title="Семпл данных" />
+      </Space>
     );
   };
 

@@ -5,6 +5,7 @@ import re
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from typing import Any
 
 import boto3
 from defusedxml import ElementTree
@@ -354,3 +355,77 @@ class S3ExtractConfigBuilder(BaseExtractConfigBuilder):
             contents.append(cnt)
 
         return contents
+
+    @classmethod
+    async def get_sample_records(cls, source: Source, limit: int = 10) -> list[dict[str, Any]] | None:
+        """Retrieve sample records from S3 (first XML objects)."""
+        s3 = boto3.client(
+            "s3",
+            endpoint_url=source.connection_string,
+            aws_access_key_id=source.access_key,
+            aws_secret_access_key=source.secret_key,
+        )
+        bucket = source.bucket_name
+        prefix = source.table_name if source.table_name and source.table_name != "na" else ""
+
+        response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+
+        if not response.get("Contents"):
+            return None
+
+        xml_objects = [obj for obj in response["Contents"] if obj["Key"].endswith(".xml")]
+        if not xml_objects:
+            return None
+
+        sample: list[dict[str, Any]] = []
+        for obj in xml_objects:
+            if len(sample) >= limit:
+                break
+            key = obj["Key"]
+            try:
+                response = s3.get_object(Bucket=bucket, Key=key)
+                content = response["Body"].read().decode("utf-8")
+                records = cls._xml_content_to_records(content, limit - len(sample))
+                if records:
+                    sample.extend(records)
+            except Exception as exc:
+                logger.warning("Failed to read object %s from S3: %s", key, exc)
+
+        return sample or None
+
+    @classmethod
+    def _xml_content_to_records(cls, content: str, limit: int) -> list[dict[str, Any]]:
+        """Convert XML content string to flattened records."""
+        try:
+            root = ElementTree.fromstring(content)
+        except Exception as exc:
+            logger.warning("Failed to parse XML content for sample: %s", exc)
+            return []
+
+        sample: list[dict[str, Any]] = []
+        for element in root:
+            flattened = cls._flatten_xml_element(element)
+            if flattened:
+                sample.append(flattened)
+            if len(sample) >= limit:
+                break
+        return sample
+
+    @classmethod
+    def _flatten_xml_element(cls, element: ET.Element, parent_path: str = "") -> dict[str, Any]:
+        """Flatten XML element similar to folder extract builder."""
+        result: dict[str, Any] = {}
+
+        if element.text and element.text.strip():
+            key = parent_path.rstrip("_") if parent_path else element.tag
+            result[key] = element.text.strip()
+
+        for child in element:
+            child_path = f"{parent_path}{child.tag}_" if parent_path else f"{child.tag}_"
+            result.update(cls._flatten_xml_element(child, child_path))
+
+        for attr_name, attr_value in element.attrib.items():
+            attr_key = f"{parent_path}{element.tag}_attr_{attr_name}" if parent_path else f"{element.tag}_attr_{attr_name}"
+            result[attr_key] = attr_value
+
+        return result

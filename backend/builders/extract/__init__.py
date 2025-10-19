@@ -84,6 +84,8 @@ class ExtractConfigBuilder:
         logger.debug(f"Data quality: {data_quality}")
         batch_size = await builder.get_batch_size(src)
         logger.debug(f"Batch size: {batch_size}")
+        sample_records = await builder.get_sample_records(src)
+        logger.debug(f"Sample records collected: {len(sample_records) if sample_records else 0}")
 
         return ExtractConfig(
             source_metadata=src,
@@ -94,6 +96,7 @@ class ExtractConfigBuilder:
             incremental=incremental,
             data_quality=data_quality,
             batch_size=batch_size,
+            sample_records=sample_records,
         )
 
     @classmethod
@@ -152,6 +155,11 @@ class ExtractConfigBuilder:
         logger.debug("Data quality: %s", data_quality)
         batch_size = await builder_cls.get_batch_size(source)
         logger.debug("Batch size: %s", batch_size)
+        sample_records = await builder_cls.get_sample_records(source)
+        logger.debug(
+            "Sample records collected: %s",
+            len(sample_records) if sample_records else 0,
+        )
 
         return ExtractConfig(
             source_metadata=source,
@@ -162,4 +170,5 @@ class ExtractConfigBuilder:
             incremental=incremental,
             data_quality=data_quality,
             batch_size=batch_size,
+            sample_records=sample_records,
         )

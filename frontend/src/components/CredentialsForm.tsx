@@ -3,6 +3,7 @@ import { Form, Input, InputNumber, Button, Card, Typography, Space, Alert, Divid
 import { DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, RobotOutlined } from '@ant-design/icons';
 import type { CredentialsRequired } from '../services/api';
 import { t, tReplace } from '../i18n';
+import DataSample from './DataSample';
 
 const { Title, Text } = Typography;
 
@@ -10,9 +11,10 @@ interface CredentialsFormProps {
   credentialsRequired: CredentialsRequired;
   onSubmit: (credentials: Record<string, unknown>) => void;
   onCancel: () => void;
+  dataSample?: unknown[];
 }
 
-function CredentialsForm({ credentialsRequired, onSubmit, onCancel }: CredentialsFormProps) {
+function CredentialsForm({ credentialsRequired, onSubmit, onCancel, dataSample }: CredentialsFormProps) {
   const [form] = Form.useForm();
   const [credentials, setCredentials] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
@@ -59,6 +61,10 @@ function CredentialsForm({ credentialsRequired, onSubmit, onCancel }: Credential
           type="success"
           showIcon
         />
+
+        <Divider />
+
+        <DataSample records={dataSample} title="Семпл данных" />
 
         <Divider />
 

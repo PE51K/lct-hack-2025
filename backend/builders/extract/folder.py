@@ -1,5 +1,7 @@
 """Folder extract configuration builder."""
 
+import csv
+import json
 import logging
 import re
 import xml.etree.ElementTree as ET
@@ -547,6 +549,38 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
         }
 
     @classmethod
+    async def get_sample_records(cls, source: Source, limit: int = 10) -> list[dict[str, Any]] | None:
+        """Return up to `limit` sample records from folder source."""
+        folder_path = Path(source.connection_string.replace("//", "").replace("file:", ""))
+
+        if not folder_path.exists():
+            return None
+
+        if folder_path.is_file():
+            suffix = folder_path.suffix.lower()
+            if suffix == ".xml":
+                return cls._extract_xml_sample_from_files([folder_path], limit)
+            if suffix == ".csv":
+                return cls._extract_csv_sample(folder_path, limit)
+            if suffix == ".json":
+                return cls._extract_json_sample(folder_path, limit)
+            return None
+
+        content_type = await cls.get_src_content_type(source)
+
+        if content_type == ContentType.xml:
+            files = sorted(folder_path.glob("*.xml"))
+            return cls._extract_xml_sample_from_files(files, limit)
+        if content_type == ContentType.csv:
+            first_csv = next((f for f in sorted(folder_path.glob("*.csv")) if f.is_file()), None)
+            return cls._extract_csv_sample(first_csv, limit) if first_csv else None
+        if content_type == ContentType.json:
+            first_json = next((f for f in sorted(folder_path.glob("*.json")) if f.is_file()), None)
+            return cls._extract_json_sample(first_json, limit) if first_json else None
+
+        return None
+
+    @classmethod
     async def _analyze_xml_folder(cls, folder_path: Path) -> Content:
         """Analyze XML files in folder using full parser."""
         xml_files = list(folder_path.glob("*.xml"))
@@ -634,3 +668,100 @@ class FolderExtractConfigBuilder(BaseExtractConfigBuilder):
 
         # Default to text
         return "text"
+
+    # ====================== SAMPLE EXTRACTION HELPERS ======================
+
+    @classmethod
+    def _flatten_xml_element(cls, element: ET.Element, parent_path: str = "") -> dict[str, Any]:
+        """Flatten XML element into dictionary using underscore path notation."""
+        result: dict[str, Any] = {}
+
+        if element.text and element.text.strip():
+            key = parent_path.rstrip("_") if parent_path else element.tag
+            result[key] = element.text.strip()
+
+        for child in element:
+            child_path = f"{parent_path}{child.tag}_" if parent_path else f"{child.tag}_"
+            result.update(cls._flatten_xml_element(child, child_path))
+
+        for attr_name, attr_value in element.attrib.items():
+            attr_key = f"{parent_path}{element.tag}_attr_{attr_name}" if parent_path else f"{element.tag}_attr_{attr_name}"
+            result[attr_key] = attr_value
+
+        return result
+
+    @classmethod
+    def _extract_xml_sample_from_files(
+        cls, files: list[Path], limit: int
+    ) -> list[dict[str, Any]] | None:
+        """Extract sample records from XML files."""
+        if not files:
+            return None
+
+        sample: list[dict[str, Any]] = []
+        for file_path in files:
+            try:
+                tree = ElementTree.parse(file_path)
+                root = tree.getroot()
+                for record in root:
+                    flattened = cls._flatten_xml_element(record)
+                    if flattened:
+                        sample.append(flattened)
+                    if len(sample) >= limit:
+                        return sample
+            except Exception as exc:
+                logger.warning("Failed to parse XML file %s: %s", file_path, exc)
+
+            if len(sample) >= limit:
+                break
+
+        return sample or None
+
+    @classmethod
+    def _extract_csv_sample(cls, file_path: Path | None, limit: int) -> list[dict[str, Any]] | None:
+        """Extract sample rows from CSV file."""
+        if not file_path or not file_path.exists():
+            return None
+
+        sample: list[dict[str, Any]] = []
+        try:
+            with file_path.open("r", encoding="utf-8") as csv_file:
+                reader = csv.DictReader(csv_file)
+                for row in reader:
+                    sample.append(dict(row))
+                    if len(sample) >= limit:
+                        break
+        except Exception as exc:
+            logger.warning("Failed to read CSV file %s: %s", file_path, exc)
+            return None
+
+        return sample or None
+
+    @classmethod
+    def _extract_json_sample(cls, file_path: Path | None, limit: int) -> list[dict[str, Any]] | None:
+        """Extract sample data from JSON file."""
+        if not file_path or not file_path.exists():
+            return None
+
+        try:
+            data = json.loads(file_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            logger.warning("Failed to read JSON file %s: %s", file_path, exc)
+            return None
+
+        if isinstance(data, list):
+            sample = []
+            for item in data:
+                if isinstance(item, dict):
+                    sample.append(item)
+                else:
+                    sample.append({"value": item})
+                if len(sample) >= limit:
+                    break
+            return sample or None
+
+        if isinstance(data, dict):
+            return [data]
+
+        # Fallback to raw value
+        return [{"value": data}]

@@ -1,7 +1,7 @@
 """Models for data extraction configurations."""
 
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -239,3 +239,6 @@ class ExtractConfig(BaseModel):
         default_factory=DataQualityProfile, description="Data quality profile and validation rules."
     )
     batch_size: int = Field(1000, description="Batch size for processing records.")
+    sample_records: list[dict[str, Any]] | None = Field(
+        default=None, description="Sample records extracted from the source (first 10 items)."
+    )

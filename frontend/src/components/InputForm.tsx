@@ -5,6 +5,7 @@ import { RocketOutlined, UserOutlined, ApiOutlined, BulbOutlined, UploadOutlined
 import type { CreateETLRequest, UploadSourceResponse } from '../services/api';
 import { uploadSourceFile } from '../services/api';
 import { t } from '../i18n';
+import DataSample from './DataSample';
 
 const { TextArea } = Input;
 const { Title, Paragraph } = Typography;
@@ -174,6 +175,11 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
                 }
               />
             ) : null}
+
+            <DataSample
+              records={(uploadResult?.extract_config as Record<string, unknown> | undefined)?.sample_records as unknown[] | undefined}
+              title="Семпл данных"
+            />
           </Space>
         </Card>
 

@@ -189,6 +189,12 @@ function App() {
   };
 
   const renderStep = () => {
+    const extractConfigRecord = latestResponse?.extract_config as Record<string, unknown> | undefined;
+    const sampleRecords =
+      extractConfigRecord && Object.prototype.hasOwnProperty.call(extractConfigRecord, 'sample_records')
+        ? (extractConfigRecord.sample_records as unknown[] | undefined)
+        : undefined;
+
     switch (step) {
       case 'input':
         return <InputForm onSubmit={handleCreate} />;
@@ -202,6 +208,7 @@ function App() {
             credentialsRequired={latestResponse.credentials_required}
             onSubmit={handleCredentialsSubmit}
             onCancel={handleCredentialsCancel}
+            dataSample={sampleRecords}
           />
         ) : null;
       case 'report':

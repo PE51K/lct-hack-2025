@@ -1,6 +1,7 @@
 """Base classes for extract configuration builders."""
 
 import logging
+from typing import Any
 
 from ai.llm import llm
 from models.extract import (
@@ -167,3 +168,16 @@ class BaseExtractConfigBuilder:
             Batch size for processing records.
         """
         return 1000  # Default batch size
+
+    @classmethod
+    async def get_sample_records(cls, source: Source, limit: int = 1) -> list[dict[str, Any]] | None:
+        """Retrieve sample records from the source.
+
+        Args:
+            source: The source configuration.
+            limit: Maximum number of records to return.
+
+        Returns:
+            A list of sample records or None if unavailable.
+        """
+        return None
