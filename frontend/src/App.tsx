@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, Typography, Steps, theme, Button, Space } from 'antd';
-import { SettingOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { SettingOutlined, ArrowLeftOutlined, DatabaseOutlined } from '@ant-design/icons';
 import ruRU from 'antd/locale/ru_RU';
 import InputForm from './components/InputForm';
 import ProgressBar from './components/ProgressBar';
@@ -10,6 +10,7 @@ import FeedbackForm from './components/FeedbackForm';
 import DeploymentProgress from './components/DeploymentProgress';
 import DeploymentReport from './components/DeploymentReport';
 import Settings from './components/Settings';
+import ViewResults from './components/ViewResults';
 import { createETL, createDAG, updateETL, publishETL, type CreateETLRequest, type Feedback, type ThreadUserIds, type ETLResponse } from './services/api';
 import { t } from './i18n';
 import './App.css';
@@ -17,7 +18,7 @@ import './App.css';
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-type Step = 'input' | 'generating' | 'credentials' | 'creating_dag' | 'report' | 'feedback' | 'updating' | 'publishing' | 'published';
+type Step = 'input' | 'generating' | 'credentials' | 'creating_dag' | 'report' | 'feedback' | 'updating' | 'publishing' | 'published' | 'view_results';
 
 function App() {
   const [step, setStep] = useState<Step>('input');
@@ -90,6 +91,19 @@ function App() {
           dag: response.dag,
           load_config: response.updated_load_config || prev!.load_config,
         }));
+
+        // Extract DAG ID from dag response
+        if (response.dag) {
+          const dag = response.dag as Record<string, unknown>;
+          // DAG model has dag_id directly on it (not in a config sub-object)
+          const extractedDagId = dag.dag_id as string;
+          if (extractedDagId) {
+            setDagId(extractedDagId);
+            // Set Airflow URL
+            setAirflowUrl(`http://localhost:8081/dags/${extractedDagId}/grid`);
+          }
+        }
+
         setStep('report');
       } else {
         setProgressMessages(prev => [...prev, `Error: ${response.error_message || 'Unknown error'}`]);
@@ -181,6 +195,19 @@ function App() {
     setDbCredentials(null);
   };
 
+  // Extract DAG ID when latestResponse changes and has DAG
+  useEffect(() => {
+    if (latestResponse?.dag && !dagId) {
+      const dag = latestResponse.dag as Record<string, unknown>;
+      // DAG model has dag_id directly on it (not in a config sub-object)
+      const extractedDagId = dag.dag_id as string;
+      if (extractedDagId) {
+        setDagId(extractedDagId);
+        setAirflowUrl(`http://localhost:8081/dags/${extractedDagId}/grid`);
+      }
+    }
+  }, [latestResponse, dagId]);
+
   const handleBack = () => {
     // Define allowed back transitions
     const backTransitions: Partial<Record<Step, Step>> = {
@@ -211,6 +238,7 @@ function App() {
       updating: 4,
       publishing: 5,
       published: 6,
+      view_results: 0,
     };
     return stepMap[step] || 0;
   };
@@ -239,6 +267,8 @@ function App() {
             loadConfig={latestResponse?.load_config}
             ddl={latestResponse?.ddl}
             dag={latestResponse?.dag}
+            dagId={dagId}
+            airflowUrl={airflowUrl}
             onSatisfied={handleSatisfied}
             onNotSatisfied={handleNotSatisfied}
           />
@@ -258,6 +288,8 @@ function App() {
             dbCredentials={dbCredentials}
           />
         );
+      case 'view_results':
+        return <ViewResults />;
       default:
         return <div>Unknown step</div>;
     }
@@ -328,6 +360,15 @@ function App() {
                   Назад
                 </Button>
               )}
+              <Button
+                icon={<DatabaseOutlined />}
+                onClick={() => setStep('view_results')}
+                size="large"
+                type="default"
+                style={{ borderRadius: 8 }}
+              >
+                Просмотр результатов
+              </Button>
               <Button
                 icon={<SettingOutlined />}
                 onClick={() => setSettingsVisible(true)}
