@@ -61,11 +61,12 @@ class ExtractConfigBuilder:
         )
         logger.debug(f"Extracted source from user prompt: {src}")
 
-        # Fix S3 connection details if they're missing or pointing to localhost
+        # Fix S3 connection details - always use settings for S3 to ensure correct configuration
         if src.source_type == SourceType.s3:
-            if not src.connection_string or "localhost" in src.connection_string:
-                src.connection_string = settings.s3.endpoint_url
-                logger.debug(f"Using S3 endpoint from settings: {src.connection_string}")
+            # Always override connection_string to ensure correct endpoint and port
+            src.connection_string = settings.s3.endpoint_url
+            logger.debug(f"Using S3 endpoint from settings: {src.connection_string}")
+
             if not src.access_key:
                 src.access_key = settings.s3.access_key_id
             if not src.secret_key:
