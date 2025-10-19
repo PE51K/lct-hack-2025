@@ -289,7 +289,7 @@ function App() {
           />
         );
       case 'view_results':
-        return <ViewResults />;
+        return <ViewResults onClose={handleReset} />;
       default:
         return <div>Unknown step</div>;
     }
@@ -341,7 +341,7 @@ function App() {
               justifyContent: 'space-between',
             }}
           >
-            <div className="app-logo">
+            <div className="app-logo" onClick={handleReset} style={{ cursor: 'pointer' }}>
               <div className="app-logo-icon">
                 <div className="app-logo-satellite"></div>
               </div>
