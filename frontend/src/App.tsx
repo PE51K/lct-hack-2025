@@ -100,7 +100,7 @@ function App() {
           if (extractedDagId) {
             setDagId(extractedDagId);
             // Set Airflow URL
-            setAirflowUrl(`http://localhost:8081/dags/${extractedDagId}/grid`);
+            setAirflowUrl(`http://localhost:8080/dags/${extractedDagId}/grid`);
           }
         }
 
@@ -211,7 +211,7 @@ function App() {
       const extractedDagId = dag.dag_id as string;
       if (extractedDagId) {
         setDagId(extractedDagId);
-        setAirflowUrl(`http://localhost:8081/dags/${extractedDagId}/grid`);
+        setAirflowUrl(`http://localhost:8080/dags/${extractedDagId}/grid`);
       }
     }
   }, [latestResponse, dagId]);

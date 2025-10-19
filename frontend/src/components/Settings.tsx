@@ -121,7 +121,7 @@ function Settings({ visible, onClose }: SettingsProps) {
           >
             <TextArea
               rows={4}
-              placeholder="Например: Connect to S3-compatible storage using endpoint: http://localhost:9000..."
+              placeholder="Например: Connect to S3-compatible storage using endpoint: http://localhost:9002..."
             />
           </Form.Item>
         </Card>

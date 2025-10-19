@@ -11,7 +11,7 @@ const { Title, Paragraph } = Typography;
 
 const generateRandomId = () => Math.random().toString(36).substring(2, 15);
 
-const EXAMPLE_PROMPT = `Connect to S3-compatible storage using endpoint: http://localhost:9000, bucket: test-bucket, access_key: test_minio, secret_key: secure_minio_password and extract data from folder: xml/`;
+const EXAMPLE_PROMPT = `Connect to S3-compatible storage using endpoint: http://localhost:9002, bucket: test-bucket, access_key: test_minio, secret_key: secure_minio_password and extract data from folder: xml/`;
 
 interface InputFormProps {
   onSubmit: (request: CreateETLRequest) => void;
@@ -52,7 +52,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit }) => {
     const folder = filePath.substring(0, filePath.lastIndexOf('/'));
 
     // Generate prompt with uploaded file details
-    const uploadedFilePrompt = `Connect to S3-compatible storage using endpoint: http://test-minio:9000, bucket: ${bucket}, access_key: test_minio, secret_key: secure_minio_password and extract data from folder: ${folder}/`;
+    const uploadedFilePrompt = `Connect to S3-compatible storage using endpoint: http://test-minio:9002, bucket: ${bucket}, access_key: test_minio, secret_key: secure_minio_password and extract data from folder: ${folder}/`;
 
     form.setFieldsValue({ userPrompt: uploadedFilePrompt });
   };
