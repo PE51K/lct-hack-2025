@@ -30,7 +30,7 @@ function FileUploader({ onUploadSuccess }: FileUploaderProps) {
     }
 
     const formData = new FormData();
-    formData.append('file', fileList[0] as any);
+    formData.append('file', fileList[0].originFileObj as File);
     formData.append('bucket', 'test-bucket');
     formData.append('folder', 'uploads');
 

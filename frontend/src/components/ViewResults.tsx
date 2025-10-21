@@ -11,12 +11,22 @@ interface ViewResultsProps {
   onClose?: () => void;
 }
 
+interface ViewResultsFormValues {
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  schema: string;
+  table: string;
+}
+
 const ViewResults: React.FC<ViewResultsProps> = ({ onClose }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [postgresData, setPostgresData] = useState<{
     columns: PostgresColumn[];
-    rows: Record<string, any>[];
+    rows: Record<string, unknown>[];
     totalRows: number;
     tableName: string;
     schema: string;
@@ -47,7 +57,7 @@ const ViewResults: React.FC<ViewResultsProps> = ({ onClose }) => {
     };
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: ViewResultsFormValues) => {
     setLoading(true);
     try {
       const response = await fetchPostgresData({
