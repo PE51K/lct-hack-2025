@@ -39,7 +39,7 @@ const DeploymentReport: React.FC<DeploymentReportProps> = ({
   const [dagTriggered, setDagTriggered] = useState(false);
   const [postgresData, setPostgresData] = useState<{
     columns: PostgresColumn[];
-    rows: Record<string, any>[];
+    rows: Record<string, unknown>[];
     totalRows: number;
   } | null>(null);
 

@@ -10,13 +10,13 @@ export const defaultLanguage: Language = 'ru';
 
 export function t(key: string): string {
   const keys = key.split('.');
-  let value: any = translations[defaultLanguage];
+  let value: Record<string, unknown> = translations[defaultLanguage];
 
   for (const k of keys) {
-    value = value?.[k];
+    value = value?.[k] as Record<string, unknown>;
   }
 
-  return value || key;
+  return typeof value === 'string' ? value : key;
 }
 
 export function tReplace(key: string, replacements: Record<string, string>): string {

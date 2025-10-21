@@ -23,7 +23,7 @@ interface DatabaseViewerProps {
   tableName: string;
   schema?: string;
   columns: Column[];
-  rows: any[];
+  rows: Record<string, unknown>[];
   totalRows: number;
 }
 
@@ -101,7 +101,7 @@ const DatabaseViewer: React.FC<DatabaseViewerProps> = ({
     ),
     dataIndex: col.name,
     key: col.name,
-    render: (value: any) => {
+    render: (value: unknown) => {
       if (value === null || value === undefined) {
         return <Text type="secondary">NULL</Text>;
       }

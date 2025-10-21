@@ -11,6 +11,17 @@ interface SettingsProps {
   onClose: () => void;
 }
 
+interface SettingsFormValues {
+  defaultPrompt: string;
+  postgres_host: string;
+  postgres_port: number;
+  postgres_database: string;
+  postgres_username: string;
+  postgres_password: string;
+  postgres_schema: string;
+  postgres_table: string;
+}
+
 function Settings({ visible, onClose }: SettingsProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -32,7 +43,7 @@ function Settings({ visible, onClose }: SettingsProps) {
     }
   }, [visible, form]);
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: SettingsFormValues) => {
     setLoading(true);
     try {
       const settings: UserSettings = {
@@ -51,7 +62,7 @@ function Settings({ visible, onClose }: SettingsProps) {
       settingsService.saveSettings(settings);
       message.success('Настройки успешно сохранены');
       onClose();
-    } catch (error) {
+    } catch {
       message.error('Ошибка при сохранении настроек');
     } finally {
       setLoading(false);

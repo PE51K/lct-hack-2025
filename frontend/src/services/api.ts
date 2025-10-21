@@ -133,7 +133,7 @@ export interface PostgresColumn {
 export interface FetchPostgresDataResponse {
   success: boolean;
   columns: PostgresColumn[];
-  rows: Record<string, any>[];
+  rows: Record<string, unknown>[];
   total_rows: number;
   error_message?: string;
 }
