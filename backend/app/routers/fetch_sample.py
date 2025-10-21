@@ -4,7 +4,8 @@ import logging
 from typing import Any
 
 import psycopg2
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+from psycopg2.extensions import quote_ident
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,8 @@ async def fetch_sample(request: FetchSampleRequest) -> FetchSampleResponse:
         )
 
         logger.info(
-            f"Connecting to database: {request.username}@{request.host}:{request.port}/{request.database}"
+            f"Connecting to database: {request.username}@{request.host}:{request.port}/"
+            f"{request.database}"
         )
 
         # Connect to the database
@@ -71,14 +73,16 @@ async def fetch_sample(request: FetchSampleRequest) -> FetchSampleResponse:
         cursor = connection.cursor()
 
         # Get total row count
-        count_query = f'SELECT COUNT(*) FROM "{request.schema}"."{request.table}"'
+        schema_quoted = quote_ident(request.schema, connection)
+        table_quoted = quote_ident(request.table, connection)
+        count_query = f"SELECT COUNT(*) FROM {schema_quoted}.{table_quoted}"  # noqa: S608
         cursor.execute(count_query)
         total_rows = cursor.fetchone()[0]
 
         logger.info(f"Total rows in {request.schema}.{request.table}: {total_rows}")
 
         # Fetch sample data
-        sample_query = f'SELECT * FROM "{request.schema}"."{request.table}" LIMIT %s'
+        sample_query = f"SELECT * FROM {schema_quoted}.{table_quoted} LIMIT %s"  # noqa: S608
         cursor.execute(sample_query, (request.limit,))
 
         # Get column names
@@ -98,9 +102,7 @@ async def fetch_sample(request: FetchSampleRequest) -> FetchSampleResponse:
 
         logger.info(f"Successfully fetched {len(rows)} sample rows")
 
-        return FetchSampleResponse(
-            success=True, columns=columns, rows=rows, total_rows=total_rows
-        )
+        return FetchSampleResponse(success=True, columns=columns, rows=rows, total_rows=total_rows)
 
     except psycopg2.OperationalError as e:
         error_msg = f"Could not connect to database: {e!s}"

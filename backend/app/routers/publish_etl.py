@@ -57,8 +57,10 @@ async def publish_etl(request: PublishETLRequest) -> StreamingResponse:
             if not dag_dir.exists():
                 raise HTTPException(
                     status_code=404,
-                    detail=f"DAG directory not found for user={ids.user_id}, thread={ids.thread_id}. "
-                    f"Please run /create_dag first.",
+                    detail=(
+                        f"DAG directory not found for user={ids.user_id}, "
+                        f"thread={ids.thread_id}. Please run /create_dag first."
+                    ),
                 )
 
             # Find the DAG file (should be etl_*.py)

@@ -3,7 +3,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile
 from pydantic import BaseModel
 
 from core.settings import settings
@@ -27,7 +27,7 @@ class UploadFileResponse(BaseModel):
 @upload_router.post("/upload_file")
 async def upload_file(
     file: Annotated[UploadFile, File(description="File to upload to MinIO")],
-    bucket: Annotated[str, Form(description="Target bucket name")] = None,
+    bucket: Annotated[str | None, Form(description="Target bucket name")] = None,
     folder: Annotated[str, Form(description="Target folder path")] = "",
 ) -> UploadFileResponse:
     """
@@ -54,9 +54,7 @@ async def upload_file(
         # Construct the file path
         file_path = f"{folder.rstrip('/')}/{file.filename}" if folder else file.filename
 
-        logger.info(
-            f"Uploading file {file.filename} to bucket {target_bucket} at path {file_path}"
-        )
+        logger.info(f"Uploading file {file.filename} to bucket {target_bucket} at path {file_path}")
 
         # Create S3 client
         s3_client = boto3.client(
@@ -93,12 +91,13 @@ async def upload_file(
         )
 
         logger.info(
-            f"Successfully uploaded {file.filename} ({file_size} bytes) to {target_bucket}/{file_path}"
+            f"Successfully uploaded {file.filename} ({file_size} bytes) to "
+            f"{target_bucket}/{file_path}"
         )
 
         return UploadFileResponse(
             success=True,
-            message=f"Файл успешно загружен в MinIO",
+            message="Файл успешно загружен в MinIO",
             bucket=target_bucket,
             file_path=file_path,
             file_size=file_size,

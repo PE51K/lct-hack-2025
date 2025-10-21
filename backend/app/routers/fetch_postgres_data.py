@@ -5,6 +5,7 @@ from typing import Any
 
 import psycopg2
 from fastapi import APIRouter, HTTPException
+from psycopg2.extensions import quote_ident
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -81,17 +82,17 @@ async def fetch_postgres_data(request: FetchPostgresDataRequest) -> FetchPostgre
         columns = [{"name": col[0], "type": col[1]} for col in column_info]
 
         # Get total row count
-        cursor.execute(f'SELECT COUNT(*) FROM "{request.schema}"."{request.table}"')
+        schema_quoted = quote_ident(request.schema, conn)
+        table_quoted = quote_ident(request.table, conn)
+        count_query = f"SELECT COUNT(*) FROM {schema_quoted}.{table_quoted}"  # noqa: S608
+        cursor.execute(count_query)
         total_rows = cursor.fetchone()[0]
 
         # Fetch data with limit
         column_names = [col["name"] for col in columns]
         columns_str = ", ".join(f'"{col}"' for col in column_names)
-        cursor.execute(
-            f'SELECT {columns_str} '
-            f'FROM "{request.schema}"."{request.table}" LIMIT %s',
-            (request.limit,),
-        )
+        select_query = f"SELECT {columns_str} FROM {schema_quoted}.{table_quoted} LIMIT %s"  # noqa: S608
+        cursor.execute(select_query, (request.limit,))
         rows_data = cursor.fetchall()
 
         # Convert rows to dict format
@@ -103,7 +104,9 @@ async def fetch_postgres_data(request: FetchPostgresDataRequest) -> FetchPostgre
                 value = row[i]
                 if value is not None:
                     # Convert to string for dates, decimals, etc.
-                    row_dict[col_name] = str(value) if not isinstance(value, (str, int, float, bool)) else value
+                    row_dict[col_name] = (
+                        str(value) if not isinstance(value, (str, int, float, bool)) else value
+                    )
                 else:
                     row_dict[col_name] = None
             rows.append(row_dict)
@@ -111,9 +114,7 @@ async def fetch_postgres_data(request: FetchPostgresDataRequest) -> FetchPostgre
         cursor.close()
         conn.close()
 
-        logger.info(
-            f"Successfully fetched {len(rows)} rows from {request.schema}.{request.table}"
-        )
+        logger.info(f"Successfully fetched {len(rows)} rows from {request.schema}.{request.table}")
 
         return FetchPostgresDataResponse(
             success=True,
@@ -129,7 +130,7 @@ async def fetch_postgres_data(request: FetchPostgresDataRequest) -> FetchPostgre
             columns=[],
             rows=[],
             total_rows=0,
-            error_message=f"Database error: {str(e)}",
+            error_message=f"Database error: {e!s}",
         )
     except Exception as e:
         logger.error(f"Error fetching PostgreSQL data: {e}")

@@ -4,6 +4,7 @@ Application settings for the Calculator API application.
 Uses Pydantic's BaseSettings to manage configuration and environment variables.
 """
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # ============ FastAPI backend app ============
@@ -163,7 +164,7 @@ class AirflowSettings(BaseSettings):
 
     url: str = "http://airflow:8080"
     username: str = "admin"
-    password: str = "admin"
+    password: str = Field(default="admin", env="AIRFLOW_PASSWORD")
 
 
 # ============ Main Settings Aggregator ============
