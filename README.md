@@ -2,12 +2,6 @@
 
 A comprehensive AI-powered assistant for automating data engineering processes, capable of connecting to various data sources, building ETL pipelines, designing data warehouses, and optimizing processing performance.
 
-## 👀 Demo
-
-You can check out a live demo of the application [here](http://158.160.6.46:7777/) (creds for db's already in demo).
-
-Demo Airflow is located at [http://158.160.6.46:8080](http://158.160.6.46:8080) (login: `admin`, password: `secure_admin_password`).
-
 ## 📜 Table of Contents
 
 - [Architecture](#-architecture)
